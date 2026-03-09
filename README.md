@@ -416,3 +416,22 @@
 | Add approved events to calendar | Event |
 | Export events to personal calendars | Attendee |
 | Display upcoming events | |
+---
+
+## V) BackLog - Kanbaan
+
+### Kanbaan Backlog
+
+![Kanbaan Backlog](images/image30.png)
+---
+
+## VI) Meeting Schedule with TA
+
+| Meeting | Date | Duration |
+|---------|------|----------|
+| Meeting 1 | 20th Feb | 15 min |
+| Meeting 2 | 5th March | 10 min |
+
+Had constant communication on Slack throughout.
+
+---
