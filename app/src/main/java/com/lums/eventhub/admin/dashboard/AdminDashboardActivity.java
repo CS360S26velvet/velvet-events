@@ -6,33 +6,39 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.lums.eventhub.R;
-import com.lums.eventhub.admin.proposals.ProposalListActivity;
 
 public class AdminDashboardActivity extends AppCompatActivity {
-
-    private TextView tvPendingCount, tvApprovedCount, tvWelcome;
-    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
 
-        tvWelcome = findViewById(R.id.tvWelcome);
-        tvPendingCount = findViewById(R.id.tvPendingCount);
-        tvApprovedCount = findViewById(R.id.tvApprovedCount);
-
-        db = FirebaseFirestore.getInstance();
-
-        // Load counts from Firebase
-        db.collection("proposals").whereEqualTo("status", "pending").get()
-                .addOnSuccessListener(q -> tvPendingCount.setText(String.valueOf(q.size())));
-
-        db.collection("proposals").whereEqualTo("status", "approved").get()
-                .addOnSuccessListener(q -> tvApprovedCount.setText(String.valueOf(q.size())));
-
+        // 1. Proposals Button
         findViewById(R.id.btnViewProposals).setOnClickListener(v ->
-                startActivity(new Intent(this, ProposalListActivity.class))
-        );
+                startActivity(new Intent(this, com.lums.eventhub.admin.proposals.ProposalListActivity.class)));
+
+        // 2. Auditorium Button
+        findViewById(R.id.btnAuditorium).setOnClickListener(v ->
+                startActivity(new Intent(this, com.lums.eventhub.admin.auditorium.AuditoriumActivity.class)));
+
+        // 3. Calendar Button
+        findViewById(R.id.btnCalendar).setOnClickListener(v ->
+                startActivity(new Intent(this, com.lums.eventhub.admin.calendar.CalendarActivity.class)));
+
+        // 4. Accommodation Button
+        findViewById(R.id.btnAccommodation).setOnClickListener(v ->
+                startActivity(new Intent(this, com.lums.eventhub.admin.accommodation.AccommodationActivity.class)));
+
+        // Firebase Stats Loader
+        loadFirebaseStats();
+    }
+
+    private void loadFirebaseStats() {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        db.collection("proposals").whereEqualTo("status", "pending").get()
+                .addOnSuccessListener(q -> ((TextView)findViewById(R.id.tvPendingCount)).setText("Pending: " + q.size()));
+        db.collection("proposals").whereEqualTo("status", "approved").get()
+                .addOnSuccessListener(q -> ((TextView)findViewById(R.id.tvApprovedCount)).setText("Approved: " + q.size()));
     }
 }

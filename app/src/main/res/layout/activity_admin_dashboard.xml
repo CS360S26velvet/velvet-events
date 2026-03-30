@@ -1,102 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="20dp"
     android:background="#F8F9FA">
 
-    <!-- Welcome Message -->
     <TextView
         android:id="@+id/tvWelcome"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Welcome, Admin"
+        android:text="Admin Dashboard"
         android:textSize="24sp"
         android:textStyle="bold"
-        android:textColor="#1A1A2E"
-        android:layout_marginBottom="24dp"/>
+        android:layout_marginBottom="20dp"/>
 
-    <!-- Stats Section (Horizontal) -->
+    <!-- Stats Row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:weightSum="2"
-        android:layout_marginBottom="24dp">
-
-        <!-- Pending Card -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/input_background"
-            android:gravity="center">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Pending"
-                android:textColor="#666666" />
-
-            <TextView
-                android:id="@+id/tvPendingCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="#FF8C00" />
-        </LinearLayout>
-
-        <!-- Approved Card -->
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:layout_marginStart="8dp"
-            android:background="@drawable/input_background"
-            android:gravity="center">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Approved"
-                android:textColor="#666666" />
-
-            <TextView
-                android:id="@+id/tvApprovedCount"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="28sp"
-                android:textStyle="bold"
-                android:textColor="#28A745" />
-        </LinearLayout>
+        android:layout_marginBottom="20dp">
+        <TextView android:id="@+id/tvPendingCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Pending: 0" android:textColor="#FF8C00" android:textStyle="bold"/>
+        <TextView android:id="@+id/tvApprovedCount" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="Approved: 0" android:textColor="#28A745" android:textStyle="bold"/>
     </LinearLayout>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Recent Actions"
-        android:textStyle="bold"
-        android:layout_marginBottom="12dp"/>
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Management Console" android:textStyle="bold" android:layout_marginBottom="10dp"/>
 
-    <!-- The Button to Navigate -->
-    <Button
-        android:id="@+id/btnViewProposals"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="View All Proposals"
-        android:backgroundTint="#6C63FF"
-        android:textColor="#FFFFFF"
-        android:padding="12dp" />
+    <!-- 1. Proposals Button -->
+    <Button android:id="@+id/btnViewProposals"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Review Event Proposals" android:backgroundTint="#6C63FF" android:layout_marginBottom="10dp"/>
+
+    <!-- 2. Auditorium Button (US-06) -->
+    <Button android:id="@+id/btnAuditorium"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Auditorium Bookings" android:backgroundTint="#6C757D" android:layout_marginBottom="10dp"/>
+
+    <!-- 3. Calendar Button (US-08/09) -->
+    <Button android:id="@+id/btnCalendar"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Event Calendar" android:backgroundTint="#6C757D" android:layout_marginBottom="10dp"/>
+
+    <!-- 4. Accommodation Button (US-13) -->
+    <Button android:id="@+id/btnAccommodation"
+        android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Accommodation Requests" android:backgroundTint="#17A2B8"/>
 
 </LinearLayout>

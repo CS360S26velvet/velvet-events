@@ -27,9 +27,14 @@
         <activity android:name=".admin.proposals.ProposalListActivity" />
         <activity android:name=".admin.proposals.ProposalDetailActivity" />
 
-<!--        &lt;!&ndash; 3. TEAMMATE STUBS (Crucial to prevent crashes) &ndash;&gt;-->
+<!-- 3. TEAMMATE STUBS (Crucial to prevent crashes) &ndash;&gt;-->
         <activity android:name=".organizer.OrganizerDashboardActivity" />
         <activity android:name=".attendee.AttendeeDashboardActivity" />
+
+        <!-- Admin Feature Activities -->
+        <activity android:name=".admin.auditorium.AuditoriumActivity" />
+        <activity android:name=".admin.calendar.CalendarActivity" />
+        <activity android:name=".admin.accommodation.AccommodationActivity" />
 
     </application>
 
