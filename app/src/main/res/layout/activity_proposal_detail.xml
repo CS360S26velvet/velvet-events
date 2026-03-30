@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:padding="20dp">
+
+    <TextView android:id="@+id/tvDetailTitle" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:textSize="24sp" android:textStyle="bold" android:text="Title"/>
+
+    <TextView android:id="@+id/tvDetailInfo" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:textColor="#555555" android:layout_marginTop="8dp" android:text="Date &amp; Venue"/>
+
+    <TextView android:id="@+id/tvDetailDesc" android:layout_width="wrap_content"
+        android:layout_height="wrap_content" android:layout_marginTop="16dp" android:textSize="16sp" android:text="Description"/>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp" android:background="#DDD" android:layout_marginVertical="20dp"/>
+
+    <Button android:id="@+id/btnApprove" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="APPROVE" android:backgroundTint="#28A745" android:layout_marginBottom="10dp"/>
+
+    <Button android:id="@+id/btnReject" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="REJECT" android:backgroundTint="#DC3545"/>
+</LinearLayout>
