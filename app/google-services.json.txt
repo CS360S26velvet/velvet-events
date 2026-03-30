@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "531089708367",
+    "project_id": "lums-eventhub-cd952",
+    "storage_bucket": "lums-eventhub-cd952.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531089708367:android:6fd63a5b5fcbf9d957613a",
+        "android_client_info": {
+          "package_name": "com.lums.eventhub"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWSLZtUspDv3GpbTIs1G4hN0f8ntaywXM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

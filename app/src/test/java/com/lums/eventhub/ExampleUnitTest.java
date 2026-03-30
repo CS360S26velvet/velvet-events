@@ -1,4 +1,4 @@
-package com.example.velvetevents;
+package com.lums.eventhub;
 
 import org.junit.Test;
 

@@ -1,15 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
+    id 'com.google.gms.google-services'
 }
 
 android {
-    namespace 'com.example.velvetevents'
+    namespace 'com.lums.eventhub'
     compileSdk {
         version = release(36)
     }
 
     defaultConfig {
-        applicationId "com.example.velvetevents"
+        applicationId "com.example.eventhub"
         minSdk 26
         targetSdk 36
         versionCode 1
@@ -38,4 +39,9 @@ dependencies {
     testImplementation libs.junit
     androidTestImplementation libs.ext.junit
     androidTestImplementation libs.espresso.core
+
+    implementation platform('com.google.firebase:firebase-bom:32.7.0')
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.firebase:firebase-firestore'
+    implementation 'com.google.firebase:firebase-auth'
 }
