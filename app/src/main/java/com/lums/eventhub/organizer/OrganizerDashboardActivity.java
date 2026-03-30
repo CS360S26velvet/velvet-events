@@ -1,4 +1,12 @@
 package com.lums.eventhub.organizer;
 
-public class OrganizerDashboardActivity {
+import android.os.Bundle;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class OrganizerDashboardActivity extends AppCompatActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        // This is a placeholder
+    }
 }
