@@ -12,6 +12,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LUMSEventHub">
         <activity
+            android:name=".CapacitySettingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FormBuilderActivity"
+            android:exported="false" />
+        <activity
             android:name=".CheckInActivity"
             android:exported="false" />
         <activity

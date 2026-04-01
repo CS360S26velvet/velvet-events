@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_form_builder.xml
+    Role: Layout for the Form Builder screen (US-18, US-19, US-22)
+    Allows organizers to create custom registration forms by adding questions
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:padding="16dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Registration Form Builder"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold"/>
+
+        <Button
+            android:id="@+id/btnPreview"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Preview"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#1565C0"
+            android:textSize="12sp"/>
+
+        <Button
+            android:id="@+id/btnSaveForm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Save"
+            android:backgroundTint="#0D47A1"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:layout_marginStart="8dp"/>
+    </LinearLayout>
+
+    <!-- Question Type Selector -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnAddShortText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Short Text"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnAddParagraph"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Paragraph"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnAddMultiChoice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Multiple Choice"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnAddDropdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Dropdown"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnAddDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Date"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"
+                android:layout_marginEnd="8dp"/>
+
+            <Button
+                android:id="@+id/btnAddFileUpload"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ File Upload"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="11sp"/>
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Questions List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewQuestions"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp"/>
+
+</LinearLayout>

@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Check In"
-        android:backgroundTint="#1B5E20"
+        android:backgroundTint="#1565C0"
         android:textColor="#FFFFFF"
         android:textSize="12sp"/>
 

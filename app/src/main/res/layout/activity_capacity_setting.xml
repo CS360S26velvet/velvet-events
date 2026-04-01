@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_capacity_setting.xml
+    Role: Allows organizer to set maximum registration capacity for an event (US-25)
+    and duplicate a form from a previous event (US-23)
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Form Settings"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#1565C0"
+        android:paddingBottom="24dp"/>
+
+    <!-- US-25: Max Capacity -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Maximum Registration Capacity"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Set the maximum number of attendees allowed to register."
+        android:textSize="13sp"
+        android:textColor="#666666"
+        android:paddingBottom="8dp"/>
+
+    <EditText
+        android:id="@+id/etCapacity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="e.g. 200"
+        android:inputType="number"
+        android:background="#FFFFFF"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnSaveCapacity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Save Capacity"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="32dp"/>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#BBDEFB"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- US-23: Duplicate Form -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Duplicate Form from Previous Event"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Copy a registration form from a past event."
+        android:textSize="13sp"
+        android:textColor="#666666"
+        android:paddingBottom="8dp"/>
+
+    <TextView
+        android:id="@+id/tvSelectedEvent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No event selected"
+        android:textSize="14sp"
+        android:textColor="#666666"
+        android:background="#FFFFFF"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnSelectEvent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Previous Event"
+        android:backgroundTint="#0D47A1"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="12dp"/>
+
+    <Button
+        android:id="@+id/btnDuplicateForm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Duplicate Form"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"/>
+
+</LinearLayout>

@@ -1,5 +1,10 @@
 package com.lums.eventhub;
-
+/**
+ * CheckInActivity.java
+ * Role: Manages live event check-in for organizers (US-30)
+ * Pattern: RecyclerView with Adapter pattern
+ * Outstanding issues: None
+ */
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -163,7 +168,7 @@ public class CheckInActivity extends AppCompatActivity {
                 holder.btnCheckIn.setText("Check In");
                 holder.btnCheckIn.setEnabled(true);
                 holder.btnCheckIn.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFF1B5E20));
+                        android.content.res.ColorStateList.valueOf(0xFF1565C0));
                 holder.btnCheckIn.setOnClickListener(v -> {
                     a.isCheckedIn = true;
                     checkedInCount++;
