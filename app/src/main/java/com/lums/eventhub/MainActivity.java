@@ -38,5 +38,7 @@ public class MainActivity extends AppCompatActivity {
 
         btnRegistrants.setOnClickListener(v ->
                 Toast.makeText(this, "Coming soon!", Toast.LENGTH_SHORT).show());
+        btnRegistrants.setOnClickListener(v ->
+                startActivity(new Intent(this, RegistrantDashboardActivity.class)));
     }
 }

@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.LUMSEventHub">
         <activity
+            android:name=".RegistrantDashboardActivity"
+            android:exported="false" />
+        <activity
             android:name=".CapacitySettingActivity"
             android:exported="false" />
         <activity
