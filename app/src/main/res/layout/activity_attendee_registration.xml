@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_attendee_registration.xml
+    Role: Allows attendees to fill in the custom registration form built by the organizer.
+    Supports required/optional questions and allows editing before submission.
+    User Stories: AT US-06, US-07, US-09, US-10
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:padding="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="SPADES 2025"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Registration Form"
+            android:textColor="#BBDEFB"
+            android:textSize="14sp"/>
+    </LinearLayout>
+
+    <!-- Progress indicator -->
+    <TextView
+        android:id="@+id/tvProgress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Question 1 of 4"
+        android:textSize="13sp"
+        android:textColor="#1565C0"
+        android:padding="12dp"
+        android:background="#FFFFFF"/>
+
+    <!-- Form Questions List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewForm"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"/>
+
+    <!-- Bottom Buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="16dp"
+        android:background="#FFFFFF">
+
+        <Button
+            android:id="@+id/btnBack"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="← Back"
+            android:backgroundTint="#BBDEFB"
+            android:textColor="#1565C0"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnSubmit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Submit"
+            android:backgroundTint="#1565C0"
+            android:textColor="#FFFFFF"/>
+    </LinearLayout>
+
+</LinearLayout>

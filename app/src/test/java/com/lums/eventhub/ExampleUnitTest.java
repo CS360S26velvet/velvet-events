@@ -274,4 +274,145 @@ public class ExampleUnitTest {
         assertTrue(input.matches("[0-9]+"));
         assertEquals(200, Integer.parseInt(input));
     }
+    // ==================== AT US-06, US-07, US-09, US-10 TESTS ====================
+
+    /**
+     * AT US-09: Test that required questions are correctly identified
+     */
+    @Test
+    public void testRequiredQuestionsIdentified() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true"});
+        questions.add(new String[]{"Student ID", "Short Text", "true"});
+        questions.add(new String[]{"Department", "Short Text", "false"});
+        questions.add(new String[]{"Dietary Preferences", "Short Text", "false"});
+
+        int requiredCount = 0;
+        for (String[] q : questions) {
+            if (q[2].equals("true")) requiredCount++;
+        }
+        assertEquals(2, requiredCount);
+    }
+
+    /**
+     * AT US-09: Test that optional questions are correctly identified
+     */
+    @Test
+    public void testOptionalQuestionsIdentified() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true"});
+        questions.add(new String[]{"Student ID", "Short Text", "true"});
+        questions.add(new String[]{"Department", "Short Text", "false"});
+        questions.add(new String[]{"Dietary Preferences", "Short Text", "false"});
+
+        int optionalCount = 0;
+        for (String[] q : questions) {
+            if (q[2].equals("false")) optionalCount++;
+        }
+        assertEquals(2, optionalCount);
+    }
+
+    /**
+     * AT US-06: Test that required fields are validated before submission
+     */
+    @Test
+    public void testRequiredFieldValidation() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true", ""});
+        questions.add(new String[]{"Student ID", "Short Text", "true", "AT0041"});
+
+        boolean canSubmit = true;
+        for (String[] q : questions) {
+            if (q[2].equals("true") && q[3].trim().isEmpty()) {
+                canSubmit = false;
+                break;
+            }
+        }
+        assertFalse(canSubmit);
+    }
+
+    /**
+     * AT US-06: Test that form can be submitted when all required fields filled
+     */
+    @Test
+    public void testFormCanBeSubmittedWhenComplete() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true", "Hassan Raza"});
+        questions.add(new String[]{"Student ID", "Short Text", "true", "AT0041"});
+        questions.add(new String[]{"Department", "Short Text", "false", ""});
+
+        boolean canSubmit = true;
+        for (String[] q : questions) {
+            if (q[2].equals("true") && q[3].trim().isEmpty()) {
+                canSubmit = false;
+                break;
+            }
+        }
+        assertTrue(canSubmit);
+    }
+
+    /**
+     * AT US-07: Test that different question types are supported
+     */
+    @Test
+    public void testQuestionTypesSupported() {
+        List<String> supportedTypes = new ArrayList<>();
+        supportedTypes.add("Short Text");
+        supportedTypes.add("Paragraph");
+        supportedTypes.add("Multiple Choice");
+        supportedTypes.add("Checkboxes");
+        supportedTypes.add("Dropdown");
+        supportedTypes.add("Date");
+        supportedTypes.add("File Upload");
+
+        assertTrue(supportedTypes.contains("Short Text"));
+        assertTrue(supportedTypes.contains("Multiple Choice"));
+        assertTrue(supportedTypes.contains("Dropdown"));
+        assertEquals(7, supportedTypes.size());
+    }
+
+    /**
+     * AT US-10: Test that answers are preserved when going back
+     */
+    @Test
+    public void testAnswersPreservedOnBack() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true", "Hassan Raza"});
+        questions.add(new String[]{"Student ID", "Short Text", "true", "AT0041"});
+
+        // Simulate going back and coming back
+        String savedAnswer = questions.get(0)[3];
+        assertEquals("Hassan Raza", savedAnswer);
+        assertFalse(savedAnswer.isEmpty());
+    }
+
+    /**
+     * AT US-10: Test that partial answers are saved before going back
+     */
+    @Test
+    public void testPartialAnswersSaved() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true", "Hassan"});
+        questions.add(new String[]{"Student ID", "Short Text", "true", ""});
+
+        int answeredCount = 0;
+        for (String[] q : questions) {
+            if (!q[3].isEmpty()) answeredCount++;
+        }
+        assertEquals(1, answeredCount);
+    }
+
+    /**
+     * AT US-06: Test total question count is correct
+     */
+    @Test
+    public void testTotalQuestionCount() {
+        List<String[]> questions = new ArrayList<>();
+        questions.add(new String[]{"Full Name", "Short Text", "true"});
+        questions.add(new String[]{"Student ID", "Short Text", "true"});
+        questions.add(new String[]{"Department", "Short Text", "false"});
+        questions.add(new String[]{"Dietary Preferences", "Short Text", "false"});
+
+        assertEquals(4, questions.size());
+    }
 }

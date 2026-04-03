@@ -64,5 +64,13 @@
         android:text="Registrant Dashboard"
         android:backgroundTint="#1565C0"
         android:textColor="#FFFFFF"/>
+    <Button
+        android:id="@+id/btnAttendeeForm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Attendee Registration"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="12dp"/>
 
 </LinearLayout>

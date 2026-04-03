@@ -26,6 +26,9 @@ public class MainActivity extends AppCompatActivity {
         Button btnCheckIn = findViewById(R.id.btnCheckIn);
         Button btnPayments = findViewById(R.id.btnPayments);
         Button btnRegistrants = findViewById(R.id.btnRegistrants);
+        Button btnAttendeeForm = findViewById(R.id.btnAttendeeForm);
+        btnAttendeeForm.setOnClickListener(v ->
+                startActivity(new Intent(this, AttendeeRegistrationActivity.class)));
 
         btnFormBuilder.setOnClickListener(v ->
                 startActivity(new Intent(this, CapacitySettingActivity.class)));
