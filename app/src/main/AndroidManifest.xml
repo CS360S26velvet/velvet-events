@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- CRITICAL: YOU NEED THIS FOR FIREBASE TO TALK TO THE INTERNET -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- 1. LOGIN SCREEN (Launcher) -->
+        <!-- 1. LOGIN SCREEN (The first screen that opens) -->
         <activity
             android:name=".auth.LoginActivity"
             android:exported="true">
@@ -27,14 +31,13 @@
         <activity android:name=".admin.proposals.ProposalListActivity" />
         <activity android:name=".admin.proposals.ProposalDetailActivity" />
 
-<!-- 3. TEAMMATE STUBS (Crucial to prevent crashes) &ndash;&gt;-->
-        <activity android:name=".organizer.OrganizerDashboardActivity" />
-        <activity android:name=".attendee.AttendeeDashboardActivity" />
 
-        <!-- Admin Feature Activities -->
+        <!-- 4. ADMIN FEATURE ACTIVITIES -->
         <activity android:name=".admin.auditorium.AuditoriumActivity" />
         <activity android:name=".admin.calendar.CalendarActivity" />
         <activity android:name=".admin.accommodation.AccommodationActivity" />
+
+
 
     </application>
 

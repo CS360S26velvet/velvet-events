@@ -10,7 +10,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.eventhub"
+        applicationId "com.lums.eventhub"
         minSdk 26
         targetSdk 36
         versionCode 1

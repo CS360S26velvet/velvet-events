@@ -10,7 +10,8 @@ import com.lums.eventhub.R;
 import com.lums.eventhub.model.Proposal;
 
 public class ProposalDetailActivity extends AppCompatActivity {
-    private TextView tvTitle, tvInfo, tvDesc;
+
+    private TextView tvTitle, tvDetailDate, tvDetailVenue, tvDetailOrganizer, tvDetailDesc, tvDetailInfo;
     private FirebaseFirestore db;
     private String proposalId;
 
@@ -19,32 +20,50 @@ public class ProposalDetailActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_proposal_detail);
 
-        tvTitle = findViewById(R.id.tvDetailTitle);
-        tvInfo = findViewById(R.id.tvDetailInfo); // New field for Date/Venue
-        tvDesc = findViewById(R.id.tvDetailDesc);
+        tvTitle          = findViewById(R.id.tvDetailTitle);
+        tvDetailDate     = findViewById(R.id.tvDetailDate);
+        tvDetailVenue    = findViewById(R.id.tvDetailVenue);
+        tvDetailOrganizer = findViewById(R.id.tvDetailOrganizer);
+        tvDetailDesc     = findViewById(R.id.tvDetailDesc);
+        tvDetailInfo     = findViewById(R.id.tvDetailInfo);
 
-        proposalId = getIntent().getStringExtra("id");
+        proposalId = getIntent().getStringExtra("proposalId");
         db = FirebaseFirestore.getInstance();
 
-        // Load the specific proposal details from Firebase
-        db.collection("proposals").document(proposalId).get().addOnSuccessListener(doc -> {
-            Proposal p = doc.toObject(Proposal.class);
-            if (p != null) {
-                tvTitle.setText(p.getTitle());
-                tvInfo.setText("Date: " + p.getEventDate() + "\nVenue: " + p.getVenue());
-                tvDesc.setText(p.getDescription());
-            }
-        });
+        // Back button
+        findViewById(R.id.btnBack).setOnClickListener(v -> finish());
 
+        // Load proposal from Firestore
+        db.collection("proposals").document(proposalId).get()
+                .addOnSuccessListener(doc -> {
+                    Proposal p = doc.toObject(Proposal.class);
+                    if (p != null) {
+                        tvTitle.setText(p.getTitle());
+                        tvDetailDate.setText(p.getEventDate() != null ? p.getEventDate() : "—");
+                        tvDetailVenue.setText(p.getVenue() != null ? p.getVenue() : "—");
+                        tvDetailOrganizer.setText(p.getOrganizerUsername() != null ? p.getOrganizerUsername() : "—");
+                        tvDetailDesc.setText(p.getDescription() != null ? p.getDescription() : "No description provided.");
+                        tvDetailInfo.setText("Current Status: " + (p.getStatus() != null ? p.getStatus().toUpperCase() : "UNKNOWN"));
+                    }
+                });
+
+        // Decision buttons
         findViewById(R.id.btnApprove).setOnClickListener(v -> updateStatus("approved"));
+        findViewById(R.id.btnRevision).setOnClickListener(v -> updateStatus("revision"));
         findViewById(R.id.btnReject).setOnClickListener(v -> updateStatus("rejected"));
     }
 
     private void updateStatus(String status) {
-        db.collection("proposals").document(proposalId).update("status", status)
+        db.collection("proposals").document(proposalId)
+                .update("status", status)
                 .addOnSuccessListener(a -> {
-                    Toast.makeText(this, "Proposal " + status, Toast.LENGTH_SHORT).show();
-                    finish(); // Go back to the list
-                });
+                    String msg = status.equals("approved") ? "Proposal approved ✓"
+                            : status.equals("rejected") ? "Proposal rejected"
+                            : "Revision requested";
+                    Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 }
