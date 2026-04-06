@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -10,27 +13,49 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Event_management">
+        android:theme="@style/Theme.LUMSEventHub">
+
+        <!-- Entry point -->
         <activity
-            android:name=".MainActivity"
+            android:name=".auth.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".AttendeeActivity" />
-        <activity android:name=".EventBrowsingActivity" />
-        <activity android:name=".EventDetailsActivity" />
-<!--        <activity android:name=".CalendarActivity" />-->
-        <activity
-            android:name=".CalendarActivity"
-            android:exported="true"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar">
-        </activity>
-        <activity android:name=".NotificationsActivity" />
-        <activity android:name=".MyRegistrationsActivity" />
+
+        <!-- Admin module -->
+        <activity android:name=".admin.dashboard.AdminDashboardActivity" />
+        <activity android:name=".admin.proposals.ProposalListActivity" />
+        <activity android:name=".admin.proposals.ProposalDetailActivity" />
+        <activity android:name=".admin.organizer.RegisterOrganizerActivity" />
+        <activity android:name=".admin.auditorium.AuditoriumActivity" />
+        <activity android:name=".admin.calendar.CalendarActivity" />
+        <activity android:name=".admin.accommodation.AccommodationActivity" />
+
+        <!-- Organizer module -->
+        <activity android:name=".OrganizerDashboardActivity" />
+
+        <!-- Person C screens -->
+        <activity android:name=".AttendeeRegistrationActivity" android:exported="false" />
+        <activity android:name=".FormBuilderActivity" android:exported="false" />
+        <activity android:name=".ProposalFormActivity" android:exported="false" />
+        <activity android:name=".RegistrantDashboardActivity" android:exported="false" />
+        <activity android:name=".CapacitySettingActivity" android:exported="false" />
+        <activity android:name=".CheckInActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
+
+        <!-- Person D: Attendee module -->
+        <activity android:name=".AttendeeActivity" android:exported="false" />
+        <activity android:name=".EventBrowsingActivity" android:exported="false" />
+        <activity android:name=".EventDetailsActivity" android:exported="false" />
+        <activity android:name=".MyRegistrationsActivity" android:exported="false" />
+        <activity android:name=".NotificationsActivity" android:exported="false" />
+        <!-- Note: CalendarActivity is in .admin.calendar package in Amna's code,
+             Person D's CalendarActivity is a different screen for attendees -->
+        <activity android:name=".AttendeeCalendarActivity" android:exported="false" />
+
     </application>
 
 </manifest>

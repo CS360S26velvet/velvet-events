@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -15,6 +15,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.example.event_management.EventDetailsActivity;
+import com.example.event_management.MyRegistrationsActivity;
+import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -101,7 +104,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
         navHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(EventBrowsingActivity.this, AttendeeActivity.class);
+                Intent intent = new Intent(EventBrowsingActivity.this, com.lums.eventhub.AttendeeActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -119,7 +122,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(EventBrowsingActivity.this, MainActivity.class));
+                startActivity(new Intent(EventBrowsingActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish(); // ← clear from back stack on logout
             }
         });
@@ -228,7 +231,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
 
     private void loadEventsFromFirebase() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("events")
+        db.collection("proposals")
                 .whereEqualTo("status", "Approved")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {

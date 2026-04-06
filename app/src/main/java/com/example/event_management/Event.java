@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 public class Event {
     public String id, title, organizer, date, venue, category, desc, deadline, time, fee;

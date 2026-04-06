@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -94,7 +94,7 @@ public class EventDetailsActivity extends AppCompatActivity {
         btnBackBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(EventDetailsActivity.this, EventBrowsingActivity.class);
+                Intent i = new Intent(EventDetailsActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 i.putExtra("userId", userId); // ← pass forward
                 startActivity(i);
             }

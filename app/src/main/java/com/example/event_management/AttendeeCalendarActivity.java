@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class CalendarActivity extends AppCompatActivity {
+public class AttendeeCalendarActivity extends AppCompatActivity {
 
     LinearLayout calendarGrid, selectedDateEvents, savedEventsList;
     TextView tvMonthYear, tvSelectedDate, tvNoEvents;
@@ -39,7 +39,7 @@ public class CalendarActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.calendar_activity);
+        setContentView(R.layout.attendee_calendar_activity);
 
         // ← Receive userId from previous activity
         userId = getIntent().getStringExtra("userId");
@@ -120,7 +120,7 @@ public class CalendarActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(CalendarActivity.this, MainActivity.class));
+                startActivity(new Intent(CalendarActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish(); // ← clear from back stack on logout
             }
         });

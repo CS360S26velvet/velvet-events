@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -8,6 +8,9 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.event_management.EventBrowsingActivity;
+import com.example.event_management.MyRegistrationsActivity;
+import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 public class AttendeeActivity extends AppCompatActivity {
@@ -67,7 +70,7 @@ public class AttendeeActivity extends AppCompatActivity {
         btnCalendar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, CalendarActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, AttendeeCalendarActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -119,7 +122,7 @@ public class AttendeeActivity extends AppCompatActivity {
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(AttendeeActivity.this, MainActivity.class));
+                startActivity(new Intent(AttendeeActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish();
             }
         });

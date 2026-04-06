@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -50,7 +50,7 @@ public class NotificationsActivity extends AppCompatActivity {
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, AttendeeActivity.class);
+                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.AttendeeActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -59,7 +59,7 @@ public class NotificationsActivity extends AppCompatActivity {
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, EventBrowsingActivity.class);
+                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -68,7 +68,7 @@ public class NotificationsActivity extends AppCompatActivity {
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, MyRegistrationsActivity.class);
+                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -84,7 +84,7 @@ public class NotificationsActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(NotificationsActivity.this, MainActivity.class));
+                startActivity(new Intent(NotificationsActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish(); // ← clear from back stack on logout
             }
         });

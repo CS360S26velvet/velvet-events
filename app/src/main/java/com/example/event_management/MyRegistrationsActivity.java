@@ -1,4 +1,4 @@
-package com.example.event_management;
+package com.lums.eventhub;
 
 import android.content.Intent;
 import android.graphics.Typeface;
@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -45,7 +46,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MyRegistrationsActivity.this, AttendeeActivity.class);
+                Intent intent = new Intent(MyRegistrationsActivity.this, com.lums.eventhub.AttendeeActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -54,7 +55,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MyRegistrationsActivity.this, EventBrowsingActivity.class);
+                Intent intent = new Intent(MyRegistrationsActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -79,7 +80,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MyRegistrationsActivity.this, MainActivity.class));
+                startActivity(new Intent(MyRegistrationsActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish(); // ← clear from back stack on logout
             }
         });
@@ -168,7 +169,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         btnView.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(0xFF5B2D8E));
         btnView.setOnClickListener(v -> {
-            Intent intent = new Intent(this, EventDetailsActivity.class);
+            Intent intent = new Intent(this, com.lums.eventhub.EventDetailsActivity.class);
             intent.putExtra("userId", userId); // ← pass forward
             intent.putExtra("eventId", eventId);
             intent.putExtra("eventTitle", title);
