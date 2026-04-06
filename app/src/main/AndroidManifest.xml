@@ -44,6 +44,13 @@
         <activity android:name=".CapacitySettingActivity" android:exported="false" />
         <activity android:name=".CheckInActivity" android:exported="false" />
         <activity android:name=".MainActivity" android:exported="false" />
+        <!-- Person D: Attendee module -->
+        <activity android:name=".AttendeeActivity" android:exported="false" />
+        <activity android:name=".EventBrowsingActivity" android:exported="false" />
+        <activity android:name=".EventDetailsActivity" android:exported="false" />
+        <activity android:name=".MyRegistrationsActivity" android:exported="false" />
+        <activity android:name=".NotificationsActivity" android:exported="false" />
+        <activity android:name=".AttendeeCalendarActivity" android:exported="false" />
 
     </application>
 

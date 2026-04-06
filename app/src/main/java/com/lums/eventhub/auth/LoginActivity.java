@@ -17,6 +17,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.lums.eventhub.AttendeeActivity;
 import com.lums.eventhub.R;
 import com.lums.eventhub.admin.dashboard.AdminDashboardActivity;
 import com.lums.eventhub.OrganizerDashboardActivity;
@@ -93,8 +94,12 @@ public class LoginActivity extends AppCompatActivity {
 
                     } else if (username.startsWith("#AT")) {
                         // Person D will wire this up
-                        Toast.makeText(this, "Attendee module — coming soon",
-                                Toast.LENGTH_SHORT).show();
+                        String userId = matchedDoc.getId(); // ← Firestore document ID
+                        Intent intent = new Intent(this, AttendeeActivity.class); // your attendee dashboard
+                        intent.putExtra("userId", userId);
+                        intent.putExtra("username", username);
+                        startActivity(intent);
+                        finish();
                     } else {
                         Toast.makeText(this,
                                 "Invalid ID format. Use #AD, #ORG, or #AT prefix",
