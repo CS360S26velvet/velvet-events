@@ -13,8 +13,8 @@ import java.util.List;
 
 public class ProposalAdapter extends RecyclerView.Adapter<ProposalAdapter.ViewHolder> {
 
-    private List<Proposal> proposalList;
-    private OnItemClickListener listener;
+    private final List<Proposal> proposalList;
+    private final OnItemClickListener listener;
 
     public interface OnItemClickListener {
         void onItemClick(Proposal proposal);
@@ -22,7 +22,7 @@ public class ProposalAdapter extends RecyclerView.Adapter<ProposalAdapter.ViewHo
 
     public ProposalAdapter(List<Proposal> proposalList, OnItemClickListener listener) {
         this.proposalList = proposalList;
-        this.listener = listener;
+        this.listener     = listener;
     }
 
     @NonNull
@@ -37,54 +37,64 @@ public class ProposalAdapter extends RecyclerView.Adapter<ProposalAdapter.ViewHo
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Proposal p = proposalList.get(position);
 
-        holder.tvTitle.setText(p.getTitle());
+        // Event Name
+        holder.tvTitle.setText(p.getTitle() != null ? p.getTitle() : "Untitled");
 
-        // Organizer display
-        String org = p.getOrganizerUsername() != null ? p.getOrganizerUsername() : "—";
-        if (org.contains("_")) org = org.substring(org.indexOf("_") + 1).toUpperCase();
-        holder.tvOrganizer.setText("👤 " + org);
+        // Society name — prefer societyName field, fallback to extracting from organizerUsername
+        String society = p.getSocietyName();
+        if (society == null || society.isEmpty()) {
+            society = p.getOrganizerUsername();
+            if (society != null && society.contains("_")) {
+                society = society.substring(society.indexOf("_") + 1).toUpperCase();
+            }
+        }
+        holder.tvOrganizer.setText("👤 " + (society != null ? society : "—"));
 
-        holder.tvDate.setText("📅 " + (p.getEventDate() != null ? p.getEventDate() : "—"));
+        // Date — use date field, fallback to eventDate for legacy docs
+        String date = p.getEventDate();
+        holder.tvDate.setText("📅 " + (date != null ? date : "—"));
+
+        // Venue
         holder.tvVenue.setText("📍 " + (p.getVenue() != null ? p.getVenue() : "—"));
 
-        // Status badge with color
-        String status = p.getStatus() != null ? p.getStatus() : "unknown";
+        // Status badge with canonical colour coding
+        String status = p.getStatus() != null ? p.getStatus() : "Unknown";
         holder.tvStatus.setText(status.toUpperCase());
         switch (status) {
-            case "pending":
-                holder.tvStatus.setTextColor(Color.parseColor("#E8637A"));
+            case "Submitted":
+                holder.tvStatus.setTextColor(Color.parseColor("#E8637A"));  // pink = pending review
                 break;
-            case "approved":
-                holder.tvStatus.setTextColor(Color.parseColor("#27AE60"));
+            case "Approved":
+                holder.tvStatus.setTextColor(Color.parseColor("#27AE60"));  // green
                 break;
-            case "rejected":
-                holder.tvStatus.setTextColor(Color.parseColor("#E74C3C"));
+            case "Rejected":
+                holder.tvStatus.setTextColor(Color.parseColor("#E74C3C"));  // red
+                break;
+            case "Revision Requested":
+                holder.tvStatus.setTextColor(Color.parseColor("#F39C12"));  // orange
                 break;
             default:
-                holder.tvStatus.setTextColor(Color.parseColor("#9B7B86"));
+                holder.tvStatus.setTextColor(Color.parseColor("#9B7B86"));  // grey
         }
 
-        // Review button and row click
         holder.tvReview.setOnClickListener(v -> listener.onItemClick(p));
         holder.itemView.setOnClickListener(v -> listener.onItemClick(p));
     }
 
     @Override
-    public int getItemCount() {
-        return proposalList.size();
-    }
+    public int getItemCount() { return proposalList.size(); }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle, tvStatus, tvOrganizer, tvDate, tvVenue, tvReview;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
-            tvTitle    = itemView.findViewById(R.id.tvItemTitle);
-            tvStatus   = itemView.findViewById(R.id.tvItemStatus);
+            tvTitle     = itemView.findViewById(R.id.tvItemTitle);
+            tvStatus    = itemView.findViewById(R.id.tvItemStatus);
             tvOrganizer = itemView.findViewById(R.id.tvItemOrganizer);
-            tvDate     = itemView.findViewById(R.id.tvItemDate);
-            tvVenue    = itemView.findViewById(R.id.tvItemVenue);
-            tvReview   = itemView.findViewById(R.id.tvItemReview);
+            tvDate      = itemView.findViewById(R.id.tvItemDate);
+            tvVenue     = itemView.findViewById(R.id.tvItemVenue);
+            tvReview    = itemView.findViewById(R.id.tvItemReview);
         }
     }
 }

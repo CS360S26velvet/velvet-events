@@ -3,6 +3,9 @@
  * Entry point of the app. Routes users to correct dashboard
  * based on username prefix: #AD = Admin, #ORG = Organizer, #AT = Attendee
  * Implements: Admin US-01
+ *
+ * #ORG login: fetches societyName from users/ doc and passes it
+ * along with username to OrganizerDashboardActivity.
  */
 package com.lums.eventhub.auth;
 
@@ -12,9 +15,11 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.lums.eventhub.R;
 import com.lums.eventhub.admin.dashboard.AdminDashboardActivity;
+import com.lums.eventhub.organizer.OrganizerDashboardActivity;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -50,18 +55,18 @@ public class LoginActivity extends AppCompatActivity {
                 .collection("users")
                 .get()
                 .addOnSuccessListener(query -> {
-                    boolean found = false;
-                    for (com.google.firebase.firestore.DocumentSnapshot doc : query) {
+                    DocumentSnapshot matchedDoc = null;
+                    for (DocumentSnapshot doc : query) {
                         String dbUser = doc.getString("username");
                         String dbPass = doc.getString("password");
                         if (dbUser != null && dbUser.trim().equals(username) &&
                                 dbPass != null && dbPass.trim().equals(password)) {
-                            found = true;
+                            matchedDoc = doc;
                             break;
                         }
                     }
 
-                    if (!found) {
+                    if (matchedDoc == null) {
                         Toast.makeText(this, "Invalid username or password",
                                 Toast.LENGTH_SHORT).show();
                         return;
@@ -73,16 +78,26 @@ public class LoginActivity extends AppCompatActivity {
                         intent.putExtra("username", username);
                         startActivity(intent);
                         finish();
+
                     } else if (username.startsWith("#ORG")) {
-                        // Person B will wire this up
-                        Toast.makeText(this, "Organizer module — coming soon",
-                                Toast.LENGTH_SHORT).show();
+                        // Get societyName from the matched user doc
+                        // organizerUsername == the username they logged in with
+                        String societyName = matchedDoc.getString("societyName");
+                        if (societyName == null) societyName = username; // fallback
+
+                        Intent intent = new Intent(this, OrganizerDashboardActivity.class);
+                        intent.putExtra("organizerUsername", username);  // canonical field name
+                        intent.putExtra("societyName",       societyName);
+                        startActivity(intent);
+                        finish();
+
                     } else if (username.startsWith("#AT")) {
                         // Person D will wire this up
                         Toast.makeText(this, "Attendee module — coming soon",
                                 Toast.LENGTH_SHORT).show();
                     } else {
-                        Toast.makeText(this, "Invalid ID format. Use #AD, #ORG, or #AT prefix",
+                        Toast.makeText(this,
+                                "Invalid ID format. Use #AD, #ORG, or #AT prefix",
                                 Toast.LENGTH_LONG).show();
                     }
                 })

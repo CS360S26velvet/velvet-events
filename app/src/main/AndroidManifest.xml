@@ -30,6 +30,10 @@
         <activity android:name=".admin.dashboard.AdminDashboardActivity" />
         <activity android:name=".admin.proposals.ProposalListActivity" />
         <activity android:name=".admin.proposals.ProposalDetailActivity" />
+        <activity android:name=".admin.organizer.RegisterOrganizerActivity" />
+
+        <!-- 3. ORGANIZER MODULE -->
+        <activity android:name=".organizer.OrganizerDashboardActivity" />
 
 
         <!-- 4. ADMIN FEATURE ACTIVITIES -->

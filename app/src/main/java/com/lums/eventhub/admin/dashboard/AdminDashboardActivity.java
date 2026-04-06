@@ -6,19 +6,16 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.lums.eventhub.R;
+import com.lums.eventhub.admin.organizer.RegisterOrganizerActivity;
 import com.lums.eventhub.admin.proposals.ProposalDetailActivity;
 import com.lums.eventhub.admin.proposals.ProposalListActivity;
 import com.lums.eventhub.admin.auditorium.AuditoriumActivity;
 import com.lums.eventhub.admin.calendar.CalendarActivity;
 import com.lums.eventhub.admin.accommodation.AccommodationActivity;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Locale;
 
 public class AdminDashboardActivity extends AppCompatActivity {
 
@@ -50,16 +47,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnAccommodation).setOnClickListener(v ->
                 startActivity(new Intent(this, AccommodationActivity.class)));
 
+        // Register New Organizer button
+        findViewById(R.id.btnRegisterOrganizer).setOnClickListener(v ->
+                startActivity(new Intent(this, RegisterOrganizerActivity.class)));
+
         // "View All" proposals link
         findViewById(R.id.tvViewAll).setOnClickListener(v ->
                 startActivity(new Intent(this, ProposalListActivity.class)));
 
         // Sign out
-        findViewById(R.id.btnSignOut).setOnClickListener(v -> {
-            finish();
-        });
+        findViewById(R.id.btnSignOut).setOnClickListener(v -> finish());
 
-        // Load all dynamic data
         loadStats();
         loadPendingProposals();
     }
@@ -67,81 +65,77 @@ public class AdminDashboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // Refresh stats whenever we return to dashboard (e.g. after approving a proposal)
         loadStats();
         loadPendingProposals();
     }
 
     private void loadStats() {
-        // 1. Pending proposals count
-        db.collection("proposals").whereEqualTo("status", "pending").get()
+        // Pending = status "Submitted" (organizer submitted to CCA, not yet reviewed)
+        db.collection("proposals").whereEqualTo("status", "Submitted").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvPendingNumber)).setText(String.valueOf(q.size())));
 
-        // 2. Approved this month
-        db.collection("proposals").whereEqualTo("status", "approved").get()
+        // Approved
+        db.collection("proposals").whereEqualTo("status", "Approved").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvApprovedNumber)).setText(String.valueOf(q.size())));
 
-        // 3. Accommodation requests
+        // Accommodation requests
         db.collection("accommodation_requests").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvAccomNumber)).setText(String.valueOf(q.size())));
 
-        // 4. Active events (status = "active" or eventDate >= today)
-        db.collection("events").whereEqualTo("status", "Approved").get()
+        // Active events = Approved proposals
+        db.collection("proposals").whereEqualTo("status", "Approved").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvActiveNumber)).setText(String.valueOf(q.size())));
     }
 
     private void loadPendingProposals() {
         LinearLayout container = findViewById(R.id.llPendingProposals);
-        TextView tvNoPending = findViewById(R.id.tvNoPending);
+        TextView tvNoPending   = findViewById(R.id.tvNoPending);
         container.removeAllViews();
 
-        db.collection("proposals").whereEqualTo("status", "pending")
-                .limit(5) // Show top 5 on dashboard
+        // Show "Submitted" proposals (pending CCA review) — not Draft
+        db.collection("proposals").whereEqualTo("status", "Submitted")
+                .limit(5)
                 .get()
                 .addOnSuccessListener(query -> {
                     if (query.isEmpty()) {
-                        tvNoPending.setVisibility(android.view.View.VISIBLE);
+                        tvNoPending.setVisibility(View.VISIBLE);
                         return;
                     }
-                    tvNoPending.setVisibility(android.view.View.GONE);
+                    tvNoPending.setVisibility(View.GONE);
 
                     for (QueryDocumentSnapshot doc : query) {
-                        String docId    = doc.getId();
-                        String title    = doc.getString("title");
-                        String society  = doc.getString("organizerUsername");
-                        String date     = doc.getString("eventDate");
+                        String docId   = doc.getId();
+                        String title   = doc.getString("title");
+                        // societyName preferred for display; fallback to organizerUsername
+                        String society = doc.getString("societyName");
+                        if (society == null) {
+                            society = doc.getString("organizerUsername");
+                            if (society != null && society.contains("_")) {
+                                society = society.substring(society.indexOf("_") + 1).toUpperCase();
+                            }
+                        }
+                        String date = doc.getString("date");
+                        if (date == null) date = doc.getString("eventDate");
 
+                        if (title   == null) title   = "Untitled";
                         if (society == null) society = "—";
-                        if (title == null)   title   = "Untitled";
-                        if (date == null)    date    = "—";
-
-                        // Strip prefix for display e.g. #ORG_ali -> SPADES
-                        String societyDisplay = society.contains("_")
-                                ? society.substring(society.indexOf("_") + 1).toUpperCase()
-                                : society;
+                        if (date    == null) date    = "—";
 
                         // Build row
                         LinearLayout row = new LinearLayout(this);
                         row.setOrientation(LinearLayout.HORIZONTAL);
                         row.setPadding(10, 14, 10, 14);
-
-                        // Alternating row background
-                        int rowColor = (container.getChildCount() % 2 == 0)
-                                ? 0xFFFFFFFF : 0xFFFFF5F7;
+                        int rowColor = (container.getChildCount() % 2 == 0) ? 0xFFFFFFFF : 0xFFFFF5F7;
                         row.setBackgroundColor(rowColor);
 
-                        // Society cell
-                        TextView tvSociety = makeCell(societyDisplay, 1.2f, true);
-                        // Title cell
-                        TextView tvTitle = makeCell(title, 1.8f, false);
-                        // Date cell
-                        TextView tvDate = makeCell(date, 1.2f, false);
+                        TextView tvSociety = makeCell(society, 1.2f, true);
+                        TextView tvTitle   = makeCell(title,   1.8f, false);
+                        TextView tvDate    = makeCell(date,    1.2f, false);
 
-                        // Review button cell
                         TextView tvReview = new TextView(this);
                         LinearLayout.LayoutParams btnParams =
                                 new LinearLayout.LayoutParams(0,
@@ -166,11 +160,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         row.addView(tvTitle);
                         row.addView(tvDate);
                         row.addView(tvReview);
-
                         container.addView(row);
 
-                        // Divider
-                        View divider = new android.view.View(this);
+                        View divider = new View(this);
                         LinearLayout.LayoutParams divParams = new LinearLayout.LayoutParams(
                                 LinearLayout.LayoutParams.MATCH_PARENT, 1);
                         divider.setLayoutParams(divParams);
