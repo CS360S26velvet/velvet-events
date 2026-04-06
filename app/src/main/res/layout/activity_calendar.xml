@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F0FAFA">
+
+    <!-- HEADER (teal gradient) -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_calendar_header"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="44dp"
+        android:paddingBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="#A8E6E0"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Calendar"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Approved events pinned by date"
+                android:textSize="12sp"
+                android:textColor="#A8E6E0" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- CALENDAR CARD -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_card"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginTop="16dp"
+                android:padding="16dp"
+                android:elevation="4dp">
+
+                <!-- Month navigation row -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/btnPrevMonth"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="‹"
+                        android:textSize="22sp"
+                        android:textColor="#17A2B8"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/bg_month_nav_btn" />
+
+                    <TextView
+                        android:id="@+id/tvMonthYear"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="April 2026"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#2D1B2E"
+                        android:gravity="center" />
+
+                    <TextView
+                        android:id="@+id/btnNextMonth"
+                        android:layout_width="36dp"
+                        android:layout_height="36dp"
+                        android:text="›"
+                        android:textSize="22sp"
+                        android:textColor="#17A2B8"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:background="@drawable/bg_month_nav_btn" />
+                </LinearLayout>
+
+                <!-- Day headers -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="S" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#E8637A" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="M" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#9B7B86" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="T" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#9B7B86" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="W" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#9B7B86" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="T" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#9B7B86" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="F" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#9B7B86" />
+                    <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="S" android:gravity="center" android:textSize="11sp" android:textStyle="bold" android:textColor="#E8637A" />
+                </LinearLayout>
+
+                <!-- Calendar grid container (rows added programmatically) -->
+                <LinearLayout
+                    android:id="@+id/llCalendarGrid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+
+            </LinearLayout>
+
+            <!-- EVENTS THIS MONTH SECTION -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="20dp"
+                android:paddingBottom="8dp">
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="20dp"
+                    android:background="@drawable/bg_calendar_header"
+                    android:layout_marginEnd="10dp" />
+
+                <TextView
+                    android:id="@+id/tvEventsHeader"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="All Events — April 2026"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#2D1B2E" />
+
+            </LinearLayout>
+
+            <!-- Events list header row -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:background="#E0F5F5"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp">
+
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="2" android:text="EVENT NAME" android:textSize="10sp" android:textStyle="bold" android:textColor="#17A2B8" android:letterSpacing="0.08" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.5" android:text="ORGANIZER" android:textSize="10sp" android:textStyle="bold" android:textColor="#17A2B8" android:letterSpacing="0.08" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.5" android:text="DATE" android:textSize="10sp" android:textStyle="bold" android:textColor="#17A2B8" android:letterSpacing="0.08" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1.5" android:text="VENUE" android:textSize="10sp" android:textStyle="bold" android:textColor="#17A2B8" android:letterSpacing="0.08" />
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="STATUS" android:textSize="10sp" android:textStyle="bold" android:textColor="#17A2B8" android:letterSpacing="0.08" />
+            </LinearLayout>
+
+            <!-- Dynamic events list -->
+            <LinearLayout
+                android:id="@+id/llEventsList"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginBottom="32dp"
+                android:background="@drawable/bg_card"
+                android:elevation="3dp" />
+
+        </LinearLayout>
+    </ScrollView>
+</LinearLayout>

@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFF0F3">
+
+    <!-- HEADER -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_dashboard_header"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="44dp"
+        android:paddingBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginEnd="12dp" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Event Proposals"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Review and manage event proposals"
+                    android:textSize="12sp"
+                    android:textColor="#F9C0CC" />
+            </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- STATS ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:weightSum="4">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="10dp"
+            android:layout_marginEnd="6dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvStatPending"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#E8637A" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pending"
+                android:textSize="10sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="10dp"
+            android:layout_marginEnd="6dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvStatApproved"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#27AE60" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Approved"
+                android:textSize="10sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="10dp"
+            android:layout_marginEnd="6dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvStatRejected"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#E74C3C" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Rejected"
+                android:textSize="10sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="10dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvStatTotal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#8E44AD" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total"
+                android:textSize="10sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- FILTER ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="8dp"
+        android:weightSum="4">
+
+        <TextView
+            android:id="@+id/btnFilterAll"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="All"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_button_login"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnFilterPending"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Pending"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#E8637A"
+            android:background="@drawable/bg_badge"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnFilterApproved"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Approved"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#27AE60"
+            android:background="@drawable/bg_badge"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/btnFilterRejected"
+            android:layout_width="0dp"
+            android:layout_height="36dp"
+            android:layout_weight="1"
+            android:text="Rejected"
+            android:gravity="center"
+            android:textSize="12sp"
+            android:textColor="#E74C3C"
+            android:background="@drawable/bg_badge" />
+    </LinearLayout>
+
+    <!-- PROPOSAL LIST -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvProposals"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:clipToPadding="false" />
+
+</LinearLayout>

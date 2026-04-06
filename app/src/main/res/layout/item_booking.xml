@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="10dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="3dp"
+    app:cardBackgroundColor="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top row: event title + availability badge -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="10dp">
+
+            <TextView
+                android:id="@+id/tvBookingTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#2D1B2E"
+                android:layout_marginEnd="8dp" />
+
+            <TextView
+                android:id="@+id/tvAvailability"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CONFIRMED"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                android:textColor="#27AE60"
+                android:background="@drawable/bg_badge"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp" />
+        </LinearLayout>
+
+        <!-- Venue row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📍 "
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvBookingVenue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#C47A8A"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Date row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📅 "
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvBookingDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <!-- Organizer row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="👤 "
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/tvBookingOrganizer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#F5D5DC"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Confirm availability button -->
+        <TextView
+            android:id="@+id/tvConfirmBtn"
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:text="✓ Confirm Availability"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/bg_btn_approve" />
+
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

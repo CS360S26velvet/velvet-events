@@ -13,36 +13,38 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.LUMSEventHub">
+
+        <!-- Entry point -->
         <activity
-            android:name=".AttendeeRegistrationActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FormBuilderActivity"
-            android:exported="false" />
-        <activity
-            android:name=".OrganizerDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".ProposalFormActivity"
-            android:exported="false" />
-        <activity
-            android:name=".RegistrantDashboardActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CapacitySettingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".CheckInActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
+            android:name=".auth.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Admin module -->
+        <activity android:name=".admin.dashboard.AdminDashboardActivity" />
+        <activity android:name=".admin.proposals.ProposalListActivity" />
+        <activity android:name=".admin.proposals.ProposalDetailActivity" />
+        <activity android:name=".admin.organizer.RegisterOrganizerActivity" />
+        <activity android:name=".admin.auditorium.AuditoriumActivity" />
+        <activity android:name=".admin.calendar.CalendarActivity" />
+        <activity android:name=".admin.accommodation.AccommodationActivity" />
+
+        <!-- Organizer module -->
+        <activity android:name=".organizer.OrganizerDashboardActivity" />
+
+        <!-- Person C screens -->
+        <activity android:name=".AttendeeRegistrationActivity" android:exported="false" />
+        <activity android:name=".FormBuilderActivity" android:exported="false" />
+        <activity android:name=".ProposalFormActivity" android:exported="false" />
+        <activity android:name=".RegistrantDashboardActivity" android:exported="false" />
+        <activity android:name=".CapacitySettingActivity" android:exported="false" />
+        <activity android:name=".CheckInActivity" android:exported="false" />
+        <activity android:name=".MainActivity" android:exported="false" />
+
     </application>
 
 </manifest>

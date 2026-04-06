@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_proposal_detail.xml
+    Role: Admin reviews full proposal submitted by organizer.
+    Displays ALL fields from the proposal form.
+    Approve / Request Revision / Reject buttons at bottom.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF0F3">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- HEADER -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_dashboard_header"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="44dp"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/btnBack"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="← Back to Proposals"
+                    android:textColor="#F9C0CC"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Event Proposal Review"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Review and make a decision on this proposal"
+                    android:textSize="12sp"
+                    android:textColor="#F9C0CC"/>
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- SECTION 1: Basic Information -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Basic Information"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#2D1B2E"
+                android:layout_marginBottom="12dp"/>
+
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <!-- Event Name -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="EVENT NAME" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailTitle" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="16sp"
+                android:textStyle="bold" android:textColor="#2D1B2E" android:layout_marginBottom="14dp"/>
+
+            <!-- Event Type -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="EVENT TYPE" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailEventType" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:layout_marginBottom="14dp"/>
+
+            <!-- Date + Venue row -->
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal" android:layout_marginBottom="14dp">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="DATE" android:textSize="10sp" android:textColor="#C47A8A"
+                        android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+                    <TextView android:id="@+id/tvDetailDate" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#2D1B2E"/>
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:orientation="vertical">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                        android:text="VENUE REQUESTED" android:textSize="10sp" android:textColor="#C47A8A"
+                        android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+                    <TextView android:id="@+id/tvDetailVenue" android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#2D1B2E"/>
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Submitted By -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="SUBMITTED BY (USERNAME)" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailOrganizer" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:layout_marginBottom="14dp"/>
+
+            <!-- Society Name -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="SOCIETY" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailSociety" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:layout_marginBottom="14dp"/>
+
+            <!-- Description -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="DESCRIPTION" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailDesc" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:lineSpacingMultiplier="1.4"/>
+
+        </LinearLayout>
+
+        <!-- SECTION 2: Participants & Guests -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Participants &amp; Guests" android:textSize="16sp"
+                android:textStyle="bold" android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="EXPECTED PARTICIPANTS" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailParticipants" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:layout_marginBottom="14dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="GUESTS / SPEAKERS" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <LinearLayout android:id="@+id/llDetailGuests" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"/>
+
+        </LinearLayout>
+
+        <!-- SECTION 3: Budget -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Budget" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="ESTIMATED BUDGET" android:textSize="10sp" android:textColor="#C47A8A"
+                android:textStyle="bold" android:letterSpacing="0.1" android:layout_marginBottom="4dp"/>
+            <TextView android:id="@+id/tvDetailBudget" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp" android:textColor="#2D1B2E"/>
+
+        </LinearLayout>
+
+        <!-- SECTION 4: Sessions -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Sessions" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <LinearLayout android:id="@+id/llDetailSessions" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="vertical"/>
+
+        </LinearLayout>
+
+        <!-- SECTION 5: Accommodation -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Accommodation" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <TextView android:id="@+id/tvDetailAccommodation" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:lineSpacingMultiplier="1.5"/>
+
+        </LinearLayout>
+
+        <!-- Current Status -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Current Status" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="12dp"/>
+
+            <TextView android:id="@+id/tvDetailInfo" android:layout_width="wrap_content"
+                android:layout_height="wrap_content" android:textSize="14sp"
+                android:textColor="#2D1B2E" android:lineSpacingMultiplier="1.5"/>
+
+        </LinearLayout>
+
+        <!-- DECISION CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="32dp"
+            android:padding="16dp"
+            android:elevation="4dp">
+
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Review Decision" android:textSize="16sp" android:textStyle="bold"
+                android:textColor="#2D1B2E" android:layout_marginBottom="12dp"/>
+            <View android:layout_width="match_parent" android:layout_height="1dp"
+                android:background="#F5D5DC" android:layout_marginBottom="16dp"/>
+
+            <Button android:id="@+id/btnApprove"
+                android:layout_width="match_parent" android:layout_height="52dp"
+                android:text="✓  APPROVE EVENT" android:textSize="15sp" android:textStyle="bold"
+                android:textColor="#FFFFFF" android:background="@drawable/bg_btn_approve"
+                android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+
+            <Button android:id="@+id/btnRevision"
+                android:layout_width="match_parent" android:layout_height="52dp"
+                android:text="↺  REQUEST REVISION" android:textSize="15sp" android:textStyle="bold"
+                android:textColor="#F39C12" android:background="@drawable/bg_btn_revision"
+                android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+
+            <Button android:id="@+id/btnReject"
+                android:layout_width="match_parent" android:layout_height="52dp"
+                android:text="✕  REJECT PROPOSAL" android:textSize="15sp" android:textStyle="bold"
+                android:textColor="#E74C3C" android:background="@drawable/bg_btn_reject"
+                android:stateListAnimator="@null"/>
+
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>

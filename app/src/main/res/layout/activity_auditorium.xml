@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFF0F3">
+
+    <!-- HEADER -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_dashboard_header"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="44dp"
+        android:paddingBottom="20dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/btnBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Back"
+                android:textColor="#F9C0CC"
+                android:textSize="13sp"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Auditorium Management"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View bookings and confirm venue availability"
+                android:textSize="12sp"
+                android:textColor="#F9C0CC" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- STATS ROW -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="8dp"
+        android:weightSum="3">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="12dp"
+            android:layout_marginEnd="6dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvTotalBookings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#E8637A" />
+            <View
+                android:layout_width="28dp"
+                android:layout_height="3dp"
+                android:background="#E8637A"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="5dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Total\nBookings"
+                android:textSize="11sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="12dp"
+            android:layout_marginEnd="6dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvConfirmedBookings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#27AE60" />
+            <View
+                android:layout_width="28dp"
+                android:layout_height="3dp"
+                android:background="#27AE60"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="5dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Confirmed"
+                android:textSize="11sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:background="@drawable/bg_stat_card"
+            android:padding="12dp"
+            android:elevation="3dp">
+            <TextView
+                android:id="@+id/tvPendingBookings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:textColor="#F39C12" />
+            <View
+                android:layout_width="28dp"
+                android:layout_height="3dp"
+                android:background="#F39C12"
+                android:layout_marginTop="3dp"
+                android:layout_marginBottom="5dp" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Awaiting\nApproval"
+                android:textSize="11sp"
+                android:textColor="#9B7B86" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- SECTION TITLE -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <View
+            android:layout_width="4dp"
+            android:layout_height="20dp"
+            android:background="@drawable/bg_button_login"
+            android:layout_marginEnd="10dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Venue Bookings"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#2D1B2E" />
+    </LinearLayout>
+
+    <!-- BOOKINGS LIST -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvBookings"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp"
+        android:clipToPadding="false" />
+
+    <!-- EMPTY STATE -->
+    <TextView
+        android:id="@+id/tvEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No bookings found"
+        android:textSize="14sp"
+        android:textColor="#C4A8B0"
+        android:gravity="center"
+        android:padding="40dp"
+        android:visibility="gone" />
+
+</LinearLayout>
