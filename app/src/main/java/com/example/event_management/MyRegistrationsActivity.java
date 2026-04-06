@@ -9,15 +9,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.event_management.AttendeeActivity;
-import com.example.event_management.EventBrowsingActivity;
-import com.example.event_management.EventDetailsActivity;
-import com.example.event_management.MainActivity;
-import com.example.event_management.R;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MyRegistrationsActivity extends AppCompatActivity {
 
@@ -26,12 +19,15 @@ public class MyRegistrationsActivity extends AppCompatActivity {
     Button navDashboard, navBrowseEvents, navMyRegistrations, navNotifications, btnLogout;
 
     FirebaseFirestore db;
-    String userId = "3khY0RCTezX40llTbDbz";
+    String userId; // ← no longer hardcoded
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.my_registrations);
+
+        // ← Receive userId from previous activity
+        userId = getIntent().getStringExtra("userId");
 
         registrationsList  = findViewById(R.id.registrationsList);
         tvTotalCount       = findViewById(R.id.tvTotalCount);
@@ -44,34 +40,39 @@ public class MyRegistrationsActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        // Load registrations from Firebase
         loadRegistrations();
 
-        // Bottom nav
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MyRegistrationsActivity.this, AttendeeActivity.class));
+                Intent intent = new Intent(MyRegistrationsActivity.this, AttendeeActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
             }
         });
 
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MyRegistrationsActivity.this, EventBrowsingActivity.class));
-
+                Intent intent = new Intent(MyRegistrationsActivity.this, EventBrowsingActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
             }
         });
+
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //already here
+                // already here
             }
         });
+
         navNotifications.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MyRegistrationsActivity.this, NotificationsActivity.class));
+                Intent intent = new Intent(MyRegistrationsActivity.this, NotificationsActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
             }
         });
 
@@ -79,69 +80,47 @@ public class MyRegistrationsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(MyRegistrationsActivity.this, MainActivity.class));
+                finish(); // ← clear from back stack on logout
             }
         });
     }
 
-    /**
-     * This function loads Registered events from the firebase
-     */
     private void loadRegistrations() {
-        db.collection("users").document(userId).collection("registrations").get().addOnSuccessListener(snapshots -> {
+        db.collection("users").document(userId).collection("registrations").get()
+                .addOnSuccessListener(snapshots -> {
                     registrationsList.removeAllViews();
                     int count = 0;
 
                     for (QueryDocumentSnapshot doc : snapshots) {
-                        // Read fields
-                        String eventId    = doc.getString("eventId");
-                        String title      = doc.getString("eventTitle");
-                        String organizer  = doc.getString("organizer");
-                        String date       = doc.getString("date");
-                        String venue      = doc.getString("venue");
-                        String time           = doc.getString("time");
-                        String fee            = doc.getString("fee");
-                        String description    = doc.getString("description");
-                        String regClosingDate = doc.getString("RegClosingDate");
-                        String category       = doc.getString("category");
-                        int seatsBooked       = doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0;
-                        int seatsTotal        = doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0;
+                        String eventId       = doc.getString("eventId");
+                        String title         = doc.getString("eventTitle");
+                        String organizer     = doc.getString("organizer");
+                        String date          = doc.getString("date");
+                        String venue         = doc.getString("venue");
+                        String time          = doc.getString("time");
+                        String fee           = doc.getString("fee");
+                        String description   = doc.getString("description");
+                        String regClosingDate= doc.getString("RegClosingDate");
+                        String category      = doc.getString("category");
+                        int seatsBooked      = doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0;
+                        int seatsTotal       = doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0;
 
-                        // Build and add card
                         registrationsList.addView(
-                                buildCard(eventId, title, organizer, date, time, venue,fee,description,regClosingDate,category,seatsBooked,seatsTotal)
+                                buildCard(eventId, title, organizer, date, time, venue, fee, description, regClosingDate, category, seatsBooked, seatsTotal)
                         );
                         count++;
                     }
 
                     tvTotalCount.setText(String.valueOf(count));
+                    tvEmpty.setVisibility(count == 0 ? View.VISIBLE : View.GONE);
 
-                    // Show empty state if nothing loaded
-                    if (count == 0) {
-                        tvEmpty.setVisibility(View.VISIBLE);
-                    } else {
-                        tvEmpty.setVisibility(View.GONE);
-                    }
                 }).addOnFailureListener(e ->
                         tvEmpty.setText("Failed to load registrations"));
     }
 
-    /**
-     * Builds a card to display each registered event
-     * @param eventId
-     * @param title
-     * @param organizer
-     * @param date
-     * @param time
-     * @param venue
-     * @param fee
-     * @param description
-     * @param regClosingDate
-     * @param category
-     * @param seatsBooked
-     * @param seatsTotal
-     * @return
-     */
-    private View buildCard(String eventId,String title,String organizer,String date,String time,String venue,String fee,String description,String regClosingDate,String category,int seatsBooked,int seatsTotal) {
+    private View buildCard(String eventId, String title, String organizer, String date, String time,
+                           String venue, String fee, String description, String regClosingDate,
+                           String category, int seatsBooked, int seatsTotal) {
 
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
@@ -190,6 +169,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                 android.content.res.ColorStateList.valueOf(0xFF5B2D8E));
         btnView.setOnClickListener(v -> {
             Intent intent = new Intent(this, EventDetailsActivity.class);
+            intent.putExtra("userId", userId); // ← pass forward
             intent.putExtra("eventId", eventId);
             intent.putExtra("eventTitle", title);
             intent.putExtra("eventOrganizer", organizer);

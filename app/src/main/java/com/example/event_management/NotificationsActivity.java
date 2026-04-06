@@ -22,7 +22,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
     FirebaseFirestore db;
 
-    String userId = "3khY0RCTezX40llTbDbz";
+    String userId; // ← no longer hardcoded
 
     List<Notification> allNotifications = new ArrayList<>();
 
@@ -30,6 +30,9 @@ public class NotificationsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.notifications_activity);
+
+        // ← Receive userId from previous activity
+        userId = getIntent().getStringExtra("userId");
 
         notificationsList  = findViewById(R.id.notificationsList);
         tvUnreadCount      = findViewById(R.id.tvUnreadCount);
@@ -44,57 +47,59 @@ public class NotificationsActivity extends AppCompatActivity {
 
         loadNotifications();
 
-        // Bottom nav
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(NotificationsActivity.this, AttendeeActivity.class));
+                Intent intent = new Intent(NotificationsActivity.this, AttendeeActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
             }
         });
 
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
-           @Override
-           public void onClick(View v) {
-               startActivity(new Intent(NotificationsActivity.this, EventBrowsingActivity.class));
-
-           }
-       });
-        navMyRegistrations.setOnClickListener(new View.OnClickListener() {
-              @Override
-              public void onClick(View v) {
-                  startActivity(new Intent(NotificationsActivity.this, MyRegistrationsActivity.class));
-
-              }
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(NotificationsActivity.this, EventBrowsingActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
+            }
         });
+
+        navMyRegistrations.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(NotificationsActivity.this, MyRegistrationsActivity.class);
+                intent.putExtra("userId", userId); // ← pass forward
+                startActivity(intent);
+            }
+        });
+
         navNotifications.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //alr here
+                // already here
             }
         });
+
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(NotificationsActivity.this, MainActivity.class));
+                finish(); // ← clear from back stack on logout
             }
         });
     }
 
-    /**
-     * This fucntion loads data from firebase
-     */
     private void loadNotifications() {
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
                 .addSnapshotListener((snapshots, error) -> {
-                    // Stop if there was an error
                     if (error != null || snapshots == null) {
                         tvEmpty.setText("Failed to load notifications");
                         return;
                     }
 
-                    // Reload everything fresh whenever Firebase changes
                     allNotifications.clear();
 
                     for (QueryDocumentSnapshot doc : snapshots) {
@@ -106,7 +111,6 @@ public class NotificationsActivity extends AppCompatActivity {
                         notif.eventId = doc.getString("eventId");
                         notif.sentAt  = doc.getString("sentAt");
 
-                        // Safely read isRead whether stored as boolean or string
                         Object isReadVal = doc.get("isRead");
                         if (isReadVal instanceof Boolean) {
                             notif.isRead = (Boolean) isReadVal;
@@ -123,9 +127,6 @@ public class NotificationsActivity extends AppCompatActivity {
                 });
     }
 
-    /**
-     * displays the notifs
-     */
     private void displayNotifications() {
         notificationsList.removeAllViews();
 
@@ -137,7 +138,6 @@ public class NotificationsActivity extends AppCompatActivity {
 
         tvEmpty.setVisibility(View.GONE);
 
-        // Count unread
         int unread = 0;
         for (Notification n : allNotifications) {
             if (!n.isRead) unread++;
@@ -149,13 +149,7 @@ public class NotificationsActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * this function makes a single card to display a notification
-     * @param notif
-     * @return
-     */
     private View buildNotifCard(Notification notif) {
-        // Outer card
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
         card.setElevation(2f);
@@ -166,7 +160,7 @@ public class NotificationsActivity extends AppCompatActivity {
         card.setLayoutParams(cardParams);
         card.setPadding(16, 16, 16, 16);
 
-        // Top row: icon + title + unread dot
+        // Top row: icon + title
         LinearLayout topRow = new LinearLayout(this);
         topRow.setOrientation(LinearLayout.HORIZONTAL);
         topRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -176,34 +170,32 @@ public class NotificationsActivity extends AppCompatActivity {
         topParams.setMargins(0, 0, 0, 6);
         topRow.setLayoutParams(topParams);
 
-        // Icon box
+        // Icon
         TextView tvIcon = new TextView(this);
-        tvIcon.setLayoutParams(new LinearLayout.LayoutParams(40, 40));
         tvIcon.setGravity(Gravity.CENTER);
         tvIcon.setTextSize(16);
 
-        // Set icon and color based on type
         switch (notif.type != null ? notif.type : "") {
             case "confirmation":
             case "payment_received":
                 tvIcon.setText("✅");
-                tvIcon.setBackgroundColor(0xFF4CAF50); // green
+                tvIcon.setBackgroundColor(0xFF4CAF50);
                 break;
             case "emergency":
             case "change":
                 tvIcon.setText("⚠");
-                tvIcon.setBackgroundColor(0xFFFF9800); // orange
+                tvIcon.setBackgroundColor(0xFFFF9800);
                 break;
             case "rejection":
             case "payment_rejected":
                 tvIcon.setText("✕");
-                tvIcon.setBackgroundColor(0xFFE53935); // red
+                tvIcon.setBackgroundColor(0xFFE53935);
                 tvIcon.setTextColor(0xFFFFFFFF);
                 break;
             case "reminder":
             default:
                 tvIcon.setText("🕐");
-                tvIcon.setBackgroundColor(0xFF29B6F6); // blue
+                tvIcon.setBackgroundColor(0xFF29B6F6);
                 break;
         }
 
@@ -222,7 +214,6 @@ public class NotificationsActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         topRow.addView(tvTitle);
 
-
         card.addView(topRow);
 
         // Message
@@ -233,7 +224,7 @@ public class NotificationsActivity extends AppCompatActivity {
         LinearLayout.LayoutParams msgParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        msgParams.setMargins(52, 0, 0, 6); // indent to align with title
+        msgParams.setMargins(52, 0, 0, 6);
         tvMessage.setLayoutParams(msgParams);
         card.addView(tvMessage);
 
@@ -256,10 +247,8 @@ public class NotificationsActivity extends AppCompatActivity {
         btnRow.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
-
         card.addView(btnRow);
 
         return card;
     }
-
 }

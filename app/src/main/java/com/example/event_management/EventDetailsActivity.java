@@ -2,7 +2,6 @@ package com.example.event_management;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.icu.text.CaseMap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -14,7 +13,6 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.Firebase;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.ParseException;
@@ -27,7 +25,7 @@ import java.util.Map;
 public class EventDetailsActivity extends AppCompatActivity {
 
     // UI Components
-    private Button btnBack, btnRegister, btnAddToCalendar, btnBackBottom;
+    private Button btnRegister, btnAddToCalendar, btnBackBottom;
     private TextView tvHeroCategory, tvHeroTitle;
     private TextView tvDate, tvTime, tvVenue, tvOrganizer, tvFee;
     private TextView tvSeats, tvSeatsPercent, tvDescription, tvRegCloses;
@@ -48,55 +46,57 @@ public class EventDetailsActivity extends AppCompatActivity {
     private String eventTime;
     private String eventFee;
 
+    private String userId; // ← no longer hardcoded
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.event_detail);
 
-        btnBackBottom = findViewById(R.id.btnBackBottom);
-
-        btnRegister = findViewById(R.id.btnRegister);
+        btnBackBottom    = findViewById(R.id.btnBackBottom);
+        btnRegister      = findViewById(R.id.btnRegister);
         btnAddToCalendar = findViewById(R.id.btnAddToCalendar);
-
-        tvHeroCategory = findViewById(R.id.tvHeroCategory);
-        tvHeroTitle = findViewById(R.id.tvHeroTitle);
-        imgHero = findViewById(R.id.imgHero);
-
-        tvDate = findViewById(R.id.tvDate);
-        tvTime = findViewById(R.id.tvTime);
-        tvVenue = findViewById(R.id.tvVenue);
-        tvOrganizer = findViewById(R.id.tvOrganizer);
-        tvFee = findViewById(R.id.tvFee);
-
-        tvSeats = findViewById(R.id.tvSeats);
-        tvSeatsPercent = findViewById(R.id.tvSeatsPercent);
-        progressSeats = findViewById(R.id.progressSeats);
-
-        tvDescription = findViewById(R.id.tvDescription);
-        tvRegCloses = findViewById(R.id.tvRegCloses);
+        tvHeroCategory   = findViewById(R.id.tvHeroCategory);
+        tvHeroTitle      = findViewById(R.id.tvHeroTitle);
+        imgHero          = findViewById(R.id.imgHero);
+        tvDate           = findViewById(R.id.tvDate);
+        tvTime           = findViewById(R.id.tvTime);
+        tvVenue          = findViewById(R.id.tvVenue);
+        tvOrganizer      = findViewById(R.id.tvOrganizer);
+        tvFee            = findViewById(R.id.tvFee);
+        tvSeats          = findViewById(R.id.tvSeats);
+        tvSeatsPercent   = findViewById(R.id.tvSeatsPercent);
+        progressSeats    = findViewById(R.id.progressSeats);
+        tvDescription    = findViewById(R.id.tvDescription);
+        tvRegCloses      = findViewById(R.id.tvRegCloses);
 
         Intent intent = getIntent();
 
-        eventId = intent.getStringExtra("eventId");
-        eventTitle = intent.getStringExtra("eventTitle");
-        eventOrganizer = intent.getStringExtra("eventOrganizer");
-        eventDate = intent.getStringExtra("eventDate");
-        eventVenue = intent.getStringExtra("eventVenue");
-        eventCategory = intent.getStringExtra("eventCategory");
+        // ← Receive userId passed from EventBrowsingActivity
+        userId           = intent.getStringExtra("userId");
+
+        eventId          = intent.getStringExtra("eventId");
+        eventTitle       = intent.getStringExtra("eventTitle");
+        eventOrganizer   = intent.getStringExtra("eventOrganizer");
+        eventDate        = intent.getStringExtra("eventDate");
+        eventVenue       = intent.getStringExtra("eventVenue");
+        eventCategory    = intent.getStringExtra("eventCategory");
         eventSeatsBooked = intent.getIntExtra("eventSeatsBooked", 0);
-        eventSeatsTotal = intent.getIntExtra("eventSeatsTotal", 0);
+        eventSeatsTotal  = intent.getIntExtra("eventSeatsTotal", 0);
         eventDescription = intent.getStringExtra("Description");
         eventRegClosingDate = intent.getStringExtra("RegClosingDate");
-        eventTime = intent.getStringExtra("Time");
-        eventFee = intent.getStringExtra("fee");
+        eventTime        = intent.getStringExtra("Time");
+        eventFee         = intent.getStringExtra("fee");
 
         displayEventData();
 
-        // Back button (bottom)
+        // Back button — pass userId back to EventBrowsingActivity
         btnBackBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(EventDetailsActivity.this, EventBrowsingActivity.class));
+                Intent i = new Intent(EventDetailsActivity.this, EventBrowsingActivity.class);
+                i.putExtra("userId", userId); // ← pass forward
+                startActivity(i);
             }
         });
 
@@ -104,20 +104,20 @@ public class EventDetailsActivity extends AppCompatActivity {
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int availableSeats = eventSeatsTotal-eventSeatsBooked;
+                int availableSeats = eventSeatsTotal - eventSeatsBooked;
                 if (availableSeats <= 0) {
                     Toast.makeText(EventDetailsActivity.this, "Sorry, this event is fully booked!", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 try {
-                    boolean reg_open_flag=isRegistrationOpen();
-                    if(!reg_open_flag){
-                        Toast.makeText(EventDetailsActivity.this, "Sorry, the deadline to register for this event has already passed!", Toast.LENGTH_SHORT).show();
+                    if (!isRegistrationOpen()) {
+                        Toast.makeText(EventDetailsActivity.this, "Sorry, the deadline has already passed!", Toast.LENGTH_SHORT).show();
+                        return;
                     }
                 } catch (ParseException e) {
                     throw new RuntimeException(e);
                 }
-                //setActivity(new Intent(EventDetailsActivity.this, RegistrationActivity.class));
+                registerForEvent();
             }
         });
 
@@ -125,30 +125,29 @@ public class EventDetailsActivity extends AppCompatActivity {
         btnAddToCalendar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-                String userId = "3khY0RCTezX40llTbDbz";
                 Map<String, Object> event_Cal = new HashMap<>();
+                event_Cal.put("title",    eventTitle);
+                event_Cal.put("venue",    eventVenue);
+                event_Cal.put("date",     eventDate);
+                event_Cal.put("time",     eventTime);
+                event_Cal.put("category", eventCategory);
 
-//                //pass information to calendar screen
-                event_Cal.put("title", eventTitle);
-                event_Cal.put("venue", eventVenue);
-                event_Cal.put("date", eventDate);
-                event_Cal.put("time", eventTime);
-                event_Cal.put("category",eventCategory);
-                //add this to calendar firebase
-
-                FirebaseFirestore.getInstance().collection("users").document(userId).collection("calendarEvents").document(eventId).set(event_Cal).addOnSuccessListener(unused -> {
-                    Toast.makeText(EventDetailsActivity.this, "Added to Calendar!", Toast.LENGTH_SHORT).show();
-                }).addOnFailureListener(e->{
-                    Toast.makeText(EventDetailsActivity.this, "failed to add to calendar", Toast.LENGTH_SHORT).show();
-                });
+                FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(userId) // ← uses real userId
+                        .collection("calendarEvents")
+                        .document(eventId)
+                        .set(event_Cal)
+                        .addOnSuccessListener(unused -> {
+                            Toast.makeText(EventDetailsActivity.this, "Added to Calendar!", Toast.LENGTH_SHORT).show();
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(EventDetailsActivity.this, "Failed to add to calendar", Toast.LENGTH_SHORT).show();
+                        });
             }
         });
     }
 
-    /**
-     * this function displays the details of event
-     */
     @SuppressLint({"UseCompatLoadingForColorStateLists", "ResourceType"})
     private void displayEventData() {
         tvHeroCategory.setText(eventCategory);
@@ -160,16 +159,15 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvHeroCategory.setBackgroundColor(0xFF7B2FBE);
         }
 
-        // Event details
         tvDate.setText(eventDate);
         tvTime.setText(eventTime);
         tvVenue.setText(eventVenue);
         tvOrganizer.setText(eventOrganizer);
         tvFee.setText(eventFee);
-        // Capacity
+
         int availableSeats = eventSeatsTotal - eventSeatsBooked;
         tvSeats.setText(availableSeats + " / " + eventSeatsTotal + " seats available");
-        //percentage
+
         int percentFull = 0;
         if (eventSeatsTotal > 0) {
             percentFull = (eventSeatsBooked * 100) / eventSeatsTotal;
@@ -177,7 +175,6 @@ public class EventDetailsActivity extends AppCompatActivity {
         tvSeatsPercent.setText(percentFull + "% full");
         progressSeats.setProgress(percentFull);
 
-        // Change color based on availability
         if (availableSeats <= 0) {
             tvSeats.setTextColor(0xFFE53935);
             tvSeatsPercent.setTextColor(0xFFE53935);
@@ -192,24 +189,47 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvSeatsPercent.setTextColor(0xFF4CAF50);
         }
 
-        // Description
         tvDescription.setText(eventDescription);
-
-        // Registration closing date
         tvRegCloses.setText("Registration closes " + eventRegClosingDate);
     }
 
-    //check if registration is still open
-
-    /**
-     * this function checks if the current date has passed the events registration deadline
-     * @return
-     * @throws ParseException
-     */
     private boolean isRegistrationOpen() throws ParseException {
         Date currentDate = new Date();
         SimpleDateFormat formatted_date = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
         Date formatted_deadline = formatted_date.parse(eventDate);
         return currentDate.before(formatted_deadline);
+    }
+
+    private void registerForEvent() {
+        Map<String, Object> registrationData = new HashMap<>();
+        registrationData.put("eventId",        eventId);
+        registrationData.put("eventTitle",     eventTitle);
+        registrationData.put("organizer",      eventOrganizer);
+        registrationData.put("date",           eventDate);
+        registrationData.put("venue",          eventVenue);
+        registrationData.put("time",           eventTime);
+        registrationData.put("fee",            eventFee);
+        registrationData.put("description",    eventDescription);
+        registrationData.put("RegClosingDate", eventRegClosingDate);
+        registrationData.put("category",       eventCategory);
+        registrationData.put("seatsBooked",    eventSeatsBooked);
+        registrationData.put("seatsTotal",     eventSeatsTotal);
+
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId) // ← uses real userId
+                .collection("registrations")
+                .document(eventId)
+                .set(registrationData)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Registered successfully!", Toast.LENGTH_SHORT).show();
+                    btnRegister.setEnabled(false);
+                    btnRegister.setText("Registered ✓");
+                    btnRegister.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
     }
 }
