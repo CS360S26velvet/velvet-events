@@ -13,11 +13,30 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+/**
+ * AttendeeCalendarActivity.java
+ * Displays a monthly calendar view for the logged-in attendee.
+ * Events that the user has saved to their calendar are highlighted
+ * on the calendar grid in dark purple.
+ *
+ * Features:
+ * - Navigate between months using previous/next buttons
+ * - Tap a date to see saved events for that day
+ * - Displays a full list of all saved calendar events below the grid
+ *
+ * Calendar events are loaded from:
+ * users/{userId}/calendarEvents
+ *
+ * Receives userId from the previous activity via Intent.
+ */
 
 public class AttendeeCalendarActivity extends AppCompatActivity {
 
@@ -83,7 +102,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(CalendarActivity.this, AttendeeActivity.class);
+                Intent intent = new Intent(AttendeeCalendarActivity.this, AttendeeActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
                 finish();
@@ -93,7 +112,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(CalendarActivity.this, EventBrowsingActivity.class);
+                Intent intent = new Intent(AttendeeCalendarActivity.this, EventBrowsingActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -102,7 +121,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(CalendarActivity.this, MyRegistrationsActivity.class);
+                Intent intent = new Intent(AttendeeCalendarActivity.this, MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -111,7 +130,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         navNotifications.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(CalendarActivity.this, NotificationsActivity.class);
+                Intent intent = new Intent(AttendeeCalendarActivity.this, NotificationsActivity.class);
                 intent.putExtra("userId", userId); // ← pass forward
                 startActivity(intent);
             }
@@ -120,7 +139,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(CalendarActivity.this, com.lums.eventhub.auth.LoginActivity.class));
+                startActivity(new Intent(AttendeeCalendarActivity.this, com.lums.eventhub.auth.LoginActivity.class));
                 finish(); // ← clear from back stack on logout
             }
         });

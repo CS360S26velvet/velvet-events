@@ -9,9 +9,22 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+/**
+ * MyRegistrationsActivity.java
+ * Displays a list of all events the logged-in attendee
+ * has registered for, fetched from their Firestore
+ * subcollection: users/{userId}/registrations
+ *
+ * Each registration is shown as a card with event title,
+ * organizer, date, time, venue, and a "View Event" button
+ * that navigates to EventDetailsActivity.
+ *
+ * Receives userId via Intent and passes it forward to all
+ * subsequent activities.
+ */
 
 public class MyRegistrationsActivity extends AppCompatActivity {
 

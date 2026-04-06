@@ -15,11 +15,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.example.event_management.EventDetailsActivity;
-import com.example.event_management.MyRegistrationsActivity;
-import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+/**
+ * EventBrowsingActivity.java
+ * Displays all approved events fetched from Firestore.
+ * Allows attendees to search events by title and filter
+ * by category (All, Society Events, Workshops/Seminars).
+ * Each event card has a "View Details" button that navigates
+ * to EventDetailsActivity.
+ *
+ * Receives userId via Intent and passes it forward to all
+ * subsequent activities.
+ */
 
 public class EventBrowsingActivity extends AppCompatActivity {
     // Search

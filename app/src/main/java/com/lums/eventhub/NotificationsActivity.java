@@ -1,5 +1,6 @@
 package com.lums.eventhub;
 
+import com.lums.eventhub.Notification;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -13,6 +14,25 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * NotificationsActivity.java
+ * Displays all notifications for the logged-in attendee,
+ * fetched in real-time from their Firestore subcollection:
+ * users/{userId}/notifications
+ *
+ * Each notification is shown as a card with an icon (based
+ * on type), title, message, and timestamp.
+ * Unread notification count is displayed at the top.
+ *
+ * notification types:
+ * - confirmation / payment_received → green ✅
+ * - emergency / change              → orange ⚠
+ * - rejection / payment_rejected    → red ✕
+ * - reminder (default)              → blue 🕐
+ *
+ * Receives userId via Intent and passes it forward to all
+ * subsequent activities.
+ */
 
 public class NotificationsActivity extends AppCompatActivity {
 

@@ -21,6 +21,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+/**
+ * EventDetailsActivity.java
+ * Displays full details of a selected event including title, date,
+ * time, venue, organizer, fee, seat availability, description,
+ * and registration deadline.
+ *
+ * Allows the attendee to:
+ * - Register for the event (writes to users/{userId}/registrations)
+ * - Add the event to their calendar (writes to users/{userId}/calendarEvents)
+ * - Navigate back to EventBrowsingActivity
+ *
+ * Receives all event data and userId via Intent from
+ * EventBrowsingActivity or MyRegistrationsActivity.
+ */
 
 public class EventDetailsActivity extends AppCompatActivity {
 

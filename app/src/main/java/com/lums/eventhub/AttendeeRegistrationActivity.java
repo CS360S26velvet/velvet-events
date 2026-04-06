@@ -1,21 +1,5 @@
 package com.lums.eventhub;
 
-/**
- * AttendeeRegistrationActivity.java
- *
- * Role: Shows all events belonging to this society (organizerId = "ORG0012").
- * Each event row has a "Build Reg Form" button that opens FormBuilderActivity
- * for that specific event.
- *
- * If no events exist in Firestore for this organizerId, shows a "No events yet" message.
- *
- * Note: organizerId == societyId — same concept, using organizerId everywhere.
- *
- * Firestore reads: events/ where organizerId == "ORG0012"
- *
- * User Stories: Org US-18 (build reg form per event)
- */
-
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -33,6 +17,20 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
+/**
+ * AttendeeRegistrationActivity.java
+ *
+ * Role: Shows all events belonging to this society (organizerId = "ORG0012").
+ * Each event row has a "Build Reg Form" button that opens FormBuilderActivity
+ * for that specific event.
+ *
+ * If no events exist in Firestore for this organizerId, shows a "No events yet" message.
+ *
+ * Note: organizerId == societyId — same concept, using organizerId everywhere.
+ *
+ * Firestore reads: events/ where organizerId == "ORG0012"
+ *
+ */
 
 public class AttendeeRegistrationActivity extends AppCompatActivity {
 

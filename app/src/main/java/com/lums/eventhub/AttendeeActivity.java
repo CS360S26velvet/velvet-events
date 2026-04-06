@@ -8,10 +8,17 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.example.event_management.EventBrowsingActivity;
-import com.example.event_management.MyRegistrationsActivity;
-import com.example.event_management.NotificationsActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
+/**
+ * AttendeeActivity.java
+ * Main dashboard for attendees after login.
+ * Displays registration count and unread notification count.
+ * Provides navigation to: Browse Events, My Registrations,
+ * Notifications, and Calendar.
+ *
+ * Receives userId from LoginActivity via Intent and passes
+ * it forward to all subsequent activities.
+ */
 
 public class AttendeeActivity extends AppCompatActivity {
     private Button btnBrowseEvents;
@@ -52,7 +59,7 @@ public class AttendeeActivity extends AppCompatActivity {
         btnBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, EventBrowsingActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -61,7 +68,7 @@ public class AttendeeActivity extends AppCompatActivity {
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, EventBrowsingActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -70,7 +77,7 @@ public class AttendeeActivity extends AppCompatActivity {
         btnCalendar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, AttendeeCalendarActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.AttendeeCalendarActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -79,7 +86,7 @@ public class AttendeeActivity extends AppCompatActivity {
         btnNotifications.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, NotificationsActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.NotificationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -88,7 +95,7 @@ public class AttendeeActivity extends AppCompatActivity {
         navNotifs.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, NotificationsActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.NotificationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -97,7 +104,7 @@ public class AttendeeActivity extends AppCompatActivity {
         btnMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, MyRegistrationsActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
@@ -106,7 +113,7 @@ public class AttendeeActivity extends AppCompatActivity {
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(AttendeeActivity.this, MyRegistrationsActivity.class);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId);
                 startActivity(intent);
             }
