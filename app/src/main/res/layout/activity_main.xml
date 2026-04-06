@@ -73,4 +73,25 @@
         android:textColor="#FFFFFF"
         android:layout_marginTop="12dp"/>
 
+    <!-- Person B additions START -->
+    <Button
+        android:id="@+id/btnOrgDashboard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Organizer Dashboard"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="12dp"/>
+
+    <Button
+        android:id="@+id/btnProposalForm"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Event Proposal Form"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="12dp"/>
+
+    <!-- Person B additions END -->
+
 </LinearLayout>

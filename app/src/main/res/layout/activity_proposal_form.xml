@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_proposal_form.xml
+    Role: Layout for ProposalFormActivity (Person B — Prompt 2)
+    Background: #E3F2FD. ScrollView takes weight=1; bottom bar is fixed outside.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD">
+
+    <!-- ═══════════════════════════════ HEADER BAR ═══════════════════════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tvProposalHeaderTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="New Event Proposal"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dashboard > New Event"
+            android:textColor="#BBDEFB"
+            android:textSize="14sp" />
+
+    </LinearLayout>
+
+    <!-- ═══════════════════════════════ SCROLL AREA ══════════════════════════ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- ─────────────── SECTION 1: Basic Event Information ─────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1565C0"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Basic Event Information"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Event Title -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Title *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="Enter event title"
+                android:singleLine="true" />
+
+            <!-- Description -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Description *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="Describe your event..."
+                android:minLines="3"
+                android:inputType="textMultiLine"
+                android:gravity="top" />
+
+            <!-- Event Type -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Type *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <RadioGroup
+                android:id="@+id/rgEventType"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+                <RadioButton
+                    android:id="@+id/rbSocietyEvent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Society Event" />
+                <RadioButton
+                    android:id="@+id/rbSchoolWorkshop"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="School-Led Workshop"
+                    android:layout_marginStart="16dp" />
+            </RadioGroup>
+
+            <!-- Society Name (read-only) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Society Name"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etSocietyName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#E3F2FD"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:text="SPADES Society"
+                android:focusable="false"
+                android:focusableInTouchMode="false" />
+
+            <!-- Date -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="dd/mm/yyyy"
+                android:inputType="text" />
+
+            <!-- Venue -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Venue *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etVenue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="Enter venue details" />
+
+            <!-- Supporting Documents card -->
+            <LinearLayout
+                android:id="@+id/cardSupportingDocs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="8dp"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tap to attach supporting documents"
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PDF, DOC, DOCX (max. 10MB)"
+                    android:textColor="#999999"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- ─────────────── SECTION 2: Guests & Participants ──────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1565C0"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Guests &amp; Participants"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Expected Participants -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Expected Participants *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etParticipants"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="e.g. 200"
+                android:inputType="number" />
+
+            <!-- Speakers / Guests label -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Speakers / Guests"
+                android:textColor="#000000"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Dynamic guest rows container -->
+            <LinearLayout
+                android:id="@+id/llGuestRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- Add Guest button -->
+            <Button
+                android:id="@+id/btnAddGuest"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Add Guest"
+                android:backgroundTint="#0D47A1"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="8dp" />
+
+            <!-- ─────────────── SECTION 3: Budget & Resources ─────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1565C0"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Budget &amp; Resources"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Estimated Budget -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Estimated Budget (PKR) *"
+                android:textColor="#666666"
+                android:textSize="13sp" />
+            <EditText
+                android:id="@+id/etBudget"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:hint="e.g. 50000"
+                android:inputType="number" />
+
+            <!-- Budget Document card -->
+            <LinearLayout
+                android:id="@+id/cardBudgetDoc"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FFFFFF"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="8dp"
+                android:clickable="true"
+                android:focusable="true">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Tap to attach budget document"
+                    android:textColor="#666666"
+                    android:textSize="14sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PDF, XLSX (max. 5MB)"
+                    android:textColor="#999999"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- ─────────────── SECTION 4: Event Schedule ─────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1565C0"
+                android:padding="12dp"
+                android:layout_marginBottom="4dp"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Event Schedule — Timeline Builder"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Add each session, competition, or activity that will run during your event. Each session can have its own venue and time slot."
+                android:textColor="#666666"
+                android:textSize="13sp"
+                android:padding="8dp"
+                android:layout_marginBottom="4dp" />
+
+            <!-- Dynamic session rows container -->
+            <LinearLayout
+                android:id="@+id/llSessionRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- Add Session button -->
+            <Button
+                android:id="@+id/btnAddSession"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="+ Add Session"
+                android:backgroundTint="#0D47A1"
+                android:textColor="#FFFFFF"
+                android:layout_marginBottom="8dp" />
+
+            <!-- ─────────────── SECTION 5: Accommodation ──────────────────── -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1565C0"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accommodation"
+                    android:textColor="#FFFFFF"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/cbAccommodation"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Does this event require lodging for guests or participants?"
+                android:layout_marginBottom="8dp" />
+
+            <!-- Accommodation fields — hidden until checkbox checked -->
+            <LinearLayout
+                android:id="@+id/llAccommodationFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <EditText
+                    android:id="@+id/etLodgingCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Number of guests needing lodging"
+                    android:inputType="number" />
+
+                <EditText
+                    android:id="@+id/etCheckIn"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Check-in date dd/mm/yyyy" />
+
+                <EditText
+                    android:id="@+id/etCheckOut"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Check-out date dd/mm/yyyy" />
+
+                <EditText
+                    android:id="@+id/etSpecialRequirements"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#FFFFFF"
+                    android:padding="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:hint="Any special accommodation needs..."
+                    android:minLines="2"
+                    android:inputType="textMultiLine"
+                    android:gravity="top" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- ════════════════════ BOTTOM BAR (fixed, outside ScrollView) ══════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:padding="12dp"
+        android:elevation="4dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnSaveDraft"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Save as Draft"
+                android:backgroundTint="#BBDEFB"
+                android:textColor="#1565C0"
+                android:layout_marginEnd="8dp" />
+
+            <Button
+                android:id="@+id/btnSubmitCCA"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="2"
+                android:text="Submit to CCA for Review"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF" />
+
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Once submitted, CCA will review your proposal within 3 working days."
+            android:textColor="#666666"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:paddingTop="4dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

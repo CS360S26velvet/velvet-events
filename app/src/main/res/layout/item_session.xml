@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_session.xml
+    Role: Single session row inflated dynamically in ProposalFormActivity Section 4.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- Row 1: Session name + Remove button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/etSessionName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Session name e.g. Siege"
+            android:padding="8dp"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/btnRemoveSession"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Remove"
+            android:backgroundTint="#F44336"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+    <!-- Row 2: Venue / Room -->
+    <EditText
+        android:id="@+id/etSessionVenue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Venue / Room e.g. Room 1, SDSB"
+        android:padding="8dp"
+        android:textSize="13sp"
+        android:layout_marginTop="6dp" />
+
+    <!-- Row 3: Start time + End time -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="6dp">
+
+        <EditText
+            android:id="@+id/etStartTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Start e.g. 10:00 AM"
+            android:padding="8dp"
+            android:textSize="13sp" />
+
+        <EditText
+            android:id="@+id/etEndTime"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="End e.g. 12:00 PM"
+            android:padding="8dp"
+            android:textSize="13sp"
+            android:layout_marginStart="8dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_question_editor.xml
+    Role: Single question card in the Form Builder RecyclerView.
+    Contains: question number, label EditText, required Switch, type label,
+    options LinearLayout (for Multiple Choice / Checkboxes / Dropdown),
+    Duplicate and Delete buttons.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:padding="12dp"
+    android:layout_marginBottom="8dp">
+
+    <!-- Row 1: Q number + label + required switch -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/tvQuestionNumber"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Q1"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#666666"
+            android:layout_marginEnd="8dp"/>
+
+        <EditText
+            android:id="@+id/etQuestionLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Enter your question..."
+            android:background="@android:color/transparent"
+            android:textSize="15sp"
+            android:textColor="#000000"
+            android:inputType="textCapSentences"/>
+
+        <Switch
+            android:id="@+id/swRequired"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Required"
+            android:textSize="12sp"
+            android:layout_gravity="center_vertical"/>
+
+    </LinearLayout>
+
+    <!-- Row 2: Question type label -->
+    <TextView
+        android:id="@+id/tvQuestionType"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Short Text"
+        android:textSize="12sp"
+        android:textColor="#999999"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- Options section (visible only for Multiple Choice / Checkboxes / Dropdown) -->
+    <LinearLayout
+        android:id="@+id/llOptions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone"
+        android:layout_marginTop="4dp">
+
+        <!-- Option rows will be added programmatically here -->
+
+        <Button
+            android:id="@+id/btnAddOption"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+ Add Option"
+            android:backgroundTint="#BBDEFB"
+            android:textColor="#1565C0"
+            android:textSize="11sp"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
+
+    <!-- Row last: Duplicate + Delete buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end"
+        android:layout_marginTop="8dp">
+
+        <Button
+            android:id="@+id/btnDuplicate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Duplicate"
+            android:backgroundTint="#BBDEFB"
+            android:textColor="#1565C0"
+            android:textSize="11sp"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnDelete"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Delete"
+            android:backgroundTint="#F44336"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

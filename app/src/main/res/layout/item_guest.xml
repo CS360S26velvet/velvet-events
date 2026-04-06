@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_guest.xml
+    Role: Single guest row inflated dynamically in ProposalFormActivity Section 2.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:layout_marginBottom="4dp"
+    android:gravity="center_vertical">
+
+    <EditText
+        android:id="@+id/etGuestName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="Name"
+        android:padding="8dp"
+        android:textSize="13sp" />
+
+    <EditText
+        android:id="@+id/etGuestTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="Title"
+        android:padding="8dp"
+        android:textSize="13sp"
+        android:layout_marginStart="4dp" />
+
+    <EditText
+        android:id="@+id/etGuestOrg"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="Organization"
+        android:padding="8dp"
+        android:textSize="13sp"
+        android:layout_marginStart="4dp" />
+
+    <Button
+        android:id="@+id/btnRemoveGuest"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Remove"
+        android:backgroundTint="#F44336"
+        android:textColor="#FFFFFF"
+        android:textSize="11sp"
+        android:layout_marginStart="4dp" />
+
+</LinearLayout>

@@ -17,13 +17,19 @@
             android:name=".AttendeeRegistrationActivity"
             android:exported="false" />
         <activity
+            android:name=".FormBuilderActivity"
+            android:exported="false" />
+        <activity
+            android:name=".OrganizerDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ProposalFormActivity"
+            android:exported="false" />
+        <activity
             android:name=".RegistrantDashboardActivity"
             android:exported="false" />
         <activity
             android:name=".CapacitySettingActivity"
-            android:exported="false" />
-        <activity
-            android:name=".FormBuilderActivity"
             android:exported="false" />
         <activity
             android:name=".CheckInActivity"

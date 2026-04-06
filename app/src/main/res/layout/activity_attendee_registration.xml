@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     activity_attendee_registration.xml
-    Role: Allows attendees to fill in the custom registration form built by the organizer.
-    Supports required/optional questions and allows editing before submission.
-    User Stories: AT US-06, US-07, US-09, US-10
+    Role: Shows all events registered under the society.
+    Per event: name + "Build Reg Form" button.
+    If no events: shows "No events yet" message.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -22,7 +22,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="SPADES 2025"
+            android:text="Attendee Registration"
             android:textColor="#FFFFFF"
             android:textSize="20sp"
             android:textStyle="bold"/>
@@ -30,56 +30,31 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Registration Form"
+            android:text="Select an event to build its registration form"
             android:textColor="#BBDEFB"
-            android:textSize="14sp"/>
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"/>
+
     </LinearLayout>
 
-    <!-- Progress indicator -->
+    <!-- No events message (hidden when events exist) -->
     <TextView
-        android:id="@+id/tvProgress"
+        android:id="@+id/tvNoEvents"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Question 1 of 4"
-        android:textSize="13sp"
-        android:textColor="#1565C0"
-        android:padding="12dp"
-        android:background="#FFFFFF"/>
+        android:text="No events yet. Create an event from the Organizer Dashboard first."
+        android:textSize="15sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"/>
 
-    <!-- Form Questions List -->
+    <!-- Event list -->
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewForm"
+        android:id="@+id/recyclerViewEvents"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:padding="8dp"/>
-
-    <!-- Bottom Buttons -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="16dp"
-        android:background="#FFFFFF">
-
-        <Button
-            android:id="@+id/btnBack"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="← Back"
-            android:backgroundTint="#BBDEFB"
-            android:textColor="#1565C0"
-            android:layout_marginEnd="8dp"/>
-
-        <Button
-            android:id="@+id/btnSubmit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Submit"
-            android:backgroundTint="#1565C0"
-            android:textColor="#FFFFFF"/>
-    </LinearLayout>
 
 </LinearLayout>
