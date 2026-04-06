@@ -47,11 +47,18 @@ public class LoginActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please enter username and password", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Please enter username and password",
+                    Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // Fetch all users and match manually (avoids Firestore # symbol query issues)
+        // #AT users: self-register if first time, otherwise log in normally
+        if (username.startsWith("#AT")) {
+            handleAttendeeLogin(username, password);
+            return;
+        }
+
+        // #AD and #ORG: must already exist in Firestore users collection
         FirebaseFirestore.getInstance()
                 .collection("users")
                 .get()
@@ -73,7 +80,6 @@ public class LoginActivity extends AppCompatActivity {
                         return;
                     }
 
-                    // Route based on prefix
                     if (username.startsWith("#AD")) {
                         Intent intent = new Intent(this, AdminDashboardActivity.class);
                         intent.putExtra("username", username);
@@ -81,25 +87,14 @@ public class LoginActivity extends AppCompatActivity {
                         finish();
 
                     } else if (username.startsWith("#ORG")) {
-                        // Get societyName from the matched user doc
-                        // organizerUsername == the username they logged in with
                         String societyName = matchedDoc.getString("societyName");
-                        if (societyName == null) societyName = username; // fallback
-
+                        if (societyName == null) societyName = username;
                         Intent intent = new Intent(this, OrganizerDashboardActivity.class);
-                        intent.putExtra("organizerUsername", username);  // canonical field name
-                        intent.putExtra("societyName",       societyName);
+                        intent.putExtra("organizerUsername", username);
+                        intent.putExtra("societyName", societyName);
                         startActivity(intent);
                         finish();
 
-                    } else if (username.startsWith("#AT")) {
-                        // Person D will wire this up
-                        String userId = matchedDoc.getId(); // ← Firestore document ID
-                        Intent intent = new Intent(this, AttendeeActivity.class); // your attendee dashboard
-                        intent.putExtra("userId", userId);
-                        intent.putExtra("username", username);
-                        startActivity(intent);
-                        finish();
                     } else {
                         Toast.makeText(this,
                                 "Invalid ID format. Use #AD, #ORG, or #AT prefix",
@@ -110,5 +105,73 @@ public class LoginActivity extends AppCompatActivity {
                         Toast.makeText(this, "Connection error: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show()
                 );
+    }
+
+    /**
+     * Handles attendee login with auto-registration.
+     * If username+password not found in Firestore → creates new account.
+     * If found → logs in with existing account (all their data is preserved).
+     */
+    private void handleAttendeeLogin(String username, String password) {
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("users")
+                .get()
+                .addOnSuccessListener(query -> {
+                    DocumentSnapshot matchedDoc = null;
+
+                    // Search for existing account
+                    for (DocumentSnapshot doc : query) {
+                        String dbUser = doc.getString("username");
+                        String dbPass = doc.getString("password");
+                        if (dbUser != null && dbUser.trim().equals(username) &&
+                                dbPass != null && dbPass.trim().equals(password)) {
+                            matchedDoc = doc;
+                            break;
+                        }
+                    }
+
+                    if (matchedDoc != null) {
+                        // ✅ Existing attendee — log them in
+                        String userId = matchedDoc.getId();
+                        goToAttendee(userId, username);
+
+                    } else {
+                        // 🆕 New attendee — create account in Firestore
+                        java.util.Map<String, Object> newUser = new java.util.HashMap<>();
+                        newUser.put("username", username);
+                        newUser.put("password", password);
+                        newUser.put("role", "attendee");
+                        newUser.put("createdAt",
+                                com.google.firebase.Timestamp.now());
+
+                        db.collection("users")
+                                .add(newUser)
+                                .addOnSuccessListener(docRef -> {
+                                    // Account created — go to dashboard
+                                    Toast.makeText(this,
+                                            "Account created! Welcome " + username,
+                                            Toast.LENGTH_SHORT).show();
+                                    goToAttendee(docRef.getId(), username);
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this,
+                                                "Could not create account: " + e.getMessage(),
+                                                Toast.LENGTH_SHORT).show()
+                                );
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Connection error: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show()
+                );
+    }
+
+    private void goToAttendee(String userId, String username) {
+        Intent intent = new Intent(this, AttendeeActivity.class);
+        intent.putExtra("userId", userId);
+        intent.putExtra("username", username);
+        startActivity(intent);
+        finish();
     }
 }

@@ -194,7 +194,7 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvSeatsPercent.setTextColor(0xFFE53935);
             btnRegister.setEnabled(false);
             btnRegister.setText("Sold Out");
-            btnRegister.setBackgroundTintList(getResources().getColorStateList(0xFFAAAAAA));
+            btnRegister.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFAAAAAA));
         } else if (availableSeats < eventSeatsTotal * 0.2) {
             tvSeats.setTextColor(0xFFF5A623);
             tvSeatsPercent.setTextColor(0xFFF5A623);
