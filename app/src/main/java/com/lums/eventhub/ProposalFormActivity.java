@@ -25,67 +25,39 @@ import java.util.Map;
 /**
  * ProposalFormActivity.java
  *
- * <p>5-section proposal form. All data — including guests and sessions — is
- * fully persisted to Firestore. Edit mode reloads everything including dynamic
- * guest and session rows.</p>
+ * 5-section proposal form. All data persisted to Firestore.
  *
- * <p>Save as Draft: no validation, saves/updates proposals/{id} with status="Draft".
- * Submit to CCA: validates Section 1, saves with status="Submitted".</p>
+ * KEY CHANGE: Field name is now "organizerUsername" (canonical).
+ * This is the same concept as "organizerId" in older code — reconciled.
+ * organizerUsername == organizerId == the #ORG_xxx username assigned by admin.
  *
- * <p>Data written to: proposals/{id}<br>
- * Guests stored as: guests (List of Maps)<br>
- * Sessions stored as: sessions (List of Maps)</p>
+ * Status values (canonical, shared with admin):
+ *   "Draft"              — save as draft, not visible to admin
+ *   "Submitted"          — submitted to CCA, visible to admin
  *
- * <p>User Stories: Org US-02, US-03, US-04, US-05, US-08, US-16</p>
+ * User Stories: Org US-02, US-03, US-04, US-05, US-08, US-16
  */
 public class ProposalFormActivity extends AppCompatActivity {
 
-    // -------------------------------------------------------------------------
-    // Constants
-    // -------------------------------------------------------------------------
+    // organizerUsername == organizerId — same concept, canonical name is organizerUsername
+    // This value comes from LoginActivity intent extra "organizerUsername" when integrated.
+    // For now kept as constant matching existing Firebase data.
+    private static final String ORGANIZER_USERNAME = "ORG0012";
+    private static final String SOCIETY_NAME       = "SPADES Society";
 
-    private static final String ORGANIZER_ID = "ORG0012";
-    private static final String SOCIETY_NAME = "SPADES Society";
-
-    // -------------------------------------------------------------------------
-    // Section 1
-    // -------------------------------------------------------------------------
     private EditText   etTitle, etDescription, etSocietyName, etDate, etVenue;
     private RadioGroup rgEventType;
-
-    // -------------------------------------------------------------------------
-    // Section 2
-    // -------------------------------------------------------------------------
     private EditText     etParticipants;
     private LinearLayout llGuestRows;
-
-    // -------------------------------------------------------------------------
-    // Section 3
-    // -------------------------------------------------------------------------
     private EditText etBudget;
-
-    // -------------------------------------------------------------------------
-    // Section 4
-    // -------------------------------------------------------------------------
     private LinearLayout llSessionRows;
-
-    // -------------------------------------------------------------------------
-    // Section 5
-    // -------------------------------------------------------------------------
     private CheckBox     cbAccommodation;
     private LinearLayout llAccommodationFields;
     private EditText     etLodgingCount, etCheckIn, etCheckOut, etSpecialRequirements;
 
-    // -------------------------------------------------------------------------
-    // Misc
-    // -------------------------------------------------------------------------
     private FirebaseFirestore db;
-    private String            proposalId;   // null = create, non-null = edit
+    private String            proposalId;
     private TextView          tvHeaderTitle;
-
-    // -------------------------------------------------------------------------
-    // Lifecycle
-    // -------------------------------------------------------------------------
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,7 +72,6 @@ public class ProposalFormActivity extends AppCompatActivity {
         wireBottomBar();
         wireDocumentCards();
 
-        // Default: one empty session
         addSessionRow(null);
 
         proposalId = getIntent().getStringExtra("proposalId");
@@ -109,10 +80,6 @@ public class ProposalFormActivity extends AppCompatActivity {
             loadProposalForEdit(proposalId);
         }
     }
-
-    // -------------------------------------------------------------------------
-    // Bind views
-    // -------------------------------------------------------------------------
 
     private void bindViews() {
         tvHeaderTitle         = findViewById(R.id.tvProposalHeaderTitle);
@@ -134,94 +101,58 @@ public class ProposalFormActivity extends AppCompatActivity {
         etSpecialRequirements = findViewById(R.id.etSpecialRequirements);
     }
 
-    // -------------------------------------------------------------------------
-    // Accommodation toggle
-    // -------------------------------------------------------------------------
-
     private void wireAccommodationToggle() {
         cbAccommodation.setOnCheckedChangeListener((b, checked) ->
                 llAccommodationFields.setVisibility(checked ? View.VISIBLE : View.GONE));
     }
-
-    // -------------------------------------------------------------------------
-    // Guest rows
-    // -------------------------------------------------------------------------
 
     private void wireGuestButton() {
         Button btnAddGuest = findViewById(R.id.btnAddGuest);
         btnAddGuest.setOnClickListener(v -> addGuestRow(null));
     }
 
-    /**
-     * Inflates a guest row, optionally pre-filled from a saved Map.
-     *
-     * @param data Map with keys "name", "title", "organization", or null for empty row.
-     */
     private void addGuestRow(Map<String, Object> data) {
-        View row = LayoutInflater.from(this)
-                .inflate(R.layout.item_guest, llGuestRows, false);
-
-        EditText etName = row.findViewById(R.id.etGuestName);
+        View row = LayoutInflater.from(this).inflate(R.layout.item_guest, llGuestRows, false);
+        EditText etName       = row.findViewById(R.id.etGuestName);
         EditText etGuestTitle = row.findViewById(R.id.etGuestTitle);
-        EditText etOrg  = row.findViewById(R.id.etGuestOrg);
-        Button   btnRem = row.findViewById(R.id.btnRemoveGuest);
-
+        EditText etOrg        = row.findViewById(R.id.etGuestOrg);
+        Button   btnRem       = row.findViewById(R.id.btnRemoveGuest);
         if (data != null) {
             setText(etName,       (String) data.get("name"));
             setText(etGuestTitle, (String) data.get("title"));
             setText(etOrg,        (String) data.get("organization"));
         }
-
         btnRem.setOnClickListener(v -> llGuestRows.removeView(row));
         llGuestRows.addView(row);
     }
-
-    // -------------------------------------------------------------------------
-    // Session rows
-    // -------------------------------------------------------------------------
 
     private void wireSessionButton() {
         Button btnAddSession = findViewById(R.id.btnAddSession);
         btnAddSession.setOnClickListener(v -> addSessionRow(null));
     }
 
-    /**
-     * Inflates a session row, optionally pre-filled from a saved Map.
-     *
-     * @param data Map with keys "name", "venue", "startTime", "endTime", or null for empty.
-     */
     private void addSessionRow(Map<String, Object> data) {
-        View row = LayoutInflater.from(this)
-                .inflate(R.layout.item_session, llSessionRows, false);
-
+        View row = LayoutInflater.from(this).inflate(R.layout.item_session, llSessionRows, false);
         EditText etSessionName  = row.findViewById(R.id.etSessionName);
         EditText etSessionVenue = row.findViewById(R.id.etSessionVenue);
         EditText etStartTime    = row.findViewById(R.id.etStartTime);
         EditText etEndTime      = row.findViewById(R.id.etEndTime);
         Button   btnRem         = row.findViewById(R.id.btnRemoveSession);
-
         if (data != null) {
             setText(etSessionName,  (String) data.get("name"));
             setText(etSessionVenue, (String) data.get("venue"));
             setText(etStartTime,    (String) data.get("startTime"));
             setText(etEndTime,      (String) data.get("endTime"));
         }
-
         btnRem.setOnClickListener(v -> {
             if (llSessionRows.getChildCount() <= 1) {
-                Toast.makeText(this, "At least one session is required.",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "At least one session is required.", Toast.LENGTH_SHORT).show();
             } else {
                 llSessionRows.removeView(row);
             }
         });
-
         llSessionRows.addView(row);
     }
-
-    // -------------------------------------------------------------------------
-    // Document upload placeholders
-    // -------------------------------------------------------------------------
 
     private void wireDocumentCards() {
         String msg = "File upload will be available in final version.";
@@ -231,10 +162,6 @@ public class ProposalFormActivity extends AppCompatActivity {
                 Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
     }
 
-    // -------------------------------------------------------------------------
-    // Bottom bar
-    // -------------------------------------------------------------------------
-
     private void wireBottomBar() {
         Button btnSaveDraft = findViewById(R.id.btnSaveDraft);
         Button btnSubmitCCA = findViewById(R.id.btnSubmitCCA);
@@ -242,18 +169,10 @@ public class ProposalFormActivity extends AppCompatActivity {
         btnSubmitCCA.setOnClickListener(v -> saveProposal(true));
     }
 
-    // -------------------------------------------------------------------------
-    // Collect guests and sessions from UI
-    // -------------------------------------------------------------------------
-
-    /**
-     * Reads all guest rows from the UI and returns them as a list of Maps.
-     * Each Map has keys: "name", "title", "organization".
-     */
     private List<Map<String, Object>> collectGuests() {
         List<Map<String, Object>> guests = new ArrayList<>();
         for (int i = 0; i < llGuestRows.getChildCount(); i++) {
-            View row = llGuestRows.getChildAt(i);
+            View row   = llGuestRows.getChildAt(i);
             String name  = getText(row, R.id.etGuestName);
             String title = getText(row, R.id.etGuestTitle);
             String org   = getText(row, R.id.etGuestOrg);
@@ -268,39 +187,20 @@ public class ProposalFormActivity extends AppCompatActivity {
         return guests;
     }
 
-    /**
-     * Reads all session rows from the UI and returns them as a list of Maps.
-     * Each Map has keys: "name", "venue", "startTime", "endTime".
-     */
     private List<Map<String, Object>> collectSessions() {
         List<Map<String, Object>> sessions = new ArrayList<>();
         for (int i = 0; i < llSessionRows.getChildCount(); i++) {
             View row = llSessionRows.getChildAt(i);
-            String name       = getText(row, R.id.etSessionName);
-            String venue      = getText(row, R.id.etSessionVenue);
-            String startTime  = getText(row, R.id.etStartTime);
-            String endTime    = getText(row, R.id.etEndTime);
             Map<String, Object> s = new HashMap<>();
-            s.put("name",      name);
-            s.put("venue",     venue);
-            s.put("startTime", startTime);
-            s.put("endTime",   endTime);
+            s.put("name",      getText(row, R.id.etSessionName));
+            s.put("venue",     getText(row, R.id.etSessionVenue));
+            s.put("startTime", getText(row, R.id.etStartTime));
+            s.put("endTime",   getText(row, R.id.etEndTime));
             sessions.add(s);
         }
         return sessions;
     }
 
-    // -------------------------------------------------------------------------
-    // Save / Submit
-    // -------------------------------------------------------------------------
-
-    /**
-     * Builds the full data map and writes to proposals/{id}.
-     * If submit=true, validates Section 1 first and sets status="Submitted".
-     * If submit=false, no validation, status="Draft".
-     *
-     * @param submit True = Submit to CCA, False = Save as Draft.
-     */
     private void saveProposal(boolean submit) {
         if (submit && !validateSection1()) return;
 
@@ -317,7 +217,6 @@ public class ProposalFormActivity extends AppCompatActivity {
 
         long participants = parseLong(etParticipants.getText().toString().trim());
         long budget       = parseLong(etBudget.getText().toString().trim());
-
         boolean requiresAccommodation = cbAccommodation.isChecked();
         long    lodgingCount          = parseLong(etLodgingCount.getText().toString().trim());
         String  checkInDate           = etCheckIn.getText().toString().trim();
@@ -338,33 +237,33 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("checkInDate",           checkInDate);
         data.put("checkOutDate",          checkOutDate);
         data.put("specialRequirements",   specialReqs);
-        data.put("organizerId",           ORGANIZER_ID);
+        // CANONICAL FIELD: organizerUsername (same as organizerId — reconciled)
+        data.put("organizerUsername",     ORGANIZER_USERNAME);
         data.put("guests",                collectGuests());
         data.put("sessions",              collectSessions());
 
+        // Canonical status values shared with admin
         if (submit) {
             data.put("status",      "Submitted");
             data.put("submittedAt", System.currentTimeMillis());
         } else {
-            data.put("status",   "Draft");
+            data.put("status",    "Draft");
             data.put("createdAt", System.currentTimeMillis());
         }
 
         if (proposalId != null) {
-            // Update existing document
             db.collection("proposals").document(proposalId)
                     .set(data)
-                    .addOnSuccessListener(v -> {
+                    .addOnSuccessListener(v ->  {
                         Toast.makeText(this,
                                 submit ? "Submitted to CCA!" : "Draft saved!",
                                 Toast.LENGTH_SHORT).show();
-                        if (submit) finish(); // go back to dashboard after submit
+                        if (submit) finish();
                     })
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Error: " + e.getMessage(),
                                     Toast.LENGTH_SHORT).show());
         } else {
-            // Create new document
             db.collection("proposals")
                     .add(data)
                     .addOnSuccessListener(ref -> {
@@ -380,11 +279,6 @@ public class ProposalFormActivity extends AppCompatActivity {
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Validation
-    // -------------------------------------------------------------------------
-
-    /** Validates required fields in Section 1 only. */
     private boolean validateSection1() {
         if (etTitle.getText().toString().trim().isEmpty()) {
             Toast.makeText(this, "Please fill in: Event Title", Toast.LENGTH_SHORT).show();
@@ -409,23 +303,12 @@ public class ProposalFormActivity extends AppCompatActivity {
         return true;
     }
 
-    // -------------------------------------------------------------------------
-    // Edit mode — load from Firestore
-    // -------------------------------------------------------------------------
-
-    /**
-     * Loads an existing proposal from Firestore and populates all fields
-     * including dynamic guest rows and session rows.
-     *
-     * @param id Firestore document ID of the proposal.
-     */
+    @SuppressWarnings("unchecked")
     private void loadProposalForEdit(String id) {
         db.collection("proposals").document(id)
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) return;
-
-                    // Section 1
                     setText(etTitle,       doc.getString("title"));
                     setText(etDescription, doc.getString("description"));
                     setText(etDate,        doc.getString("date"));
@@ -439,17 +322,24 @@ public class ProposalFormActivity extends AppCompatActivity {
                         rgEventType.check(R.id.rbSchoolWorkshop);
                     }
 
-                    // Section 2
                     setText(etParticipants, longToString(doc.getLong("expectedParticipants")));
-                    loadGuestRows(doc);
 
-                    // Section 3
+                    List<Map<String, Object>> guests =
+                            (List<Map<String, Object>>) doc.get("guests");
+                    if (guests != null && !guests.isEmpty()) {
+                        llGuestRows.removeAllViews();
+                        for (Map<String, Object> g : guests) addGuestRow(g);
+                    }
+
                     setText(etBudget, longToString(doc.getLong("estimatedBudget")));
 
-                    // Section 4
-                    loadSessionRows(doc);
+                    List<Map<String, Object>> sessions =
+                            (List<Map<String, Object>>) doc.get("sessions");
+                    if (sessions != null && !sessions.isEmpty()) {
+                        llSessionRows.removeAllViews();
+                        for (Map<String, Object> s : sessions) addSessionRow(s);
+                    }
 
-                    // Section 5
                     Boolean reqAcc = doc.getBoolean("requiresAccommodation");
                     if (Boolean.TRUE.equals(reqAcc)) {
                         cbAccommodation.setChecked(true);
@@ -463,43 +353,6 @@ public class ProposalFormActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Could not load proposal.", Toast.LENGTH_SHORT).show());
     }
-
-    /**
-     * Rebuilds guest rows from the saved "guests" array in a Firestore document.
-     *
-     * @param doc The Firestore document snapshot.
-     */
-    @SuppressWarnings("unchecked")
-    private void loadGuestRows(DocumentSnapshot doc) {
-        List<Map<String, Object>> guests =
-                (List<Map<String, Object>>) doc.get("guests");
-        if (guests == null || guests.isEmpty()) return;
-        llGuestRows.removeAllViews();
-        for (Map<String, Object> g : guests) {
-            addGuestRow(g);
-        }
-    }
-
-    /**
-     * Rebuilds session rows from the saved "sessions" array in a Firestore document.
-     * Clears the default empty row first.
-     *
-     * @param doc The Firestore document snapshot.
-     */
-    @SuppressWarnings("unchecked")
-    private void loadSessionRows(DocumentSnapshot doc) {
-        List<Map<String, Object>> sessions =
-                (List<Map<String, Object>>) doc.get("sessions");
-        if (sessions == null || sessions.isEmpty()) return;
-        llSessionRows.removeAllViews();
-        for (Map<String, Object> s : sessions) {
-            addSessionRow(s);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Helpers
-    // -------------------------------------------------------------------------
 
     private void setText(EditText et, String value) {
         if (et != null && value != null) et.setText(value);
