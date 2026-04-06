@@ -37,7 +37,7 @@ import java.util.List;
 public class AttendeeRegistrationActivity extends AppCompatActivity {
 
     // organizerId == societyId — same thing, using organizerId everywhere
-    private static final String ORGANIZER_ID = "ORG0012";
+    private String organizerUsername;
 
     private RecyclerView     recyclerViewEvents;
     private TextView         tvNoEvents;
@@ -51,6 +51,9 @@ public class AttendeeRegistrationActivity extends AppCompatActivity {
         setContentView(R.layout.activity_attendee_registration);
 
         db = FirebaseFirestore.getInstance();
+
+        organizerUsername = getIntent().getStringExtra("organizerUsername");
+        if (organizerUsername == null) organizerUsername = "ORG0012";
 
         recyclerViewEvents = findViewById(R.id.recyclerViewEvents);
         tvNoEvents         = findViewById(R.id.tvNoEvents);
@@ -75,20 +78,14 @@ public class AttendeeRegistrationActivity extends AppCompatActivity {
      * Shows "No events yet" if none found or on failure.
      */
     private void loadEvents() {
-        db.collection("proposals")
-                .whereEqualTo("organizerId", ORGANIZER_ID)
-                .whereEqualTo("status", "Submitted")
+        db.collection("events")
+                .whereEqualTo("organizerUsername", organizerUsername)
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     eventList.clear();
                     for (QueryDocumentSnapshot doc : querySnapshot) {
                         String title = doc.getString("title");
-                        if (title == null || title.isEmpty()) {
-                            title = doc.getString("name");
-                        }
-                        if (title == null || title.isEmpty()) {
-                            title = doc.getId();
-                        }
+                        if (title == null || title.isEmpty()) title = doc.getId();
                         eventList.add(new EventItem(doc.getId(), title));
                     }
                     showOrHideEmpty();

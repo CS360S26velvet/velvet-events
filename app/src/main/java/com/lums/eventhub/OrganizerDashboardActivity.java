@@ -3,19 +3,19 @@ package com.lums.eventhub;
 /**
  * OrganizerDashboardActivity.java
  *
- * Full organizer dashboard implementation.
+ * Full organizer dashboard. Merges proposals/ (Draft, Submitted, Revision Requested, Rejected)
+ * and events/ (Approved, Completed) so the organizer sees the full event lifecycle.
+ *
  * Receives from LoginActivity:
- *   "organizerUsername" — the #ORG_xxx username (same as organizerId, canonical field name)
+ *   "organizerUsername" — the #ORG_xxx username (canonical field name)
  *   "societyName"       — e.g. "SPADES Society"
  *
- * Queries proposals/ where organizerUsername == organizerUsername (not hardcoded).
- *
- * Status badges:
- *   "Approved"           → green,  Edit button HIDDEN
- *   "Revision Requested" → orange, Edit button VISIBLE
- *   "Submitted"          → yellow, Edit button HIDDEN
- *   "Draft"              → grey,   Edit button VISIBLE
- *   "Rejected"           → red,    Edit button HIDDEN
+ * Status badge colours + action buttons:
+ *   "Approved"           → green,  no action button
+ *   "Revision Requested" → orange, Edit button
+ *   "Submitted"          → yellow/orange, no action button
+ *   "Rejected"           → red,    "Edit & Resubmit" button
+ *   "Draft"              → grey,   Edit button
  */
 
 import android.content.Intent;
@@ -47,7 +47,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private RecyclerView recyclerViewEvents;
     private EventAdapter adapter;
-    private List<EventItem> eventList = new ArrayList<>();
+    private final List<EventItem> eventList = new ArrayList<>();
     private LinearLayout layoutNotifications;
 
     @Override
@@ -61,9 +61,13 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         organizerUsername = getIntent().getStringExtra("organizerUsername");
         societyName       = getIntent().getStringExtra("societyName");
 
-        // Fallbacks in case called without extras (e.g. direct launch in dev)
+        // Fallbacks for dev/direct launch
         if (organizerUsername == null) organizerUsername = "ORG0012";
         if (societyName == null)       societyName       = "My Society";
+
+        // Update header with actual society name
+        TextView tvSociety = findViewById(R.id.tvSocietyName);
+        if (tvSociety != null) tvSociety.setText(societyName);
 
         // RecyclerView
         recyclerViewEvents = findViewById(R.id.recyclerViewEvents);
@@ -76,13 +80,20 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         // Register New Event → ProposalFormActivity
         Button btnRegisterNewEvent = findViewById(R.id.btnRegisterNewEvent);
         if (btnRegisterNewEvent != null) {
-            btnRegisterNewEvent.setOnClickListener(v ->
-                    startActivity(new Intent(this, ProposalFormActivity.class)));
+            btnRegisterNewEvent.setOnClickListener(v -> {
+                Intent i = new Intent(this, ProposalFormActivity.class);
+                i.putExtra("organizerUsername", organizerUsername);
+                i.putExtra("societyName", societyName);
+                startActivity(i);
+            });
         }
 
         // Management Console navigation
-        findViewById(R.id.btnNavAttendeeReg).setOnClickListener(v ->
-                startActivity(new Intent(this, AttendeeRegistrationActivity.class)));
+        findViewById(R.id.btnNavAttendeeReg).setOnClickListener(v -> {
+            Intent i = new Intent(this, AttendeeRegistrationActivity.class);
+            i.putExtra("organizerUsername", organizerUsername);
+            startActivity(i);
+        });
 
         findViewById(R.id.btnNavRegistrants).setOnClickListener(v ->
                 startActivity(new Intent(this, RegistrantDashboardActivity.class)));
@@ -94,11 +105,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 startActivity(new Intent(this, CapacitySettingActivity.class)));
 
         findViewById(R.id.btnNavPayments).setOnClickListener(v ->
-                android.widget.Toast.makeText(this, "Coming soon!", android.widget.Toast.LENGTH_SHORT).show());
-
-        loadStats();
-        loadEvents();
-        loadNotifications();
+                Toast.makeText(this, "Coming soon!", Toast.LENGTH_SHORT).show());
     }
 
     @Override
@@ -114,17 +121,24 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     private void loadStats() {
+        // Count proposals that are not drafts + all approved events
         db.collection("proposals")
                 .whereEqualTo("organizerUsername", organizerUsername)
                 .get()
                 .addOnSuccessListener(q -> {
-                    int total = 0;
-                    for (QueryDocumentSnapshot doc : q) {
-                        String status = doc.getString("status");
-                        if (!"Draft".equals(status)) total++;
-                    }
-                    TextView tv = findViewById(R.id.tvTotalEvents);
-                    if (tv != null) tv.setText(String.valueOf(total));
+                    int total = q.size();
+                    // Also count from events/ collection (approved/completed)
+                    db.collection("events")
+                            .whereEqualTo("organizerUsername", organizerUsername)
+                            .get()
+                            .addOnSuccessListener(evSnap -> {
+                                TextView tv = findViewById(R.id.tvTotalEvents);
+                                if (tv != null) tv.setText(String.valueOf(total + evSnap.size()));
+                            })
+                            .addOnFailureListener(e -> {
+                                TextView tv = findViewById(R.id.tvTotalEvents);
+                                if (tv != null) tv.setText(String.valueOf(total));
+                            });
                 });
 
         db.collection("attendees")
@@ -137,9 +151,13 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------------------------
-    // Load events
+    // Load events — merge proposals/ and events/ collections
     // -------------------------------------------------------------------------
 
+    /**
+     * Step 1: load from proposals/ (Draft, Submitted, Revision Requested, Rejected).
+     * Approved/Completed come from events/ collection (written by admin on approval).
+     */
     private void loadEvents() {
         db.collection("proposals")
                 .whereEqualTo("organizerUsername", organizerUsername)
@@ -147,30 +165,57 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 .addOnSuccessListener(query -> {
                     eventList.clear();
 
-                    if (query.isEmpty()) {
-                        loadSampleEvents();
-                        return;
-                    }
-
                     for (QueryDocumentSnapshot doc : query) {
-                        String title  = doc.getString("title");
-                        String date   = doc.getString("date");
-                        if (date == null) date = doc.getString("eventDate");
                         String status = doc.getString("status");
+                        // Approved/Completed will come from events/ — skip them here
+                        if ("Approved".equals(status) || "Completed".equals(status)) continue;
+
+                        String title = doc.getString("title");
+                        String date  = doc.getString("date");
+                        if (date == null) date = doc.getString("eventDate");
                         if (title  == null) title  = "Untitled";
                         if (date   == null) date   = "—";
                         if (status == null) status = "Draft";
-                        eventList.add(new EventItem(doc.getId(), title, date, status));
+
+                        // isProposal=true means Edit → ProposalFormActivity with proposalId
+                        eventList.add(new EventItem(doc.getId(), title, date, status, true));
                     }
 
-                    adapter.notifyDataSetChanged();
+                    // Step 2: load approved/completed from events/
+                    loadApprovedEvents();
                 })
-                .addOnFailureListener(e -> loadSampleEvents());
+                .addOnFailureListener(e -> loadApprovedEvents());
+    }
+
+    /** Step 2: load from events/ (Approved/Completed written by admin). */
+    private void loadApprovedEvents() {
+        db.collection("events")
+                .whereEqualTo("organizerUsername", organizerUsername)
+                .get()
+                .addOnSuccessListener(evSnap -> {
+                    for (QueryDocumentSnapshot doc : evSnap) {
+                        String title  = doc.getString("title");
+                        String date   = doc.getString("date");
+                        String status = doc.getString("status");
+                        if (title  == null) title  = "Untitled";
+                        if (date   == null) date   = "—";
+                        if (status == null) status = "Approved";
+                        // isProposal=false — no edit allowed for approved events
+                        eventList.add(new EventItem(doc.getId(), title, date, status, false));
+                    }
+
+                    if (eventList.isEmpty()) loadSampleEvents();
+                    else adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    if (eventList.isEmpty()) loadSampleEvents();
+                    else adapter.notifyDataSetChanged();
+                });
     }
 
     private void loadSampleEvents() {
         eventList.clear();
-        eventList.add(new EventItem("1", societyName + " Event", "TBD", "Draft"));
+        eventList.add(new EventItem("s1", societyName + " Event", "TBD", "Draft", true));
         adapter.notifyDataSetChanged();
     }
 
@@ -223,12 +268,15 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     static class EventItem {
-        String id, title, date, status;
-        EventItem(String id, String title, String date, String status) {
-            this.id     = id;
-            this.title  = title;
-            this.date   = date;
-            this.status = status;
+        String  id, title, date, status;
+        boolean isProposal; // true = from proposals/, false = from events/
+
+        EventItem(String id, String title, String date, String status, boolean isProposal) {
+            this.id         = id;
+            this.title      = title;
+            this.date       = date;
+            this.status     = status;
+            this.isProposal = isProposal;
         }
     }
 
@@ -256,27 +304,44 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
             holder.tvEventDate.setText(event.date);
             holder.tvEventStatus.setText(event.status);
 
-            // Status badge colour + Edit button visibility
+            // Reset button state
+            holder.btnEventAction.setVisibility(View.GONE);
+            holder.btnEventAction.setOnClickListener(null);
+
             switch (event.status) {
+
                 case "Approved":
                     holder.tvEventStatus.setBackgroundColor(0xFF4CAF50);
-                    holder.btnEventAction.setVisibility(View.GONE);
+                    // No action — event is approved and live
                     break;
+
                 case "Revision Requested":
                     holder.tvEventStatus.setBackgroundColor(0xFFFF9800);
                     holder.btnEventAction.setVisibility(View.VISIBLE);
                     holder.btnEventAction.setText("Edit");
                     holder.btnEventAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFF0D47A1));
+                    holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
                     break;
+
                 case "Submitted":
                     holder.tvEventStatus.setBackgroundColor(0xFFFF9800);
-                    holder.btnEventAction.setVisibility(View.GONE);
+                    // Awaiting admin decision — no edit allowed
                     break;
+
                 case "Rejected":
                     holder.tvEventStatus.setBackgroundColor(0xFFF44336);
-                    holder.btnEventAction.setVisibility(View.GONE);
+                    holder.btnEventAction.setVisibility(View.VISIBLE);
+                    holder.btnEventAction.setText("Edit & Resubmit");
+                    holder.btnEventAction.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFC62828));
+                    holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
                     break;
+
+                case "Completed":
+                    holder.tvEventStatus.setBackgroundColor(0xFF607D8B);
+                    break;
+
                 case "Draft":
                 default:
                     holder.tvEventStatus.setBackgroundColor(0xFF9E9E9E);
@@ -284,16 +349,19 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                     holder.btnEventAction.setText("Edit");
                     holder.btnEventAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFF0D47A1));
+                    holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
                     break;
             }
+        }
 
-            // Edit button opens ProposalFormActivity with proposalId
-            holder.btnEventAction.setOnClickListener(v -> {
-                Intent intent = new Intent(OrganizerDashboardActivity.this,
-                        ProposalFormActivity.class);
-                intent.putExtra("proposalId", event.id);
-                startActivity(intent);
-            });
+        /** Opens ProposalFormActivity in edit mode for the given proposalId. */
+        private void openProposalForm(String proposalId) {
+            Intent intent = new Intent(OrganizerDashboardActivity.this,
+                    ProposalFormActivity.class);
+            intent.putExtra("proposalId", proposalId);
+            intent.putExtra("organizerUsername", organizerUsername);
+            intent.putExtra("societyName", societyName);
+            startActivity(intent);
         }
 
         @Override

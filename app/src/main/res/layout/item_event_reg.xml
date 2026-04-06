@@ -27,7 +27,7 @@
         android:id="@+id/btnBuildForm"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Build Reg Form"
+        android:text="Edit Reg Form"
         android:backgroundTint="#1565C0"
         android:textColor="#FFFFFF"
         android:textSize="12sp"/>

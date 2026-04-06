@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.lums.eventhub.R;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +29,7 @@ public class ProposalDetailActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private String proposalId;
+    private DocumentSnapshot currentDoc;
 
     // Detail TextViews
     private TextView tvDetailTitle, tvDetailDate, tvDetailVenue,
@@ -51,8 +53,7 @@ public class ProposalDetailActivity extends AppCompatActivity {
         loadProposal();
 
         // Decision buttons — canonical status values
-        findViewById(R.id.btnApprove).setOnClickListener(v ->
-                updateStatus("Approved"));
+        findViewById(R.id.btnApprove).setOnClickListener(v -> approveProposal());
         findViewById(R.id.btnRevision).setOnClickListener(v ->
                 updateStatus("Revision Requested"));
         findViewById(R.id.btnReject).setOnClickListener(v ->
@@ -82,6 +83,7 @@ public class ProposalDetailActivity extends AppCompatActivity {
                         Toast.makeText(this, "Proposal not found.", Toast.LENGTH_SHORT).show();
                         return;
                     }
+                    currentDoc = doc;
                     populateFields(doc);
                 })
                 .addOnFailureListener(e ->
@@ -180,15 +182,55 @@ public class ProposalDetailActivity extends AppCompatActivity {
         }
     }
 
+    private void approveProposal() {
+        if (currentDoc == null) {
+            Toast.makeText(this, "Proposal not loaded yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        db.collection("proposals").document(proposalId)
+                .update("status", "Approved")
+                .addOnSuccessListener(a -> writeToEventsCollection())
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Approval failed: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+    private void writeToEventsCollection() {
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("title",             nvlStr(currentDoc.getString("title")));
+        eventData.put("date",              nvlStr(currentDoc.getString("date")));
+        eventData.put("venue",             nvlStr(currentDoc.getString("venue")));
+        eventData.put("societyName",       nvlStr(currentDoc.getString("societyName")));
+        eventData.put("organizerUsername", nvlStr(currentDoc.getString("organizerUsername")));
+        eventData.put("description",       nvlStr(currentDoc.getString("description")));
+        eventData.put("eventType",         nvlStr(currentDoc.getString("eventType")));
+        eventData.put("status",            "Approved");
+        eventData.put("approvedAt",        System.currentTimeMillis());
+        eventData.put("proposalId",        proposalId);
+
+        // Same document ID as the proposal for easy cross-reference
+        db.collection("events").document(proposalId)
+                .set(eventData)
+                .addOnSuccessListener(a -> {
+                    Toast.makeText(this, "Proposal approved ✓", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this,
+                            "Approved but event record failed: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    finish();
+                });
+    }
+
     private void updateStatus(String status) {
         db.collection("proposals").document(proposalId)
                 .update("status", status)
                 .addOnSuccessListener(a -> {
                     String msg;
                     switch (status) {
-                        case "Approved":           msg = "Proposal approved ✓"; break;
-                        case "Rejected":           msg = "Proposal rejected";   break;
-                        case "Revision Requested": msg = "Revision requested";  break;
+                        case "Rejected":           msg = "Proposal rejected";  break;
+                        case "Revision Requested": msg = "Revision requested"; break;
                         default:                   msg = "Status updated";
                     }
                     Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
@@ -197,6 +239,10 @@ public class ProposalDetailActivity extends AppCompatActivity {
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Error: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show());
+    }
+
+    private String nvlStr(String s) {
+        return s != null ? s : "";
     }
 
     private void set(TextView tv, String value) {

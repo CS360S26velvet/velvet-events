@@ -14,7 +14,6 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
@@ -25,25 +24,35 @@ import java.util.Map;
 /**
  * ProposalFormActivity.java
  *
- * 5-section proposal form. All data persisted to Firestore.
+ * 5-section proposal form. All data persisted to Firestore proposals/ collection.
  *
- * KEY CHANGE: Field name is now "organizerUsername" (canonical).
- * This is the same concept as "organizerId" in older code — reconciled.
- * organizerUsername == organizerId == the #ORG_xxx username assigned by admin.
+ * Launched from OrganizerDashboardActivity in two modes:
+ *   (a) New event  — no intent extra "proposalId"
+ *   (b) Edit event — intent extra "proposalId" set; loads existing data from Firestore
  *
- * Status values (canonical, shared with admin):
- *   "Draft"              — save as draft, not visible to admin
- *   "Submitted"          — submitted to CCA, visible to admin
+ * On "Save Draft":
+ *   - Writes status="Draft" to Firestore
+ *   - Stays on form (does NOT finish) — organizer can keep editing
+ *   - proposalId is captured after first save so subsequent saves update the same doc
+ *
+ * On "Submit to CCA":
+ *   - Validates required fields, writes status="Submitted", then finishes
+ *   - Dashboard refreshes via onResume and shows updated status
+ *
+ * Canonical field: organizerUsername (== organizerId in older code)
+ * Received from OrganizerDashboardActivity via intent extra "organizerUsername".
+ *
+ * Status values (shared with admin ProposalDetailActivity):
+ *   "Draft"    — saved, not visible to admin
+ *   "Submitted"— visible to admin for review
  *
  * User Stories: Org US-02, US-03, US-04, US-05, US-08, US-16
  */
 public class ProposalFormActivity extends AppCompatActivity {
 
-    // organizerUsername == organizerId — same concept, canonical name is organizerUsername
-    // This value comes from LoginActivity intent extra "organizerUsername" when integrated.
-    // For now kept as constant matching existing Firebase data.
-    private static final String ORGANIZER_USERNAME = "ORG0012";
-    private static final String SOCIETY_NAME       = "SPADES Society";
+    // Received from OrganizerDashboardActivity via intent — NOT hardcoded
+    private String organizerUsername;
+    private String societyName;
 
     private EditText   etTitle, etDescription, etSocietyName, etDate, etVenue;
     private RadioGroup rgEventType;
@@ -56,7 +65,7 @@ public class ProposalFormActivity extends AppCompatActivity {
     private EditText     etLodgingCount, etCheckIn, etCheckOut, etSpecialRequirements;
 
     private FirebaseFirestore db;
-    private String            proposalId;
+    private String            proposalId;   // null = new proposal, non-null = editing existing
     private TextView          tvHeaderTitle;
 
     @Override
@@ -65,6 +74,15 @@ public class ProposalFormActivity extends AppCompatActivity {
         setContentView(R.layout.activity_proposal_form);
 
         db = FirebaseFirestore.getInstance();
+
+        // Get organizer identity from intent (set by OrganizerDashboardActivity)
+        organizerUsername = getIntent().getStringExtra("organizerUsername");
+        societyName       = getIntent().getStringExtra("societyName");
+
+        // Fallbacks for direct launch / dev
+        if (organizerUsername == null) organizerUsername = "ORG0012";
+        if (societyName == null)       societyName       = "SPADES Society";
+
         bindViews();
         wireAccommodationToggle();
         wireGuestButton();
@@ -215,8 +233,8 @@ public class ProposalFormActivity extends AppCompatActivity {
             eventType = ((RadioButton) findViewById(checkedId)).getText().toString();
         }
 
-        long participants = parseLong(etParticipants.getText().toString().trim());
-        long budget       = parseLong(etBudget.getText().toString().trim());
+        long    participants          = parseLong(etParticipants.getText().toString().trim());
+        long    budget                = parseLong(etBudget.getText().toString().trim());
         boolean requiresAccommodation = cbAccommodation.isChecked();
         long    lodgingCount          = parseLong(etLodgingCount.getText().toString().trim());
         String  checkInDate           = etCheckIn.getText().toString().trim();
@@ -227,7 +245,7 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("title",                 title);
         data.put("description",           description);
         data.put("eventType",             eventType);
-        data.put("societyName",           SOCIETY_NAME);
+        data.put("societyName",           societyName);
         data.put("date",                  date);
         data.put("venue",                 venue);
         data.put("expectedParticipants",  participants);
@@ -237,40 +255,45 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("checkInDate",           checkInDate);
         data.put("checkOutDate",          checkOutDate);
         data.put("specialRequirements",   specialReqs);
-        // CANONICAL FIELD: organizerUsername (same as organizerId — reconciled)
-        data.put("organizerUsername",     ORGANIZER_USERNAME);
+        // CANONICAL FIELD: organizerUsername (received from OrganizerDashboardActivity)
+        data.put("organizerUsername",     organizerUsername);
         data.put("guests",                collectGuests());
         data.put("sessions",              collectSessions());
 
-        // Canonical status values shared with admin
         if (submit) {
             data.put("status",      "Submitted");
             data.put("submittedAt", System.currentTimeMillis());
         } else {
             data.put("status",    "Draft");
-            data.put("createdAt", System.currentTimeMillis());
+            data.put("updatedAt", System.currentTimeMillis());
         }
 
         if (proposalId != null) {
+            // Update existing proposal document
             db.collection("proposals").document(proposalId)
                     .set(data)
-                    .addOnSuccessListener(v ->  {
+                    .addOnSuccessListener(v -> {
                         Toast.makeText(this,
                                 submit ? "Submitted to CCA!" : "Draft saved!",
                                 Toast.LENGTH_SHORT).show();
+                        // On submit: go back to dashboard (which refreshes in onResume)
+                        // On draft save: STAY on form so organizer can keep editing
                         if (submit) finish();
                     })
                     .addOnFailureListener(e ->
                             Toast.makeText(this, "Error: " + e.getMessage(),
                                     Toast.LENGTH_SHORT).show());
         } else {
+            // New proposal — create document, capture the new ID
             db.collection("proposals")
                     .add(data)
                     .addOnSuccessListener(ref -> {
-                        proposalId = ref.getId();
+                        proposalId = ref.getId(); // capture so next save updates same doc
                         Toast.makeText(this,
                                 submit ? "Submitted to CCA!" : "Draft saved!",
                                 Toast.LENGTH_SHORT).show();
+                        // On submit: go back to dashboard
+                        // On draft save: STAY on form — proposalId now set for future saves
                         if (submit) finish();
                     })
                     .addOnFailureListener(e ->
