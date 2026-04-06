@@ -34,7 +34,7 @@
         <activity android:name=".admin.accommodation.AccommodationActivity" />
 
         <!-- Organizer module -->
-        <activity android:name=".organizer.OrganizerDashboardActivity" />
+        <activity android:name=".OrganizerDashboardActivity" />
 
         <!-- Person C screens -->
         <activity android:name=".AttendeeRegistrationActivity" android:exported="false" />

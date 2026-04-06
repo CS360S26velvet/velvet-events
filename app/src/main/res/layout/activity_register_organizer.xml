@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_register_organizer.xml
+    Role: Admin registers a new organizer/society.
+    Fields: Society Name, Username (#ORG_xxx), Password
+    Matches admin pink colour scheme.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF0F3">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- HEADER -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_dashboard_header"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="44dp"
+            android:paddingBottom="20dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/btnBack"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="← Back"
+                    android:textColor="#F9C0CC"
+                    android:textSize="13sp"
+                    android:layout_marginBottom="8dp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Register New Organizer"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Allocate credentials to a new society"
+                    android:textSize="12sp"
+                    android:textColor="#F9C0CC"/>
+
+            </LinearLayout>
+        </FrameLayout>
+
+        <!-- FORM CARD -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/bg_card"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginTop="20dp"
+            android:padding="20dp"
+            android:elevation="4dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Organizer Details"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#2D1B2E"
+                android:layout_marginBottom="4dp"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:background="#F5D5DC"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Society Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="SOCIETY NAME"
+                android:textSize="10sp"
+                android:textColor="#C47A8A"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="6dp"/>
+
+            <EditText
+                android:id="@+id/etSocietyName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g. SPADES Society"
+                android:background="@drawable/bg_input_field"
+                android:padding="14dp"
+                android:textSize="14sp"
+                android:textColor="#2D1B2E"
+                android:inputType="textCapWords"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Username -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="USERNAME TO ALLOCATE"
+                android:textSize="10sp"
+                android:textColor="#C47A8A"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="6dp"/>
+
+            <EditText
+                android:id="@+id/etUsername"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="e.g. #ORG_spades"
+                android:background="@drawable/bg_input_field"
+                android:padding="14dp"
+                android:textSize="14sp"
+                android:textColor="#2D1B2E"
+                android:inputType="textNoSuggestions"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Must start with #ORG"
+                android:textSize="11sp"
+                android:textColor="#C4A8B0"
+                android:layout_marginBottom="20dp"/>
+
+            <!-- Password -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PASSWORD TO ALLOCATE"
+                android:textSize="10sp"
+                android:textColor="#C47A8A"
+                android:textStyle="bold"
+                android:letterSpacing="0.1"
+                android:layout_marginBottom="6dp"/>
+
+            <EditText
+                android:id="@+id/etPassword"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Minimum 6 characters"
+                android:background="@drawable/bg_input_field"
+                android:padding="14dp"
+                android:textSize="14sp"
+                android:textColor="#2D1B2E"
+                android:inputType="textPassword"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Share these credentials with the organizer personally"
+                android:textSize="11sp"
+                android:textColor="#C4A8B0"
+                android:layout_marginBottom="28dp"/>
+
+            <!-- Register button -->
+            <Button
+                android:id="@+id/btnRegister"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="REGISTER ORGANIZER"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="@drawable/bg_button_login"
+                android:stateListAnimator="@null"/>
+
+        </LinearLayout>
+
+        <!-- Spacing at bottom -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="32dp"/>
+
+    </LinearLayout>
+</ScrollView>

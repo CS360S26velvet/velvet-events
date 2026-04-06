@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     activity_organizer_dashboard.xml
-    Role: Layout for OrganizerDashboardActivity (Person B — Prompt 1)
+    Role: Layout for OrganizerDashboardActivity
     Background: #E3F2FD per colour system.
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,10 +14,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <!-- ═══════════════════════════════════════════════════════
-             HEADER BAR
-             background #1565C0, padding 16dp
-        ════════════════════════════════════════════════════════ -->
+        <!-- HEADER BAR -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -42,16 +39,13 @@
 
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════════════
-             STAT CARDS ROW
-        ════════════════════════════════════════════════════════ -->
+        <!-- STAT CARDS ROW -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:padding="16dp">
 
-            <!-- Card 1: Total Events -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -79,7 +73,6 @@
 
             </LinearLayout>
 
-            <!-- Card 2: Pending Payments -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -108,9 +101,7 @@
 
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════════════
-             SECTION HEADER: My Events + Register New Event button
-        ════════════════════════════════════════════════════════ -->
+        <!-- MY EVENTS SECTION HEADER -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -140,9 +131,7 @@
 
         </LinearLayout>
 
-        <!-- ═══════════════════════════════════════════════════════
-             EVENTS RECYCLER VIEW
-        ════════════════════════════════════════════════════════ -->
+        <!-- EVENTS RECYCLER VIEW -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerViewEvents"
             android:layout_width="match_parent"
@@ -152,9 +141,183 @@
             android:clipToPadding="false"
             android:nestedScrollingEnabled="false" />
 
-        <!-- ═══════════════════════════════════════════════════════
-             NOTIFICATIONS SECTION HEADER
-        ════════════════════════════════════════════════════════ -->
+        <!-- MANAGEMENT CONSOLE HEADER -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Management Console"
+            android:textColor="#000000"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginTop="16dp"
+            android:paddingBottom="8dp" />
+
+        <!-- ROW 1: Attendee Registration + Registrant Dashboard -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:weightSum="2"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:id="@+id/btnNavAttendeeReg"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1565C0"
+                android:layout_marginEnd="8dp"
+                android:elevation="3dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📋"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Attendee Reg"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnNavRegistrants"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#0D47A1"
+                android:layout_marginStart="8dp"
+                android:elevation="3dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="👥"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Registrants"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ROW 2: Live Check-In + Form Settings -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:weightSum="2"
+            android:layout_marginBottom="12dp">
+
+            <LinearLayout
+                android:id="@+id/btnNavCheckIn"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1976D2"
+                android:layout_marginEnd="8dp"
+                android:elevation="3dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="✅"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Live Check-In"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnNavFormSettings"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1565C0"
+                android:layout_marginStart="8dp"
+                android:elevation="3dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="⚙️"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Form Settings"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- ROW 3: Payment Verification — full width -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="16dp">
+
+            <LinearLayout
+                android:id="@+id/btnNavPayments"
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#0D47A1"
+                android:elevation="3dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💳"
+                    android:textSize="22sp" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Payment Verification"
+                    android:textSize="11sp"
+                    android:textStyle="bold"
+                    android:textColor="#FFFFFF"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- NOTIFICATIONS SECTION HEADER -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -164,10 +327,10 @@
             android:textStyle="bold"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             android:paddingBottom="8dp" />
 
-        <!-- Dynamic notification rows injected by OrganizerDashboardActivity -->
+        <!-- Dynamic notification rows -->
         <LinearLayout
             android:id="@+id/layoutNotifications"
             android:layout_width="match_parent"
@@ -176,9 +339,7 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp" />
 
-        <!-- ═══════════════════════════════════════════════════════
-             VIEW ALL NOTIFICATIONS BUTTON
-        ════════════════════════════════════════════════════════ -->
+        <!-- VIEW ALL NOTIFICATIONS BUTTON -->
         <Button
             android:id="@+id/btnViewAllNotifications"
             android:layout_width="match_parent"
