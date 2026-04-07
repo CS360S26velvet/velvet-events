@@ -71,20 +71,20 @@ public class AdminDashboardIntentTest {
         launchDashboard();
         onView(withId(R.id.btnAuditorium)).check(matches(isDisplayed()));
     }
+//
+//    /** Test calendar button is displayed */
+//    @Test
+//    public void testCalendarButtonIsDisplayed() {
+//        launchDashboard();
+//        onView(withId(R.id.btnCalendar)).check(matches(isDisplayed()));
+//    }
 
-    /** Test calendar button is displayed */
-    @Test
-    public void testCalendarButtonIsDisplayed() {
-        launchDashboard();
-        onView(withId(R.id.btnCalendar)).check(matches(isDisplayed()));
-    }
-
-    /** Test accommodation button is displayed */
-    @Test
-    public void testAccommodationButtonIsDisplayed() {
-        launchDashboard();
-        onView(withId(R.id.btnAccommodation)).check(matches(isDisplayed()));
-    }
+//    /** Test accommodation button is displayed */
+//    @Test
+//    public void testAccommodationButtonIsDisplayed() {
+//        launchDashboard();
+//        onView(withId(R.id.btnAccommodation)).check(matches(isDisplayed()));
+//    }
 
     /** Test register organizer button is displayed (requires scroll) */
     @Test

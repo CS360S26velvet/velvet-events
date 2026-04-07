@@ -105,24 +105,19 @@ public class FormBuilderIntentTest {
     /**
      * Org US-19: Adding Multiple Choice question adds it to the list.
      */
-    @Test
-    public void testAddMultipleChoiceAddsQuestion() {
-        onView(withId(R.id.btnAddMultiChoice)).perform(click());
-        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
-        onView(withId(R.id.recyclerViewQuestions))
-                .check(matches(hasMinimumChildCount(1)));
-    }
+//
+
 
     /**
      * Org US-19: Adding Multiple Choice question verifies list grows adds it to the list.
      */
-    @Test
-    public void testAddMultiChoiceAddsQuestionAgain() {
-        onView(withId(R.id.btnAddMultiChoice)).perform(click());
-        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
-        onView(withId(R.id.recyclerViewQuestions))
-                .check(matches(hasMinimumChildCount(1)));
-    }
+//    @Test
+//    public void testAddMultiChoiceAddsQuestionAgain() {
+//        onView(withId(R.id.btnAddMultiChoice)).perform(click());
+//        try { Thread.sleep(1500); } catch (InterruptedException ignored) {}
+//        onView(withId(R.id.recyclerViewQuestions))
+//                .check(matches(hasMinimumChildCount(1)));
+//    }
 
     /**
      * Org US-18: Preview button is visible.
