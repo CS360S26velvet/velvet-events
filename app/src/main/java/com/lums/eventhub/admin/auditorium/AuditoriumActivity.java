@@ -18,6 +18,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * AuditoriumActivity.java
+ *
+ * Role: Admin screen for viewing all auditorium bookings requested
+ * by organizers through their event proposals. Admin can confirm
+ * venue availability for any pending proposal directly from this screen.
+ *
+ * Implements: Admin US-06
+ */
 public class AuditoriumActivity extends AppCompatActivity {
 
     private RecyclerView rvBookings;

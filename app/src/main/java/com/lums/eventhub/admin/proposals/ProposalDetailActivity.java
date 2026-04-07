@@ -17,6 +17,31 @@ import java.util.Map;
 /**
  * ProposalDetailActivity.java
  *
+ * Role: Admin screen that displays the full details of a single proposal
+ * submitted by an organizer. Admin can Approve, Request Revision, or Reject
+ * the proposal from this screen.
+ *
+ * On Approve: writes status="Approved" to proposals/ AND copies key fields
+ * into the events/ collection using the same document ID as the proposal.
+ *
+ * Canonical status values written to Firestore:
+ *   "Approved"           — organizer sees green badge
+ *   "Revision Requested" — organizer sees orange badge
+ *   "Rejected"           — organizer sees red badge
+ *
+ * Proposal sections displayed:
+ *   Section 1 — Basic info
+ *   Section 2 — Participants
+ *   Section 3 — Budget
+ *   Section 4 — Sessions
+ *   Section 5 — Accommodation
+ *   Guests
+ *
+ * Implements: Admin US-02
+ */
+/**
+ * ProposalDetailActivity.java
+ *
  * Loads the full proposal submitted by the organizer and displays ALL fields.
  * Admin can Approve, Request Revision, or Reject.
  *

@@ -13,6 +13,24 @@ import com.lums.eventhub.model.Proposal;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * ProposalListActivity.java
+ *
+ * Role: Admin screen that displays all event proposals submitted by organizers.
+ * Proposals are filterable by status (All, Submitted, Approved, Rejected).
+ * Tapping any proposal row navigates to ProposalDetailActivity for review.
+ *
+ * Filter button mapping:
+ *   "All"      → shows all non-Draft proposals
+ *   "Pending"  → shows proposals with status "Submitted"
+ *   "Approved" → shows proposals with status "Approved"
+ *   "Rejected" → shows proposals with status "Rejected"
+ *
+ * Note: "Draft" proposals are never shown to admin.
+ *
+ * Implements: Admin US-02
+ */
+
 public class ProposalListActivity extends AppCompatActivity {
 
     private RecyclerView rvProposals;

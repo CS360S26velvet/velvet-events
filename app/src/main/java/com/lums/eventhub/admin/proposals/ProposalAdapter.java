@@ -11,6 +11,23 @@ import com.lums.eventhub.R;
 import com.lums.eventhub.model.Proposal;
 import java.util.List;
 
+/**
+ * ProposalAdapter.java
+ *
+ * Role: RecyclerView Adapter for displaying a list of Proposal objects
+ * in ProposalListActivity. Each row shows the event title, society name,
+ * date, venue, status badge, and a Review button.
+ *
+ * Status colour coding:
+ *   Submitted          → pink  (#E8637A) — pending CCA review
+ *   Approved           → green (#27AE60)
+ *   Rejected           → red   (#E74C3C)
+ *   Revision Requested → orange (#F39C12)
+ *   default            → grey  (#9B7B86)
+ *
+ * Implements: Admin US-02
+ */
+
 public class ProposalAdapter extends RecyclerView.Adapter<ProposalAdapter.ViewHolder> {
 
     private final List<Proposal> proposalList;

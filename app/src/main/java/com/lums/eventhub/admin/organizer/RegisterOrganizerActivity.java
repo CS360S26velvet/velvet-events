@@ -23,6 +23,22 @@ import com.lums.eventhub.R;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * RegisterOrganizerActivity.java
+ *
+ * Role: Allows the admin to register a new organizer/society account.
+ * Saves the new organizer to the Firestore users/ collection so they
+ * can log in via LoginActivity using their assigned credentials.
+ *
+ * Validation rules enforced:
+ *   - societyName must not be empty
+ *   - username must not be empty and must start with "#ORG"
+ *   - password must not be empty and must be at least 6 characters
+ *   - username must not already exist in the users/ collection
+ *
+ * Implements: Admin US — Register New Organizer
+ */
+
 public class RegisterOrganizerActivity extends AppCompatActivity {
 
     private EditText etSocietyName, etUsername, etPassword;

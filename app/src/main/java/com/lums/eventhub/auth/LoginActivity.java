@@ -22,6 +22,21 @@ import com.lums.eventhub.R;
 import com.lums.eventhub.admin.dashboard.AdminDashboardActivity;
 import com.lums.eventhub.OrganizerDashboardActivity;
 
+/**
+ * LoginActivity.java
+ *
+ * Role: Entry point of the application. Displays the login screen and
+ * routes authenticated users to the correct dashboard based on their
+ * username prefix.
+ *
+ * Routing logic:
+ *   #AD  → AdminDashboardActivity     (must exist in Firestore users/)
+ *   #ORG → OrganizerDashboardActivity (must exist in Firestore users/)
+ *   #AT  → AttendeeActivity           (auto-registered if first login)
+ *
+ * Implements: Admin US-01
+ */
+
 public class LoginActivity extends AppCompatActivity {
 
     private EditText etUsername, etPassword;

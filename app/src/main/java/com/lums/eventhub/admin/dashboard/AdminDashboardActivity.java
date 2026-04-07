@@ -17,6 +17,18 @@ import com.lums.eventhub.admin.auditorium.AuditoriumActivity;
 import com.lums.eventhub.admin.calendar.CalendarActivity;
 import com.lums.eventhub.admin.accommodation.AccommodationActivity;
 
+/**
+ * AdminDashboardActivity.java
+ *
+ * Role: Main landing screen for admin users after login.
+ * Displays summary stat cards (pending proposals, approved proposals,
+ * accommodation requests, active events) and a live list of the 5 most
+ * recent proposals awaiting CCA review. Provides navigation to all
+ * admin sub-screens.
+ *
+ * Implements: Admin US-08
+ */
+
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;

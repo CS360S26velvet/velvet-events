@@ -19,6 +19,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * CalendarActivity.java
+ *
+ * Role: Admin screen that displays a monthly calendar view of all
+ * approved events. Each approved proposal is pinned to its date on
+ * the calendar grid. Admin can navigate between months and view
+ * a full list of all approved events below the grid.
+ *
+ * Implements: Admin US-08, US-09
+ */
+
 public class CalendarActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;

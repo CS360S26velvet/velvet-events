@@ -25,6 +25,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
 
+/**
+ * AccommodationActivity.java
+ *
+ * Role: Admin screen for viewing, approving/rejecting, and exporting
+ * accommodation requests submitted by organizers for their events.
+ *
+ * Implements: Admin US-13, US-15, US-16
+ */
+
 public class AccommodationActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
