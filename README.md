@@ -1,4 +1,9 @@
-# README
+# 📋 Project README
+
+---
+
+<details>
+<summary><h2>I) Previous README</h2></summary>
 
 ## I) User Stories
 
@@ -416,6 +421,7 @@
 | Add approved events to calendar | Event |
 | Export events to personal calendars | Attendee |
 | Display upcoming events | |
+
 ---
 
 ## V) BackLog - Kanbaan
@@ -423,6 +429,7 @@
 ### Kanbaan Backlog
 
 ![Kanbaan Backlog](images/image30.png)
+
 ---
 
 ## VI) Meeting Schedule with TA
@@ -434,4 +441,215 @@
 
 Had constant communication on Slack throughout.
 
+</details>
+
 ---
+
+<details>
+<summary><h2>II) UI Mockups</h2></summary>
+
+**1). Organizer logs in with their userID and password**
+
+![Organizer Login](images_2_UI_Mockups/image1.jpeg)
+
+---
+
+**2). The Organizer Dashboard opens up**
+
+![Organizer Dashboard](images_2_UI_Mockups/image2.png)
+
+---
+
+**3). Organizer clicks on "Register New Button" and the Event Registration screen opens up**
+
+![Event Registration Screen](images_2_UI_Mockups/image3.jpeg)
+
+---
+
+**4). Organizer enters all event details and clicks on "Submit to CCA for Review" button**
+
+![Submit to CCA](images_2_UI_Mockups/image3.jpeg)
+
+---
+
+**5). The admin logs in using their userId and password**
+
+![Admin Login](images_2_UI_Mockups/image4.jpeg)
+
+---
+
+**6). The Admins Dashboard opens up**
+
+![Admin Dashboard](images_2_UI_Mockups/image5.jpeg)
+
+---
+
+**7). The admin sees if there are any submitted proposals by clicking the proposal button**
+
+![Admin Proposals Screen](images_2_UI_Mockups/image6.jpeg)
+
+---
+
+**8). The admin sees a new event has been submitted and clicks "Review" button**
+
+![Admin Review Button](images_2_UI_Mockups/image7.jpeg)
+
+---
+
+**9). The admin goes through all the event details and approves it / rejects it / or puts to review**
+
+*// Rejected:*
+
+![Event Rejected](images_2_UI_Mockups/image8.png)
+
+*// After being rejected or successful, it shows on the organizer side too:*
+
+![Status on Organizer Side](images_2_UI_Mockups/image9.png)
+
+*// Organizer can edit and resubmit the proposal to be reviewed by the admin:*
+
+![Edit and Resubmit](images_2_UI_Mockups/image10.png)
+
+*// Approved event:*
+
+![Approved Event](images_2_UI_Mockups/image11.jpeg)
+
+*// After being approved, the status shows approved on the organizer dashboard:*
+
+![Approved Status on Dashboard](images_2_UI_Mockups/image12.png)
+
+*// The approved events show in the attendee registration screen on the organization:*
+
+![Approved Events - Attendee View](images_2_UI_Mockups/image13.png)
+
+*// These approved events can be edited, and the organizer can add form builder questions:*
+
+![Form Builder Questions](images_2_UI_Mockups/image14.png)
+
+*// The organizer can add short text, paragraph and multiple choices:*
+
+![Question Types](images_2_UI_Mockups/image15.png)
+
+---
+
+**10). The attendee logs in using their userID and password**
+
+![Attendee Login](images_2_UI_Mockups/image16.jpeg)
+
+---
+
+**11). The attendees dashboard opens up**
+
+![Attendee Dashboard](images_2_UI_Mockups/image17.jpeg)
+
+---
+
+**12). The attendee browses approved events by clicking the "Browse Events" button**
+
+![Browse Events](images_2_UI_Mockups/image18.jpeg)
+
+---
+
+**13). The attendee clicks on "View Details" button to see the event details**
+
+![Event Details](images_2_UI_Mockups/image19.jpeg)
+
+---
+
+### Other Admin Screens
+
+**Accommodation Requests**
+
+![Admin Accommodation Requests](images_2_UI_Mockups/image20.jpeg)
+
+**Admin Calendar**
+
+![Admin Calendar](images_2_UI_Mockups/image21.jpeg)
+
+**Register New Screen**
+
+![Register New Screen](images_2_UI_Mockups/image22.jpeg)
+
+---
+
+### Other Attendee Screens
+
+**Attendee Registration Screens**
+
+![Attendee Registration](images_2_UI_Mockups/image23.jpeg)
+
+**Notification**
+
+![Attendee Notification](images_2_UI_Mockups/image24.jpeg)
+
+**Attendee Calendar**
+
+![Attendee Calendar](images_2_UI_Mockups/image25.jpeg)
+
+</details>
+
+---
+
+<details>
+<summary><h2>III) Product Backlog Tracking</h2></summary>
+
+![Product Backlog 1](images_Product_Backlog_Tracking/image1.png)
+
+![Product Backlog 2](images_Product_Backlog_Tracking/image2.png)
+
+![Product Backlog 3](images_Product_Backlog_Tracking/image3.png)
+
+![Product Backlog 4](images_Product_Backlog_Tracking/image4.png)
+
+![Product Backlog 5](images_Product_Backlog_Tracking/image5.png)
+
+</details>
+
+---
+
+<details>
+<summary><h2>IV) Halfway Sprint</h2></summary>
+
+### Week 1
+
+| Person | User Stories | Tasks |
+|--------|-------------|-------|
+| Person A | Admin US-01 | Login screen, basic admin dashboard |
+| Person B | Org US-01, US-02, US-04, US-10, US-04, US-15, US-05, US-03| Proposal form Section 1 & 2, organizer dashboard |
+| Person C | Org US-18, US-19 | Basic form builder (text, paragraph, MCQ) |
+| Person D | AT US-01, AT US-02 | Attendee dashboard UI, event listing |
+
+### Week 2 + 3
+
+| Person | User Stories | Tasks |
+|--------|-------------|-------|
+| Person A | Admin US-02, US-06, US-08, US-09, US-13 | Proposal list, approve/reject, auditorium view, Event calendar, accommodation requests |
+| Person B | Org US-02, US-05, US-12, US-09, US-08 | Complete proposal form, save draft, submit + Routing with admin + Attendee form routing |
+| Person C | Org US-20, US-22, US-25, US-24, US-29, US-30 | Form Building, required toggle, capacity, Registrant list, Check-in |
+| Person D | AT US-03, US-04, US-05, US-17, US-18, US-16 | Filter, search, event detail page, Attendee Calendar and Notifications |
+
+</details>
+
+---
+
+<details>
+<summary><h2>V) UML Diagram</h2></summary>
+
+### 🔗 Interactive Diagram Link
+
+[View Full UML Diagram on draw.io](https://viewer.diagrams.net/?tags=%7B%7D&lightbox=1&highlight=0000ff&edit=_blank&layers=1&nav=1&dark=auto#Uhttps%3A%2F%2Fdrive.google.com%2Fuc%3Fid%3D1GVqz1uMo6flheMHyJqw7G92Bgcf-KTUO%26export%3Ddownload)
+
+### Diagram Image
+
+![UML Diagram](images_UML_Diagram/image1.png)
+
+</details>
+
+---
+
+<details>
+<summary><h2>VI) Addressing Feedback on Previous Deliverable</h2></summary>
+
+TA had satisfactory response, approved our Figma screens and app flow. Mentioned that we built as a website which we defended — since proposal making and document uploading are easier to manage on a website, we had that in mind. He mentioned that when coding, it should obviously be in **Android Studio** — as a mobile screen app.
+
+</details>
