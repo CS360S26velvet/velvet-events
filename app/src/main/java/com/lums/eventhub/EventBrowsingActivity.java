@@ -239,7 +239,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
 
     private void loadEventsFromFirebase() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
-        db.collection("proposals")
+        db.collection("events")
                 .whereEqualTo("status", "Approved")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
