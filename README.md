@@ -650,6 +650,6 @@ Had constant communication on Slack throughout.
 <details>
 <summary><h2>VI) Addressing Feedback on Previous Deliverable</h2></summary>
 
-TA had satisfactory response, approved our Figma screens and app flow. Mentioned that we built as a website which we defended — since proposal making and document uploading are easier to manage on a website, we had that in mind. He mentioned that when coding, it should obviously be in Android Studio as a mobile screen app.
+TA had satisfactory response, approved our figma screens and app flow. Mentioned that we built as website which we defended that since proposal making document uploading are easier to manage on website we had that in mind. He mentioned that when coding obviously it should be in Adnroid Studio – as mobile screen app.
 
 </details>
