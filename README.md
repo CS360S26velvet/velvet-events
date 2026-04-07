@@ -615,7 +615,7 @@ Had constant communication on Slack throughout.
 | Person | User Stories | Tasks |
 |--------|-------------|-------|
 | Person A | Admin US-01 | Login screen, basic admin dashboard |
-| Person B | Org US-02, US-04 | Proposal form Section 1 & 2, organizer dashboard |
+| Person B | Org US-01, US-02, US-04, US-10, US-04, US-15, US-05, US-03| Proposal form Section 1 & 2, organizer dashboard |
 | Person C | Org US-18, US-19 | Basic form builder (text, paragraph, MCQ) |
 | Person D | AT US-01, AT US-02 | Attendee dashboard UI, event listing |
 
@@ -624,8 +624,8 @@ Had constant communication on Slack throughout.
 | Person | User Stories | Tasks |
 |--------|-------------|-------|
 | Person A | Admin US-02, US-06, US-08, US-09, US-13 | Proposal list, approve/reject, auditorium view, Event calendar, accommodation requests |
-| Person B | Org US-02, US-05 | Complete proposal form, save draft, submit + Routing with admin + Attendee form routing |
-| Person C | Org US-21, US-22, US-25, US-24, US-29, US-30 | Form preview, required toggle, capacity, Registrant list, CSV export, Check-in |
+| Person B | Org US-02, US-05, US-12, US-09, US-08 | Complete proposal form, save draft, submit + Routing with admin + Attendee form routing |
+| Person C | Org US-20, US-22, US-25, US-24, US-29, US-30 | Form Building, required toggle, capacity, Registrant list, Check-in |
 | Person D | AT US-03, US-04, US-05, US-17, US-18, US-16 | Filter, search, event detail page, Attendee Calendar and Notifications |
 
 </details>
