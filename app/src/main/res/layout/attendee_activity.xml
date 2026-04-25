@@ -42,11 +42,13 @@
     </LinearLayout>
 
     <!-- ===== SCROLLABLE CONTENT ===== -->
+
+    <!-- ===== BOTTOM NAVIGATION BAR ===== -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:background="#F0EDFA">
+        android:background="#6E4994">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -129,7 +131,7 @@
                             android:id="@+id/tvRegisteredCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="3"
+                            android:text="0"
                             android:textColor="#1A1A2E"
                             android:textSize="30sp"
                             android:textStyle="bold" />
@@ -168,7 +170,7 @@
                             android:id="@+id/tvNotifCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="7"
+                            android:text="0"
                             android:textColor="#1A1A2E"
                             android:textSize="30sp"
                             android:textStyle="bold" />
@@ -273,116 +275,18 @@
                     android:textSize="14sp"
                     android:textStyle="bold" />
 
-                <!-- Activity 1 -->
+                <!-- Dynamic rows populated from Firebase in AttendeeActivity.java -->
                 <LinearLayout
+                    android:id="@+id/recentActivityList"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:layout_marginEnd="10dp"
-                        android:background="#4CAF50" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Registered for Basketball Championship Finals"
-                        android:textColor="#1A1A2E"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="2d ago"
-                        android:textColor="#BBBBBB"
-                        android:textSize="10sp" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#F2F2F2" />
-
-                <!-- Activity 2 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="10dp"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:layout_marginEnd="10dp"
-                        android:background="#2196F3" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Viewed event Startup Weekend"
-                        android:textColor="#1A1A2E"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="3d ago"
-                        android:textColor="#BBBBBB"
-                        android:textSize="10sp" />
-
-                </LinearLayout>
-
-                <View
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginBottom="10dp"
-                    android:background="#F2F2F2" />
-
-                <!-- Activity 3 -->
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal">
-
-                    <View
-                        android:layout_width="8dp"
-                        android:layout_height="8dp"
-                        android:layout_marginEnd="10dp"
-                        android:background="#9C27B0" />
-
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Attended Tech Workshop"
-                        android:textColor="#1A1A2E"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="1w ago"
-                        android:textColor="#BBBBBB"
-                        android:textSize="10sp" />
-
-                </LinearLayout>
+                    android:orientation="vertical" />
 
             </LinearLayout>
 
         </LinearLayout>
     </ScrollView>
 
-    <!-- ===== BOTTOM NAVIGATION BAR ===== -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"

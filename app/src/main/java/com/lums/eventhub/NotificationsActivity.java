@@ -14,6 +14,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.ArrayList;
 import java.util.List;
+
 /**
  * NotificationsActivity.java
  * Displays all notifications for the logged-in attendee,
@@ -24,16 +25,21 @@ import java.util.List;
  * on type), title, message, and timestamp.
  * Unread notification count is displayed at the top.
  *
- * notification types:
- * - confirmation / payment_received → green ✅
- * - emergency / change              → orange ⚠
- * - rejection / payment_rejected    → red ✕
- * - reminder (default)              → blue 🕐
+ * AT US-17 — Emergency notifications (type: "emergency" or "change")
+ * are displayed as high-priority banner cards with a colored
+ * background and an URGENT / UPDATE label so they stand out
+ * from regular notifications.
+ *
+ * Notification types:
+ * - confirmation / payment_received → green ✅ (normal card)
+ * - emergency                       → red ✕ card with "URGENT" banner
+ * - change                          → orange ⚠ card with "UPDATE" banner
+ * - rejection / payment_rejected    → red ✕ (normal card)
+ * - reminder (default)              → blue 🕐 (normal card)
  *
  * Receives userId via Intent and passes it forward to all
  * subsequent activities.
  */
-
 public class NotificationsActivity extends AppCompatActivity {
 
     LinearLayout notificationsList;
@@ -42,7 +48,7 @@ public class NotificationsActivity extends AppCompatActivity {
 
     FirebaseFirestore db;
 
-    String userId; // ← no longer hardcoded
+    String userId;
 
     List<Notification> allNotifications = new ArrayList<>();
 
@@ -51,7 +57,6 @@ public class NotificationsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.notifications_activity);
 
-        // ← Receive userId from previous activity
         userId = getIntent().getStringExtra("userId");
 
         notificationsList  = findViewById(R.id.notificationsList);
@@ -70,8 +75,9 @@ public class NotificationsActivity extends AppCompatActivity {
         navDashboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.AttendeeActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                Intent intent = new Intent(NotificationsActivity.this,
+                        com.lums.eventhub.AttendeeActivity.class);
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
@@ -79,8 +85,9 @@ public class NotificationsActivity extends AppCompatActivity {
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                Intent intent = new Intent(NotificationsActivity.this,
+                        com.lums.eventhub.EventBrowsingActivity.class);
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
@@ -88,8 +95,9 @@ public class NotificationsActivity extends AppCompatActivity {
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(NotificationsActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                Intent intent = new Intent(NotificationsActivity.this,
+                        com.lums.eventhub.MyRegistrationsActivity.class);
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
@@ -104,8 +112,9 @@ public class NotificationsActivity extends AppCompatActivity {
         btnLogout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(NotificationsActivity.this, com.lums.eventhub.auth.LoginActivity.class));
-                finish(); // ← clear from back stack on logout
+                startActivity(new Intent(NotificationsActivity.this,
+                        com.lums.eventhub.auth.LoginActivity.class));
+                finish();
             }
         });
     }
@@ -164,21 +173,80 @@ public class NotificationsActivity extends AppCompatActivity {
         }
         tvUnreadCount.setText(String.valueOf(unread));
 
-        for (Notification notif : allNotifications) {
+        // AT US-17 — show emergency/change notifications first so they
+        // appear at the top of the list regardless of order from Firestore
+        List<Notification> priority = new ArrayList<>();
+        List<Notification> normal   = new ArrayList<>();
+
+        for (Notification n : allNotifications) {
+            if ("emergency".equals(n.type) || "change".equals(n.type)) {
+                priority.add(n);
+            } else {
+                normal.add(n);
+            }
+        }
+
+        for (Notification notif : priority) {
+            notificationsList.addView(buildNotifCard(notif));
+        }
+        for (Notification notif : normal) {
             notificationsList.addView(buildNotifCard(notif));
         }
     }
 
     private View buildNotifCard(Notification notif) {
+        boolean isEmergency = "emergency".equals(notif.type);
+        boolean isChange    = "change".equals(notif.type);
+        boolean isPriority  = isEmergency || isChange;
+
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setElevation(2f);
+        card.setElevation(isPriority ? 6f : 2f);
+
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         cardParams.setMargins(0, 0, 0, 12);
         card.setLayoutParams(cardParams);
         card.setPadding(16, 16, 16, 16);
+
+        // AT US-17 — priority cards get a tinted background and a left border accent
+        if (isEmergency) {
+            card.setBackgroundColor(0xFFFFF3F3); // light red tint
+        } else if (isChange) {
+            card.setBackgroundColor(0xFFFFF8F0); // light orange tint
+        } else {
+            card.setBackgroundColor(0xFFFFFFFF);
+        }
+
+        // AT US-17 — priority label banner (URGENT / UPDATE) shown above the content
+        if (isPriority) {
+            LinearLayout bannerRow = new LinearLayout(this);
+            bannerRow.setOrientation(LinearLayout.HORIZONTAL);
+            bannerRow.setGravity(Gravity.CENTER_VERTICAL);
+            LinearLayout.LayoutParams bannerParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            bannerParams.setMargins(0, 0, 0, 10);
+            bannerRow.setLayoutParams(bannerParams);
+
+            // Colored pill label
+            TextView tvPriorityLabel = new TextView(this);
+            tvPriorityLabel.setText(isEmergency ? "⚡ URGENT" : "📢 UPDATE");
+            tvPriorityLabel.setTextSize(10);
+            tvPriorityLabel.setTypeface(null, Typeface.BOLD);
+            tvPriorityLabel.setTextColor(0xFFFFFFFF);
+            tvPriorityLabel.setPadding(14, 4, 14, 4);
+            tvPriorityLabel.setBackgroundColor(isEmergency ? 0xFFE53935 : 0xFFFF9800);
+
+            LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            tvPriorityLabel.setLayoutParams(labelParams);
+            bannerRow.addView(tvPriorityLabel);
+
+            card.addView(bannerRow);
+        }
 
         // Top row: icon + title
         LinearLayout topRow = new LinearLayout(this);
@@ -202,6 +270,9 @@ public class NotificationsActivity extends AppCompatActivity {
                 tvIcon.setBackgroundColor(0xFF4CAF50);
                 break;
             case "emergency":
+                tvIcon.setText("🚨");
+                tvIcon.setBackgroundColor(0xFFE53935);
+                break;
             case "change":
                 tvIcon.setText("⚠");
                 tvIcon.setBackgroundColor(0xFFFF9800);
@@ -227,9 +298,9 @@ public class NotificationsActivity extends AppCompatActivity {
         // Title
         TextView tvTitle = new TextView(this);
         tvTitle.setText(notif.title != null ? notif.title : "Notification");
-        tvTitle.setTextColor(0xFF1A1A2E);
-        tvTitle.setTypeface(null, Typeface.BOLD);
-        tvTitle.setTextSize(14);
+        tvTitle.setTextColor(isPriority ? 0xFF1A1A2E : 0xFF1A1A2E);
+        tvTitle.setTypeface(null, isPriority ? Typeface.BOLD : Typeface.BOLD);
+        tvTitle.setTextSize(isPriority ? 15 : 14); // slightly larger for priority
         tvTitle.setLayoutParams(new LinearLayout.LayoutParams(0,
                 LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
         topRow.addView(tvTitle);
@@ -239,8 +310,8 @@ public class NotificationsActivity extends AppCompatActivity {
         // Message
         TextView tvMessage = new TextView(this);
         tvMessage.setText(notif.message != null ? notif.message : "");
-        tvMessage.setTextColor(0xFF444444);
-        tvMessage.setTextSize(12);
+        tvMessage.setTextColor(isPriority ? 0xFF333333 : 0xFF444444);
+        tvMessage.setTextSize(isPriority ? 13 : 12); // slightly larger for priority
         LinearLayout.LayoutParams msgParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -260,7 +331,7 @@ public class NotificationsActivity extends AppCompatActivity {
         tvTime.setLayoutParams(timeParams);
         card.addView(tvTime);
 
-        // Bottom buttons row
+        // Bottom buttons row (kept for future use e.g. mark as read)
         LinearLayout btnRow = new LinearLayout(this);
         btnRow.setOrientation(LinearLayout.HORIZONTAL);
         btnRow.setGravity(Gravity.END);

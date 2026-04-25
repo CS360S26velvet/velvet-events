@@ -653,7 +653,7 @@
                 android:id="@+id/btnBackBottom"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:text="← Back to Browse Events"
+                android:text="← Back"
                 android:textColor="#1A1A2E"
                 android:textSize="14sp"
                 android:backgroundTint="#F5F5F5"/>

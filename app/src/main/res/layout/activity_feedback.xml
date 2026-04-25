@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFF8F6FF"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Back button -->
+        <Button
+            android:id="@+id/btnFeedbackBack"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="← Back"
+            android:textColor="#5B2D8E"
+            android:textSize="13sp"
+            android:backgroundTint="#EDE7F6"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Header -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Rate Your Experience"
+            android:textColor="#1A1A2E"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Your feedback helps organizers improve future events."
+            android:textColor="#888888"
+            android:textSize="13sp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Event info card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_white_rounded"
+            android:padding="16dp"
+            android:layout_marginBottom="24dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:id="@+id/tvFeedbackEventTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Event Title"
+                android:textColor="#1A1A2E"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/tvFeedbackOrganizer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="by Organizer"
+                android:textColor="#5B2D8E"
+                android:textSize="13sp"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/tvFeedbackDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Date"
+                android:textColor="#888888"
+                android:textSize="12sp" />
+
+        </LinearLayout>
+
+        <!-- Star rating section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_white_rounded"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Overall Rating"
+                android:textColor="#1A1A2E"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- Stars built programmatically in FeedbackActivity.buildStarRating() -->
+            <LinearLayout
+                android:id="@+id/starRow"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="10dp" />
+
+            <!-- Rating label e.g. "Excellent" -->
+            <TextView
+                android:id="@+id/tvRatingLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:textColor="#5B2D8E"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Written feedback section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="@drawable/card_white_rounded"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Written Feedback"
+                android:textColor="#1A1A2E"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Optional — share details about your experience"
+                android:textColor="#AAAAAA"
+                android:textSize="12sp"
+                android:layout_marginBottom="12dp" />
+
+            <EditText
+                android:id="@+id/etFeedbackText"
+                android:layout_width="match_parent"
+                android:layout_height="120dp"
+                android:hint="What did you enjoy? What could be improved?"
+                android:textColor="#1A1A2E"
+                android:textSize="14sp"
+                android:gravity="top|start"
+                android:padding="12dp"
+                android:background="@drawable/input_rounded"
+                android:inputType="textMultiLine"
+                android:minLines="4" />
+
+        </LinearLayout>
+
+        <!-- Anonymous toggle -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/card_white_rounded"
+            android:padding="20dp"
+            android:layout_marginBottom="28dp"
+            android:elevation="2dp">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Submit Anonymously"
+                    android:textColor="#1A1A2E"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="2dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Your name will not be visible to the organizer"
+                    android:textColor="#888888"
+                    android:textSize="12sp" />
+
+            </LinearLayout>
+
+            <CheckBox
+                android:id="@+id/cbAnonymous"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:buttonTint="#5B2D8E" />
+
+        </LinearLayout>
+
+        <!-- Submit button -->
+        <Button
+            android:id="@+id/btnSubmitFeedback"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Submit Feedback"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#5B2D8E"
+            android:layout_marginBottom="40dp" />
+
+    </LinearLayout>
+</ScrollView>

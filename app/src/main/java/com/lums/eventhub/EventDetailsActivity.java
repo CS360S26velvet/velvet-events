@@ -13,6 +13,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.text.ParseException;
@@ -21,6 +22,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
 /**
  * EventDetailsActivity.java
  * Displays full details of a selected event including title, date,
@@ -30,15 +32,20 @@ import java.util.Map;
  * Allows the attendee to:
  * - Register for the event (writes to users/{userId}/registrations)
  * - Add the event to their calendar (writes to users/{userId}/calendarEvents)
- * - Navigate back to EventBrowsingActivity
+ * - Navigate back via the back button
  *
- * Receives all event data and userId via Intent from
- * EventBrowsingActivity or MyRegistrationsActivity.
+ * Back button behaviour is source-aware:
+ * - source = "myRegistrations" → goes back to MyRegistrationsActivity
+ * - source = null (default)   → goes back to EventBrowsingActivity
+ *
+ * On load, checks Firestore to see if the user is already registered
+ * for this event — if so, the Register button is disabled and shows
+ * "Already Registered ✓" to prevent duplicate registrations.
+ *
+ * Receives all event data, userId, and optional source via Intent.
  */
-
 public class EventDetailsActivity extends AppCompatActivity {
 
-    // UI Components
     private Button btnRegister, btnAddToCalendar, btnBackBottom;
     private TextView tvHeroCategory, tvHeroTitle;
     private TextView tvDate, tvTime, tvVenue, tvOrganizer, tvFee;
@@ -46,7 +53,6 @@ public class EventDetailsActivity extends AppCompatActivity {
     private ProgressBar progressSeats;
     private ImageView imgHero;
 
-    // Event data
     private String eventId;
     private String eventTitle;
     private String eventOrganizer;
@@ -60,7 +66,8 @@ public class EventDetailsActivity extends AppCompatActivity {
     private String eventTime;
     private String eventFee;
 
-    private String userId; // ← no longer hardcoded
+    private String userId;
+    private String source; // "myRegistrations" or null
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -85,47 +92,47 @@ public class EventDetailsActivity extends AppCompatActivity {
         tvRegCloses      = findViewById(R.id.tvRegCloses);
 
         Intent intent = getIntent();
-
-        // ← Receive userId passed from EventBrowsingActivity
-        userId           = intent.getStringExtra("userId");
-
-        eventId          = intent.getStringExtra("eventId");
-        eventTitle       = intent.getStringExtra("eventTitle");
-        eventOrganizer   = intent.getStringExtra("eventOrganizer");
-        eventDate        = intent.getStringExtra("eventDate");
-        eventVenue       = intent.getStringExtra("eventVenue");
-        eventCategory    = intent.getStringExtra("eventCategory");
-        eventSeatsBooked = intent.getIntExtra("eventSeatsBooked", 0);
-        eventSeatsTotal  = intent.getIntExtra("eventSeatsTotal", 0);
-        eventDescription = intent.getStringExtra("Description");
+        userId              = intent.getStringExtra("userId");
+        source              = intent.getStringExtra("source"); // null if coming from browsing
+        eventId             = intent.getStringExtra("eventId");
+        eventTitle          = intent.getStringExtra("eventTitle");
+        eventOrganizer      = intent.getStringExtra("eventOrganizer");
+        eventDate           = intent.getStringExtra("eventDate");
+        eventVenue          = intent.getStringExtra("eventVenue");
+        eventCategory       = intent.getStringExtra("eventCategory");
+        eventSeatsBooked    = intent.getIntExtra("eventSeatsBooked", 0);
+        eventSeatsTotal     = intent.getIntExtra("eventSeatsTotal", 0);
+        eventDescription    = intent.getStringExtra("Description");
         eventRegClosingDate = intent.getStringExtra("RegClosingDate");
-        eventTime        = intent.getStringExtra("Time");
-        eventFee         = intent.getStringExtra("fee");
+        eventTime           = intent.getStringExtra("Time");
+        eventFee            = intent.getStringExtra("fee");
 
         displayEventData();
 
-        // Back button — pass userId back to EventBrowsingActivity
+        // Check Firestore on load — disables Register button if already registered
+        checkIfAlreadyRegistered();
+
+        // Source-aware back button
         btnBackBottom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(EventDetailsActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
-                i.putExtra("userId", userId); // ← pass forward
-                startActivity(i);
+                navigateBack();
             }
         });
 
-        // Register button
         btnRegister.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int availableSeats = eventSeatsTotal - eventSeatsBooked;
                 if (availableSeats <= 0) {
-                    Toast.makeText(EventDetailsActivity.this, "Sorry, this event is fully booked!", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(EventDetailsActivity.this,
+                            "Sorry, this event is fully booked!", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 try {
                     if (!isRegistrationOpen()) {
-                        Toast.makeText(EventDetailsActivity.this, "Sorry, the deadline has already passed!", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(EventDetailsActivity.this,
+                                "Sorry, the deadline has already passed!", Toast.LENGTH_SHORT).show();
                         return;
                     }
                 } catch (ParseException e) {
@@ -135,7 +142,6 @@ public class EventDetailsActivity extends AppCompatActivity {
             }
         });
 
-        // Add to Calendar button
         btnAddToCalendar.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -148,18 +154,77 @@ public class EventDetailsActivity extends AppCompatActivity {
 
                 FirebaseFirestore.getInstance()
                         .collection("users")
-                        .document(userId) // ← uses real userId
+                        .document(userId)
                         .collection("calendarEvents")
                         .document(eventId)
                         .set(event_Cal)
                         .addOnSuccessListener(unused -> {
-                            Toast.makeText(EventDetailsActivity.this, "Added to Calendar!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(EventDetailsActivity.this,
+                                    "Added to Calendar!", Toast.LENGTH_SHORT).show();
                         })
                         .addOnFailureListener(e -> {
-                            Toast.makeText(EventDetailsActivity.this, "Failed to add to calendar", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(EventDetailsActivity.this,
+                                    "Failed to add to calendar", Toast.LENGTH_SHORT).show();
                         });
             }
         });
+    }
+
+    /**
+     * Navigates back to the correct activity depending on where
+     * the user came from.
+     */
+    private void navigateBack() {
+        if ("myRegistrations".equals(source)) {
+            Intent i = new Intent(EventDetailsActivity.this,
+                    MyRegistrationsActivity.class);
+            i.putExtra("userId", userId);
+            startActivity(i);
+        } else {
+            Intent i = new Intent(EventDetailsActivity.this,
+                    com.lums.eventhub.EventBrowsingActivity.class);
+            i.putExtra("userId", userId);
+            startActivity(i);
+        }
+        finish();
+    }
+
+    /**
+     * Checks whether the logged-in user already has a registration
+     * document for this event. If they do, the Register button is
+     * disabled immediately so they cannot register twice.
+     *
+     * Uses eventId as the document ID in the registrations subcollection
+     * (matching the .document(eventId).set(...) write in registerForEvent()).
+     */
+    private void checkIfAlreadyRegistered() {
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userId)
+                .collection("registrations")
+                .document(eventId)
+                .get()
+                .addOnSuccessListener((DocumentSnapshot doc) -> {
+                    if (doc.exists()) {
+                        setAlreadyRegisteredState();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Silently fail — button stays enabled, Firestore write
+                    // will simply overwrite if they somehow submit again
+                });
+    }
+
+    /**
+     * Puts the Register button into a disabled "Already Registered" state.
+     * Called both from checkIfAlreadyRegistered() and after a successful
+     * registration write.
+     */
+    private void setAlreadyRegisteredState() {
+        btnRegister.setEnabled(false);
+        btnRegister.setText("Already Registered ✓");
+        btnRegister.setBackgroundTintList(
+                android.content.res.ColorStateList.valueOf(0xFF4CAF50));
     }
 
     @SuppressLint({"UseCompatLoadingForColorStateLists", "ResourceType"})
@@ -194,7 +259,8 @@ public class EventDetailsActivity extends AppCompatActivity {
             tvSeatsPercent.setTextColor(0xFFE53935);
             btnRegister.setEnabled(false);
             btnRegister.setText("Sold Out");
-            btnRegister.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFFAAAAAA));
+            btnRegister.setBackgroundTintList(
+                    android.content.res.ColorStateList.valueOf(0xFFAAAAAA));
         } else if (availableSeats < eventSeatsTotal * 0.2) {
             tvSeats.setTextColor(0xFFF5A623);
             tvSeatsPercent.setTextColor(0xFFF5A623);
@@ -228,22 +294,29 @@ public class EventDetailsActivity extends AppCompatActivity {
         registrationData.put("category",       eventCategory);
         registrationData.put("seatsBooked",    eventSeatsBooked);
         registrationData.put("seatsTotal",     eventSeatsTotal);
+        registrationData.put("registeredAt",
+                com.google.firebase.firestore.FieldValue.serverTimestamp());
 
         FirebaseFirestore.getInstance()
                 .collection("users")
-                .document(userId) // ← uses real userId
+                .document(userId)
                 .collection("registrations")
-                .document(eventId)
+                .document(eventId) // eventId as doc ID prevents duplicates at DB level too
                 .set(registrationData)
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Registered successfully!", Toast.LENGTH_SHORT).show();
-                    btnRegister.setEnabled(false);
-                    btnRegister.setText("Registered ✓");
-                    btnRegister.setBackgroundTintList(
-                            android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+                    setAlreadyRegisteredState();
+
+                    // TODO: replace with launch to Person C's form activity once integrated
+                    // Intent confirmIntent = new Intent(this, RegistrationConfirmationActivity.class);
+                    // confirmIntent.putExtra("userId", userId);
+                    // ... pass event extras
+                    // startActivity(confirmIntent);
+                    // finish();
                 })
                 .addOnFailureListener(e -> {
-                    Toast.makeText(this, "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                            "Registration failed: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                 });
     }
 }
