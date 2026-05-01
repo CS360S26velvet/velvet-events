@@ -8,496 +8,360 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Unit tests for CheckInActivity logic (US-30)
+ * CheckInTest.java
  *
- * Covers: check-in counting, remaining count, stats updates,
- *         search/filter by name and studentId, payment status,
- *         marking attendees as checked in, edge cases.
+ * Unit tests for the two-step check-in flow:
+ *   Step 1 — CheckInActivity:             shows Approved events for organiser
+ *   Step 2 — CheckInParticipantsActivity: shows Approved-payment attendees only
  *
- * All logic is extracted from CheckInActivity into plain Java helpers —
- * no Android or Firestore dependencies needed.
+ * All logic mirrored from activity classes — no Android/Firestore dependencies.
  */
 public class CheckInTest {
 
-    // ─────────────────────────────────────────────
-    // Mirror of CheckInActivity.Attendee
-    // ─────────────────────────────────────────────
+    // ── Mirror models ─────────────────────────────────────────────────────────
+
+    static class EventItem {
+        String id, title, status, venue, date;
+        EventItem(String id, String title, String status, String venue, String date) {
+            this.id = id; this.title = title; this.status = status;
+            this.venue = venue; this.date = date;
+        }
+    }
 
     static class Attendee {
-        String id, name, studentId, paymentStatus;
-        boolean isCheckedIn;
-
+        String  id, name, studentId, paymentStatus, checkedInAt;
+        boolean checkedIn;
         Attendee(String id, String name, String studentId,
-                 String paymentStatus, boolean isCheckedIn) {
-            this.id            = id;
-            this.name          = name;
-            this.studentId     = studentId;
-            this.paymentStatus = paymentStatus;
-            this.isCheckedIn   = isCheckedIn;
+                 String paymentStatus, boolean checkedIn) {
+            this.id = id; this.name = name; this.studentId = studentId;
+            this.paymentStatus = paymentStatus; this.checkedIn = checkedIn;
+            this.checkedInAt = "";
         }
     }
 
-    // ─────────────────────────────────────────────
-    // Mirror of CheckInActivity.filterList()
-    // ─────────────────────────────────────────────
+    // ── Mirrored logic helpers ────────────────────────────────────────────────
 
-    private List<Attendee> filterList(List<Attendee> attendeeList, String query) {
-        List<Attendee> filtered = new ArrayList<>();
-        for (Attendee a : attendeeList) {
-            if (a.name.toLowerCase().contains(query.toLowerCase()) ||
-                    a.studentId.toLowerCase().contains(query.toLowerCase())) {
-                filtered.add(a);
-            }
-        }
-        return filtered;
+    private List<EventItem> filterApprovedEvents(List<EventItem> all) {
+        List<EventItem> result = new ArrayList<>();
+        for (EventItem e : all) if ("Approved".equals(e.status)) result.add(e);
+        return result;
     }
 
-    // ─────────────────────────────────────────────
-    // Mirror of checkedInCount calculation
-    // ─────────────────────────────────────────────
+    private List<Attendee> filterApprovedAttendees(List<Attendee> all) {
+        List<Attendee> result = new ArrayList<>();
+        for (Attendee a : all) if ("Approved".equals(a.paymentStatus)) result.add(a);
+        return result;
+    }
+
+    private List<Attendee> searchAttendees(List<Attendee> list, String query) {
+        if (query == null || query.isEmpty()) return new ArrayList<>(list);
+        List<Attendee> result = new ArrayList<>();
+        String q = query.toLowerCase();
+        for (Attendee a : list) {
+            if (a.name.toLowerCase().contains(q) || a.studentId.toLowerCase().contains(q))
+                result.add(a);
+        }
+        return result;
+    }
 
     private int countCheckedIn(List<Attendee> list) {
-        int count = 0;
-        for (Attendee a : list) {
-            if (a.isCheckedIn) count++;
-        }
-        return count;
+        int c = 0; for (Attendee a : list) if (a.checkedIn) c++; return c;
+    }
+    private int countRemaining(List<Attendee> list) { return list.size() - countCheckedIn(list); }
+    private int calcProgress(int checkedIn, int total) {
+        return total > 0 ? (checkedIn * 100) / total : 0;
+    }
+    private String nvl(String s, String fallback) {
+        return (s != null && !s.isEmpty()) ? s : fallback;
     }
 
-    private int countRemaining(List<Attendee> list) {
-        return list.size() - countCheckedIn(list);
-    }
+    // ── Sample data ───────────────────────────────────────────────────────────
 
-    // ─────────────────────────────────────────────
-    // Sample data — mirrors addSampleData() exactly
-    // ─────────────────────────────────────────────
-
-    private List<Attendee> attendeeList;
+    private List<EventItem> allEvents;
+    private List<Attendee>  allAttendees;
 
     @Before
     public void setUp() {
-        attendeeList = new ArrayList<>();
-        attendeeList.add(new Attendee("", "Fatima Malik",  "AT0023", "Paid",    true));
-        attendeeList.add(new Attendee("", "Hassan Raza",   "AT0041", "Paid",    false));
-        attendeeList.add(new Attendee("", "Zainab Ali",    "AT0055", "Paid",    true));
-        attendeeList.add(new Attendee("", "Bilal Khan",    "AT0067", "Pending", false));
-        attendeeList.add(new Attendee("", "Sara Ahmed",    "AT0078", "Paid",    false));
-        attendeeList.add(new Attendee("", "Usman Tariq",   "AT0089", "Paid",    false));
+        allEvents = new ArrayList<>();
+        allEvents.add(new EventItem("e1", "SPADES 2025",      "Approved",  "AH Auditorium", "Mar 20, 2026"));
+        allEvents.add(new EventItem("e2", "PSiFi 2026",       "Approved",  "CS Lawn",       "Mar 22, 2026"));
+        allEvents.add(new EventItem("e3", "Tech Workshop",    "Submitted", "SSE Building",  "Apr 1, 2026"));
+        allEvents.add(new EventItem("e4", "Alumni Mixer",     "Draft",     "Faculty Club",  "Apr 5, 2026"));
+        allEvents.add(new EventItem("e5", "Networking Night", "Rejected",  "—",             "—"));
+
+        allAttendees = new ArrayList<>();
+        allAttendees.add(new Attendee("r1", "Fatima Malik", "AT0023", "Approved", true));
+        allAttendees.add(new Attendee("r2", "Hassan Raza",  "AT0041", "Approved", false));
+        allAttendees.add(new Attendee("r3", "Zainab Ali",   "AT0055", "Approved", true));
+        allAttendees.add(new Attendee("r4", "Bilal Khan",   "AT0067", "Pending",  false));
+        allAttendees.add(new Attendee("r5", "Sara Ahmed",   "AT0078", "Approved", false));
+        allAttendees.add(new Attendee("r6", "Usman Tariq",  "AT0089", "Pending",  false));
     }
 
-    // ═══════════════════════════════════════════════
-    // US-30 — Stats: checkedIn, remaining, total
-    // ═══════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STEP 1 — CheckInActivity: Event list
+    // ═══════════════════════════════════════════════════════════════════════════
 
-    /**
-     * US-30: Total attendee count matches sample data size.
-     */
-    @Test
-    public void testTotalAttendeeCount() {
-        assertEquals(6, attendeeList.size());
+    @Test public void testOnlyApprovedEventsShown() {
+        assertEquals(2, filterApprovedEvents(allEvents).size());
     }
 
-    /**
-     * US-30: Checked-in count is correct from sample data (Fatima + Zainab).
-     */
-    @Test
-    public void testCheckedInCountFromSampleData() {
-        assertEquals(2, countCheckedIn(attendeeList));
+    @Test public void testSubmittedEventsNotShown() {
+        for (EventItem e : filterApprovedEvents(allEvents))
+            assertNotEquals("Submitted", e.status);
     }
 
-    /**
-     * US-30: Remaining count is total minus checked-in.
-     */
-    @Test
-    public void testRemainingCountFromSampleData() {
-        assertEquals(4, countRemaining(attendeeList));
+    @Test public void testDraftEventsNotShown() {
+        for (EventItem e : filterApprovedEvents(allEvents))
+            assertNotEquals("Draft", e.status);
     }
 
-    /**
-     * US-30: checkedIn + remaining always equals total.
-     */
-    @Test
-    public void testCheckedInPlusRemainingEqualsTotal() {
-        int checkedIn = countCheckedIn(attendeeList);
-        int remaining = countRemaining(attendeeList);
-        assertEquals(attendeeList.size(), checkedIn + remaining);
+    @Test public void testRejectedEventsNotShown() {
+        for (EventItem e : filterApprovedEvents(allEvents))
+            assertNotEquals("Rejected", e.status);
     }
 
-    /**
-     * US-30: When no one is checked in, checkedIn=0 and remaining=total.
-     */
-    @Test
-    public void testStatsWhenNobodyCheckedIn() {
+    @Test public void testAllShownEventsAreApproved() {
+        for (EventItem e : filterApprovedEvents(allEvents))
+            assertEquals("Approved", e.status);
+    }
+
+    @Test public void testApprovedEventTitlesCorrect() {
+        List<EventItem> approved = filterApprovedEvents(allEvents);
+        assertEquals("SPADES 2025", approved.get(0).title);
+        assertEquals("PSiFi 2026",  approved.get(1).title);
+    }
+
+    @Test public void testEmptyEventListReturnsNoApproved() {
+        assertEquals(0, filterApprovedEvents(new ArrayList<>()).size());
+    }
+
+    @Test public void testAllSubmittedReturnsNoApproved() {
+        List<EventItem> events = new ArrayList<>();
+        events.add(new EventItem("x1", "A", "Submitted", "—", "—"));
+        events.add(new EventItem("x2", "B", "Submitted", "—", "—"));
+        assertEquals(0, filterApprovedEvents(events).size());
+    }
+
+    @Test public void testEventVenueStoredCorrectly() {
+        List<EventItem> approved = filterApprovedEvents(allEvents);
+        assertEquals("AH Auditorium", approved.get(0).venue);
+    }
+
+    @Test public void testEventDateStoredCorrectly() {
+        List<EventItem> approved = filterApprovedEvents(allEvents);
+        assertEquals("Mar 20, 2026", approved.get(0).date);
+    }
+
+    @Test public void testSingleApprovedEventShown() {
+        List<EventItem> events = new ArrayList<>();
+        events.add(new EventItem("e1", "Only Event", "Approved", "Room 101", "May 1, 2026"));
+        assertEquals(1, filterApprovedEvents(events).size());
+    }
+
+    @Test public void testEventIdStoredCorrectly() {
+        List<EventItem> approved = filterApprovedEvents(allEvents);
+        assertEquals("e1", approved.get(0).id);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STEP 2 — Attendee filtering (paymentStatus == Approved only)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Test public void testOnlyApprovedPaymentAttendeesShown() {
+        assertEquals(4, filterApprovedAttendees(allAttendees).size());
+    }
+
+    @Test public void testPendingPaymentAttendeesNotShown() {
+        for (Attendee a : filterApprovedAttendees(allAttendees))
+            assertNotEquals("Pending", a.paymentStatus);
+    }
+
+    @Test public void testAllShownAttendeesHaveApprovedPayment() {
+        for (Attendee a : filterApprovedAttendees(allAttendees))
+            assertEquals("Approved", a.paymentStatus);
+    }
+
+    @Test public void testEmptyAttendeeListReturnsEmpty() {
+        assertEquals(0, filterApprovedAttendees(new ArrayList<>()).size());
+    }
+
+    @Test public void testAllPendingAttendeesReturnsEmpty() {
         List<Attendee> list = new ArrayList<>();
-        list.add(new Attendee("1", "Ali",   "AT001", "Paid", false));
-        list.add(new Attendee("2", "Sara",  "AT002", "Paid", false));
-        list.add(new Attendee("3", "Bilal", "AT003", "Paid", false));
+        list.add(new Attendee("1", "Ali",  "AT001", "Pending", false));
+        list.add(new Attendee("2", "Sara", "AT002", "Pending", false));
+        assertEquals(0, filterApprovedAttendees(list).size());
+    }
 
+    @Test public void testApprovedAttendeeNamesCorrect() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals("Fatima Malik", approved.get(0).name);
+        assertEquals("Hassan Raza",  approved.get(1).name);
+        assertEquals("Zainab Ali",   approved.get(2).name);
+        assertEquals("Sara Ahmed",   approved.get(3).name);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STEP 2 — Search / Filter
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Test public void testEmptySearchReturnsAll() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(approved.size(), searchAttendees(approved, "").size());
+    }
+
+    @Test public void testSearchByFirstName() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        List<Attendee> result   = searchAttendees(approved, "fatima");
+        assertEquals(1, result.size());
+        assertEquals("Fatima Malik", result.get(0).name);
+    }
+
+    @Test public void testSearchByLastName() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        List<Attendee> result   = searchAttendees(approved, "raza");
+        assertEquals(1, result.size());
+        assertEquals("Hassan Raza", result.get(0).name);
+    }
+
+    @Test public void testSearchIsCaseInsensitive() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(searchAttendees(approved, "ZAINAB").size(),
+                searchAttendees(approved, "zainab").size());
+    }
+
+    @Test public void testSearchByExactStudentId() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        List<Attendee> result   = searchAttendees(approved, "AT0023");
+        assertEquals(1, result.size());
+        assertEquals("Fatima Malik", result.get(0).name);
+    }
+
+    @Test public void testSearchByPartialStudentId() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        List<Attendee> result   = searchAttendees(approved, "0041");
+        assertEquals(1, result.size());
+        assertEquals("Hassan Raza", result.get(0).name);
+    }
+
+    @Test public void testSearchNoMatchReturnsEmpty() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(0, searchAttendees(approved, "xyz_no_match_9999").size());
+    }
+
+    @Test public void testSearchNullQueryReturnsAll() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(approved.size(), searchAttendees(approved, null).size());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STEP 2 — Stats and Progress
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    @Test public void testCheckedInCountFromApprovedList() {
+        // Fatima (r1) and Zainab (r3) are checked in
+        assertEquals(2, countCheckedIn(filterApprovedAttendees(allAttendees)));
+    }
+
+    @Test public void testRemainingCountFromApprovedList() {
+        assertEquals(2, countRemaining(filterApprovedAttendees(allAttendees)));
+    }
+
+    @Test public void testCheckedInPlusRemainingEqualsTotal() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(approved.size(), countCheckedIn(approved) + countRemaining(approved));
+    }
+
+    @Test public void testProgressZeroWhenNoneCheckedIn() {
+        assertEquals(0, calcProgress(0, 10));
+    }
+
+    @Test public void testProgressHundredWhenAllCheckedIn() {
+        assertEquals(100, calcProgress(10, 10));
+    }
+
+    @Test public void testProgressFiftyPercent() {
+        assertEquals(50, calcProgress(5, 10));
+    }
+
+    @Test public void testProgressZeroForEmptyList() {
+        assertEquals(0, calcProgress(0, 0));
+    }
+
+    @Test public void testStatsWhenNobodyCheckedIn() {
+        List<Attendee> list = new ArrayList<>();
+        list.add(new Attendee("1", "Ali",  "AT001", "Approved", false));
+        list.add(new Attendee("2", "Sara", "AT002", "Approved", false));
         assertEquals(0, countCheckedIn(list));
-        assertEquals(3, countRemaining(list));
+        assertEquals(2, countRemaining(list));
     }
 
-    /**
-     * US-30: When everyone is checked in, remaining=0.
-     */
-    @Test
-    public void testStatsWhenEveryoneCheckedIn() {
+    @Test public void testStatsWhenEveryoneCheckedIn() {
         List<Attendee> list = new ArrayList<>();
-        list.add(new Attendee("1", "Ali",  "AT001", "Paid", true));
-        list.add(new Attendee("2", "Sara", "AT002", "Paid", true));
-
+        list.add(new Attendee("1", "Ali",  "AT001", "Approved", true));
+        list.add(new Attendee("2", "Sara", "AT002", "Approved", true));
         assertEquals(2, countCheckedIn(list));
         assertEquals(0, countRemaining(list));
     }
 
-    /**
-     * US-30: Stats with a single attendee not checked in.
-     */
-    @Test
-    public void testStatsWithSingleAttendeeNotCheckedIn() {
-        List<Attendee> list = new ArrayList<>();
-        list.add(new Attendee("1", "Ali", "AT001", "Paid", false));
+    // ═══════════════════════════════════════════════════════════════════════════
+    // STEP 2 — Check-In Action
+    // ═══════════════════════════════════════════════════════════════════════════
 
-        assertEquals(0, countCheckedIn(list));
-        assertEquals(1, countRemaining(list));
+    @Test public void testMarkAttendeeCheckedIn() {
+        Attendee hassan = allAttendees.get(1);
+        assertFalse(hassan.checkedIn);
+        hassan.checkedIn = true;
+        assertTrue(hassan.checkedIn);
     }
 
-    /**
-     * US-30: Stats with empty list returns zeros.
-     */
-    @Test
-    public void testStatsWithEmptyList() {
-        List<Attendee> list = new ArrayList<>();
-        assertEquals(0, countCheckedIn(list));
-        assertEquals(0, countRemaining(list));
-        assertEquals(0, list.size());
+    @Test public void testCheckedInCountIncreasesAfterCheckIn() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        int before = countCheckedIn(approved);
+        approved.get(1).checkedIn = true; // Hassan
+        assertEquals(before + 1, countCheckedIn(approved));
     }
 
-    // ═══════════════════════════════════════════════
-    // US-30 — Mark attendee as checked in
-    // ═══════════════════════════════════════════════
-
-    /**
-     * US-30: Marking an attendee checked in flips isCheckedIn to true.
-     */
-    @Test
-    public void testMarkAttendeeCheckedIn() {
-        Attendee hassan = attendeeList.get(1); // Hassan — not checked in
-        assertFalse(hassan.isCheckedIn);
-
-        hassan.isCheckedIn = true;
-
-        assertTrue(hassan.isCheckedIn);
+    @Test public void testRemainingDecreasesAfterCheckIn() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        int before = countRemaining(approved);
+        approved.get(1).checkedIn = true;
+        assertEquals(before - 1, countRemaining(approved));
     }
 
-    /**
-     * US-30: After marking one attendee, checkedIn count increases by 1.
-     */
-    @Test
-    public void testCheckedInCountIncreasesAfterCheckIn() {
-        int before = countCheckedIn(attendeeList);
-        attendeeList.get(1).isCheckedIn = true; // check in Hassan
-        int after = countCheckedIn(attendeeList);
-
-        assertEquals(before + 1, after);
+    @Test public void testCheckingInAllMakesRemainingZero() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        for (Attendee a : approved) a.checkedIn = true;
+        assertEquals(0, countRemaining(approved));
     }
 
-    /**
-     * US-30: After marking one attendee, remaining count decreases by 1.
-     */
-    @Test
-    public void testRemainingCountDecreasesAfterCheckIn() {
-        int before = countRemaining(attendeeList);
-        attendeeList.get(1).isCheckedIn = true; // check in Hassan
-        int after = countRemaining(attendeeList);
-
-        assertEquals(before - 1, after);
+    @Test public void testAlreadyCheckedInRemainsCheckedIn() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        int before = countCheckedIn(approved);
+        approved.get(0).checkedIn = true; // Fatima already checked in
+        assertEquals(before, countCheckedIn(approved));
     }
 
-    /**
-     * US-30: Checking in all remaining attendees makes remaining = 0.
-     */
-    @Test
-    public void testCheckingInAllMakesRemainingZero() {
-        for (Attendee a : attendeeList) {
-            a.isCheckedIn = true;
-        }
-        assertEquals(0, countRemaining(attendeeList));
-        assertEquals(attendeeList.size(), countCheckedIn(attendeeList));
+    @Test public void testSequentialCheckInsUpdateCount() {
+        List<Attendee> approved = filterApprovedAttendees(allAttendees);
+        assertEquals(2, countCheckedIn(approved));
+        approved.get(1).checkedIn = true; assertEquals(3, countCheckedIn(approved));
+        approved.get(3).checkedIn = true; assertEquals(4, countCheckedIn(approved));
     }
 
-    /**
-     * US-30: Already checked-in attendee stays checked in (no double toggle).
-     */
-    @Test
-    public void testAlreadyCheckedInAttendeeRemainsCheckedIn() {
-        Attendee fatima = attendeeList.get(0); // already checked in
-        assertTrue(fatima.isCheckedIn);
+    // ═══════════════════════════════════════════════════════════════════════════
+    // nvl helper
+    // ═══════════════════════════════════════════════════════════════════════════
 
-        fatima.isCheckedIn = true; // set again — should still be true
-        assertTrue(fatima.isCheckedIn);
-
-        assertEquals(2, countCheckedIn(attendeeList)); // count unchanged
+    @Test public void testNvlReturnsFallbackForNull() {
+        assertEquals("fallback", nvl(null, "fallback"));
     }
 
-    /**
-     * US-30: Checking in multiple attendees one by one updates count correctly.
-     */
-    @Test
-    public void testSequentialCheckInsUpdateCountCorrectly() {
-        // Start: 2 checked in
-        assertEquals(2, countCheckedIn(attendeeList));
-
-        attendeeList.get(1).isCheckedIn = true; // Hassan
-        assertEquals(3, countCheckedIn(attendeeList));
-
-        attendeeList.get(3).isCheckedIn = true; // Bilal
-        assertEquals(4, countCheckedIn(attendeeList));
-
-        attendeeList.get(4).isCheckedIn = true; // Sara
-        assertEquals(5, countCheckedIn(attendeeList));
+    @Test public void testNvlReturnsFallbackForEmpty() {
+        assertEquals("fallback", nvl("", "fallback"));
     }
 
-    // ═══════════════════════════════════════════════
-    // US-30 — Search / filter by name
-    // ═══════════════════════════════════════════════
-
-    /**
-     * US-30: Empty search query returns all attendees.
-     */
-    @Test
-    public void testEmptySearchReturnsAll() {
-        List<Attendee> result = filterList(attendeeList, "");
-        assertEquals(attendeeList.size(), result.size());
-    }
-
-    /**
-     * US-30: Search by exact first name (case-insensitive) returns correct attendee.
-     */
-    @Test
-    public void testSearchByFirstNameCaseInsensitive() {
-        List<Attendee> result = filterList(attendeeList, "fatima");
-        assertEquals(1, result.size());
-        assertEquals("Fatima Malik", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search by last name returns correct attendee.
-     */
-    @Test
-    public void testSearchByLastName() {
-        List<Attendee> result = filterList(attendeeList, "malik");
-        assertEquals(1, result.size());
-        assertEquals("Fatima Malik", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search with uppercase query still matches (case-insensitive).
-     */
-    @Test
-    public void testSearchCaseInsensitiveUppercase() {
-        List<Attendee> result = filterList(attendeeList, "HASSAN");
-        assertEquals(1, result.size());
-        assertEquals("Hassan Raza", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search with mixed case query matches correctly.
-     */
-    @Test
-    public void testSearchCaseInsensitiveMixedCase() {
-        List<Attendee> result = filterList(attendeeList, "ZaInAb");
-        assertEquals(1, result.size());
-        assertEquals("Zainab Ali", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search query that matches no attendee returns empty list.
-     */
-    @Test
-    public void testSearchNoMatchReturnsEmpty() {
-        List<Attendee> result = filterList(attendeeList, "xyz_no_match");
-        assertEquals(0, result.size());
-    }
-
-    /**
-     * US-30: Search by partial name returns correct attendee.
-     */
-    @Test
-    public void testSearchByPartialName() {
-        List<Attendee> result = filterList(attendeeList, "zai");
-        assertEquals(1, result.size());
-        assertEquals("Zainab Ali", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search query matching multiple names returns all matches.
-     */
-    @Test
-    public void testSearchMatchingMultipleNames() {
-        // "a" appears in Fatima, Zainab, Sara, Hassan, Bilal, Usman — all 6
-        List<Attendee> result = filterList(attendeeList, "a");
-        assertEquals(6, result.size());
-    }
-
-    // ═══════════════════════════════════════════════
-    // US-30 — Search / filter by student ID
-    // ═══════════════════════════════════════════════
-
-    /**
-     * US-30: Search by exact student ID returns correct attendee.
-     */
-    @Test
-    public void testSearchByExactStudentId() {
-        List<Attendee> result = filterList(attendeeList, "AT0041");
-        assertEquals(1, result.size());
-        assertEquals("Hassan Raza", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search by partial student ID returns correct attendee.
-     */
-    @Test
-    public void testSearchByPartialStudentId() {
-        List<Attendee> result = filterList(attendeeList, "AT0067");
-        assertEquals(1, result.size());
-        assertEquals("Bilal Khan", result.get(0).name);
-    }
-
-    /**
-     * US-30: Student ID search is case-insensitive.
-     */
-    @Test
-    public void testSearchByStudentIdCaseInsensitive() {
-        List<Attendee> result = filterList(attendeeList, "at0023");
-        assertEquals(1, result.size());
-        assertEquals("Fatima Malik", result.get(0).name);
-    }
-
-    /**
-     * US-30: Search by shared prefix "AT00" matches all attendees.
-     */
-    @Test
-    public void testSearchBySharedStudentIdPrefixMatchesAll() {
-        List<Attendee> result = filterList(attendeeList, "AT00");
-        assertEquals(6, result.size());
-    }
-
-    /**
-     * US-30: Search by non-existent student ID returns empty list.
-     */
-    @Test
-    public void testSearchByNonExistentStudentIdReturnsEmpty() {
-        List<Attendee> result = filterList(attendeeList, "AT9999");
-        assertEquals(0, result.size());
-    }
-
-    // ═══════════════════════════════════════════════
-    // US-30 — Payment status
-    // ═══════════════════════════════════════════════
-
-    /**
-     * US-30: Payment status "Paid" is stored correctly.
-     */
-    @Test
-    public void testPaymentStatusPaidStoredCorrectly() {
-        Attendee fatima = attendeeList.get(0);
-        assertEquals("Paid", fatima.paymentStatus);
-    }
-
-    /**
-     * US-30: Payment status "Pending" is stored correctly.
-     */
-    @Test
-    public void testPaymentStatusPendingStoredCorrectly() {
-        Attendee bilal = attendeeList.get(3);
-        assertEquals("Pending", bilal.paymentStatus);
-    }
-
-    /**
-     * US-30: Correct count of Paid attendees in sample data.
-     */
-    @Test
-    public void testPaidAttendeeCount() {
-        int paidCount = 0;
-        for (Attendee a : attendeeList) {
-            if (a.paymentStatus.equals("Paid")) paidCount++;
-        }
-        assertEquals(5, paidCount);
-    }
-
-    /**
-     * US-30: Correct count of Pending attendees in sample data.
-     */
-    @Test
-    public void testPendingAttendeeCount() {
-        int pendingCount = 0;
-        for (Attendee a : attendeeList) {
-            if (a.paymentStatus.equals("Pending")) pendingCount++;
-        }
-        assertEquals(1, pendingCount);
-    }
-
-    /**
-     * US-30: Paid + Pending counts add up to total.
-     */
-    @Test
-    public void testPaidPlusPendingEqualsTotal() {
-        int paid = 0, pending = 0;
-        for (Attendee a : attendeeList) {
-            if (a.paymentStatus.equals("Paid"))    paid++;
-            if (a.paymentStatus.equals("Pending")) pending++;
-        }
-        assertEquals(attendeeList.size(), paid + pending);
-    }
-
-    /**
-     * US-30: Pending attendee can still be checked in regardless of payment.
-     */
-    @Test
-    public void testPendingAttendeeCanBeCheckedIn() {
-        Attendee bilal = attendeeList.get(3);
-        assertEquals("Pending", bilal.paymentStatus);
-        assertFalse(bilal.isCheckedIn);
-
-        bilal.isCheckedIn = true;
-        assertTrue(bilal.isCheckedIn);
-    }
-
-    // ═══════════════════════════════════════════════
-    // US-30 — Attendee model fields
-    // ═══════════════════════════════════════════════
-
-    /**
-     * US-30: Attendee constructor stores all fields correctly.
-     */
-    @Test
-    public void testAttendeeConstructorStoresAllFields() {
-        Attendee a = new Attendee("doc123", "Ali Hassan", "AT0099", "Paid", false);
-
-        assertEquals("doc123",    a.id);
-        assertEquals("Ali Hassan", a.name);
-        assertEquals("AT0099",    a.studentId);
-        assertEquals("Paid",      a.paymentStatus);
-        assertFalse(a.isCheckedIn);
-    }
-
-    /**
-     * US-30: Attendee with empty id string (not yet in Firestore) is valid.
-     */
-    @Test
-    public void testAttendeeWithEmptyIdIsValid() {
-        Attendee a = new Attendee("", "Test User", "AT0001", "Paid", false);
-        assertNotNull(a);
-        assertTrue(a.id.isEmpty());
-    }
-
-    /**
-     * US-30: isCheckedIn defaults to false for new unchecked attendee.
-     */
-    @Test
-    public void testNewAttendeeDefaultNotCheckedIn() {
-        Attendee a = new Attendee("1", "New User", "AT0100", "Paid", false);
-        assertFalse(a.isCheckedIn);
+    @Test public void testNvlReturnsValueWhenPresent() {
+        assertEquals("value", nvl("value", "fallback"));
     }
 }
