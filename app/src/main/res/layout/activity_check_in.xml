@@ -52,7 +52,7 @@
                     android:id="@+id/tvCheckInSubtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="—"
+                    android:text="Select an event to check in participants"
                     android:textColor="#BBDEFB"
                     android:textSize="12sp"
                     android:layout_marginTop="2dp"/>
@@ -63,160 +63,13 @@
 
     </LinearLayout>
 
-    <!-- STAT CARDS -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="12dp"
-            android:layout_marginEnd="6dp"
-            android:elevation="2dp">
-            <TextView
-                android:id="@+id/tvTotalRegistered"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                android:textColor="#1565C0"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Total Registered"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="12dp"
-            android:layout_marginEnd="6dp"
-            android:elevation="2dp">
-            <TextView
-                android:id="@+id/tvCheckedIn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                android:textColor="#2E7D32"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Checked In"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="12dp"
-            android:elevation="2dp">
-            <TextView
-                android:id="@+id/tvRemaining"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                android:textColor="#1A1A2E"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Remaining"
-                android:textSize="10sp"
-                android:textColor="#666666"/>
-        </LinearLayout>
-
-    </LinearLayout>
-
-    <!-- PROGRESS BAR -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:background="#FFFFFF"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
-        android:paddingTop="10dp"
-        android:paddingBottom="10dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="8dp"
-        android:elevation="2dp">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="6dp">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Progress"
-                android:textSize="12sp"
-                android:textStyle="bold"
-                android:textColor="#333333"/>
-
-            <TextView
-                android:id="@+id/tvCheckInProgress"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0% checked in"
-                android:textSize="12sp"
-                android:textColor="#1565C0"
-                android:textStyle="bold"/>
-
-        </LinearLayout>
-
-        <ProgressBar
-            android:id="@+id/progressCheckIn"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="10dp"
-            android:max="100"
-            android:progress="0"
-            android:progressTint="#1565C0"
-            android:progressBackgroundTint="#E8EAF6"/>
-
-    </LinearLayout>
-
-    <!-- SEARCH BAR -->
-    <EditText
-        android:id="@+id/etSearch"
-        android:layout_width="match_parent"
-        android:layout_height="46dp"
-        android:hint="🔍  Search by name or student ID..."
-        android:background="#FFFFFF"
-        android:padding="10dp"
-        android:textSize="14sp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="6dp"/>
-
-    <!-- ATTENDEE LIST -->
+    <!-- EVENT LIST -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:padding="12dp"
+        android:clipToPadding="false"/>
 
 </LinearLayout>
