@@ -26,6 +26,10 @@ package com.lums.eventhub;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.util.Base64;
+import android.widget.ImageView;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -193,6 +197,9 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                         r.studentName     = doc.getString("studentName");
                         r.studentId       = doc.getString("studentId");
                         r.paymentProofUrl = doc.getString("paymentProofUrl");
+                        r.accommodationProofUrl    = doc.getString("accommodationProofUrl");
+                        r.paymentProofBase64       = doc.getString("paymentProofBase64");
+                        r.accommodationProofBase64 = doc.getString("accommodationProofBase64");
                         r.amount          = doc.getString("amount");
                         r.paymentStatus   = doc.getString("paymentStatus");
                         r.rejectionReason = doc.getString("rejectionReason");
@@ -212,6 +219,9 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                         if (r.amount         == null) r.amount         = "PKR 500";
                         if (r.paymentStatus  == null) r.paymentStatus  = "Pending";
                         if (r.rejectionReason== null) r.rejectionReason= "";
+                        if (r.accommodationProofUrl    == null) r.accommodationProofUrl    = "";
+                        if (r.paymentProofBase64       == null) r.paymentProofBase64       = "";
+                        if (r.accommodationProofBase64 == null) r.accommodationProofBase64 = "";
 
                         allRegistrants.add(r);
                     }
@@ -313,15 +323,19 @@ public class PaymentVerificationActivity extends AppCompatActivity {
         View dialogView = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_payment_detail, null);
 
-        TextView tvName      = dialogView.findViewById(R.id.tvDetailName);
-        TextView tvId        = dialogView.findViewById(R.id.tvDetailId);
-        TextView tvSubmitted = dialogView.findViewById(R.id.tvDetailSubmitted);
-        TextView tvAmount    = dialogView.findViewById(R.id.tvDetailAmount);
-        TextView tvStatus    = dialogView.findViewById(R.id.tvDetailStatus);
-        Button   btnViewProof= dialogView.findViewById(R.id.btnViewProof);
-        EditText etReason    = dialogView.findViewById(R.id.etRejectionReason);
-        Button   btnApprove  = dialogView.findViewById(R.id.btnConfirmApprove);
-        Button   btnReject   = dialogView.findViewById(R.id.btnRejectWithReason);
+        TextView  tvName      = dialogView.findViewById(R.id.tvDetailName);
+        TextView  tvId        = dialogView.findViewById(R.id.tvDetailId);
+        TextView  tvSubmitted = dialogView.findViewById(R.id.tvDetailSubmitted);
+        TextView  tvAmount    = dialogView.findViewById(R.id.tvDetailAmount);
+        TextView  tvStatus    = dialogView.findViewById(R.id.tvDetailStatus);
+        ImageView imgRegProof      = dialogView.findViewById(R.id.imgRegProof);
+        ImageView imgAccomProof    = dialogView.findViewById(R.id.imgAccomProof);
+        TextView  tvNoRegProof     = dialogView.findViewById(R.id.tvNoRegProof);
+        TextView  tvNoAccomProof   = dialogView.findViewById(R.id.tvNoAccomProof);
+        TextView  tvAccomProofLabel= dialogView.findViewById(R.id.tvAccomProofLabel);
+        EditText  etReason    = dialogView.findViewById(R.id.etRejectionReason);
+        Button    btnApprove  = dialogView.findViewById(R.id.btnConfirmApprove);
+        Button    btnReject   = dialogView.findViewById(R.id.btnRejectWithReason);
 
         tvName.setText(r.studentName);
         tvId.setText(r.studentId);
@@ -329,7 +343,6 @@ public class PaymentVerificationActivity extends AppCompatActivity {
         tvAmount.setText(r.amount);
         tvStatus.setText(r.paymentStatus);
 
-        // Colour-code status
         int statusColor;
         switch (r.paymentStatus) {
             case "Approved": statusColor = 0xFF4CAF50; break;
@@ -338,25 +351,50 @@ public class PaymentVerificationActivity extends AppCompatActivity {
         }
         tvStatus.setTextColor(statusColor);
 
-        // Pre-fill rejection reason if editing
         if (!r.rejectionReason.isEmpty()) etReason.setText(r.rejectionReason);
+
+        // ── Registration Proof image ───────────────────────────────────────
+        if (r.paymentProofBase64 != null && !r.paymentProofBase64.isEmpty()) {
+            Bitmap bmp = base64ToBitmap(r.paymentProofBase64);
+            if (bmp != null) {
+                imgRegProof.setImageBitmap(bmp);
+                imgRegProof.setVisibility(android.view.View.VISIBLE);
+                if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.GONE);
+            } else {
+                imgRegProof.setVisibility(android.view.View.GONE);
+                if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.VISIBLE);
+            }
+        } else {
+            imgRegProof.setVisibility(android.view.View.GONE);
+            if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.VISIBLE);
+        }
+
+        // ── Accommodation Proof image ──────────────────────────────────────
+        boolean hasAccomProof = r.accommodationProofBase64 != null
+                && !r.accommodationProofBase64.isEmpty();
+        if (tvAccomProofLabel != null)
+            tvAccomProofLabel.setVisibility(hasAccomProof ? android.view.View.VISIBLE : android.view.View.GONE);
+
+        if (hasAccomProof) {
+            Bitmap bmp = base64ToBitmap(r.accommodationProofBase64);
+            if (bmp != null) {
+                imgAccomProof.setImageBitmap(bmp);
+                imgAccomProof.setVisibility(android.view.View.VISIBLE);
+                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(android.view.View.GONE);
+            } else {
+                imgAccomProof.setVisibility(android.view.View.GONE);
+                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(android.view.View.VISIBLE);
+            }
+        } else {
+            if (imgAccomProof != null)   imgAccomProof.setVisibility(android.view.View.GONE);
+            if (tvNoAccomProof != null)  tvNoAccomProof.setVisibility(android.view.View.GONE);
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(dialogView)
                 .create();
 
-        btnViewProof.setOnClickListener(v -> {
-            if (r.paymentProofUrl != null && !r.paymentProofUrl.isEmpty()) {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(r.paymentProofUrl)));
-            } else {
-                Toast.makeText(this, "No proof URL available.", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnApprove.setOnClickListener(v -> {
-            dialog.dismiss();
-            approveRegistrant(r);
-        });
+        btnApprove.setOnClickListener(v -> { dialog.dismiss(); approveRegistrant(r); });
 
         btnReject.setOnClickListener(v -> {
             String reason = etReason.getText().toString().trim();
@@ -372,13 +410,24 @@ public class PaymentVerificationActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    /** Decodes a Base64 string back into a Bitmap. */
+    private Bitmap base64ToBitmap(String base64) {
+        try {
+            byte[] bytes = Base64.decode(base64, Base64.NO_WRAP);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     // -------------------------------------------------------------------------
     // Registrant model
     // -------------------------------------------------------------------------
 
     static class Registrant {
         String docId, studentName, studentId, submittedDate;
-        String paymentProofUrl, amount, paymentStatus, rejectionReason;
+        String paymentProofUrl, accommodationProofUrl, amount, paymentStatus, rejectionReason;
+        String paymentProofBase64, accommodationProofBase64;
     }
 
     // -------------------------------------------------------------------------

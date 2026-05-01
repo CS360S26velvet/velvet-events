@@ -36,7 +36,8 @@ public class AttendeeActivity extends AppCompatActivity {
     private TextView tvRegisteredCount;
     private TextView tvNotifCount;
     private FirebaseFirestore db;
-    private String userId; // ← no longer hardcoded
+    private String userId;
+    private String username;
     private LinearLayout recentActivityList;
 
     @Override
@@ -46,6 +47,7 @@ public class AttendeeActivity extends AppCompatActivity {
 
         // ← Receive userId from LoginActivity
         userId = getIntent().getStringExtra("userId");
+        username = getIntent().getStringExtra("username"); if (username == null) username = "";
 
         btnBrowseEvents    = (Button) findViewById(R.id.btnBrowseEvents);
         navBrowseEvents    = (Button) findViewById(R.id.navBrowseEvents);
@@ -66,6 +68,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -75,6 +78,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.EventBrowsingActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -84,6 +88,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.AttendeeCalendarActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -93,6 +98,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.NotificationsActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -102,6 +108,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.NotificationsActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -111,6 +118,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -120,6 +128,7 @@ public class AttendeeActivity extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.MyRegistrationsActivity.class);
                 intent.putExtra("userId", userId);
+                intent.putExtra("username", username);
                 startActivity(intent);
             }
         });
@@ -165,7 +174,7 @@ public class AttendeeActivity extends AppCompatActivity {
                 });
     }
     /**
-    * loads the recently registered events to show as recent activity
+     * loads the recently registered events to show as recent activity
      */
 
     private void loadRecentActivity() {

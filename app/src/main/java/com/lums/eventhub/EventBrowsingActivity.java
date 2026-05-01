@@ -17,41 +17,43 @@ import java.util.List;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-/**
- * EventBrowsingActivity.java
- * Displays all approved events fetched from Firestore.
- * Allows attendees to search events by title and filter
- * by category (All, Society Events, Workshops/Seminars).
- * Each event card has a "View Details" button that navigates
- * to EventDetailsActivity.
- *
- * Receives userId via Intent and passes it forward to all
- * subsequent activities.
- */
 
+/**
+ * EventBrowsingActivity.java  (UPDATED)
+ *
+ * CHANGES:
+ *   1. Receives and forwards "username" (e.g. "#AT_Bilal") so EventDetailsActivity
+ *      can extract the attendee name for the payment verification list
+ *   2. Loads from BOTH events/ (status==Approved) AND proposals/ (status==Approved)
+ *      so org-submitted events show up on attendee side
+ *   3. Passes eventId only to EventDetailsActivity — all other data loaded live from
+ *      Firestore inside EventDetailsActivity (startDate, endDate, fees, schedule etc.)
+ *   Everything else identical to original.
+ */
 public class EventBrowsingActivity extends AppCompatActivity {
-    // Search
+
     EditText etSearch;
     Button searchbtn;
-    // Filter buttons
     Button filterALLbtn, filterSocietybtn, filterWorkshopbtn;
     Button navBrowseEvents, navMyRegistrations, navNotifs, navHome, logout;
     TextView count_results;
     String filter = "All";
 
     LinearLayout eventGrid;
-    List<Event> allEvents = new ArrayList<>();
+    List<Event> allEvents      = new ArrayList<>();
     List<Event> filteredEvents = new ArrayList<>();
 
-    private String userId; // ← no longer hardcoded
+    private String userId;
+    private String username;   // NEW — forwarded to EventDetailsActivity
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.event_browsing);
 
-        // ← Receive userId from previous activity
-        userId = getIntent().getStringExtra("userId");
+        userId   = getIntent().getStringExtra("userId");
+        username = getIntent().getStringExtra("username");   // NEW
+        if (username == null) username = "";
 
         etSearch           = findViewById(R.id.etSearch);
         searchbtn          = findViewById(R.id.btnSearch);
@@ -68,85 +70,57 @@ public class EventBrowsingActivity extends AppCompatActivity {
 
         loadEventsFromFirebase();
 
-        searchbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String text = etSearch.getText().toString().trim();
-                filter_events(text);
-            }
+        searchbtn.setOnClickListener(v ->
+                filter_events(etSearch.getText().toString().trim()));
+
+        filterALLbtn.setOnClickListener(v -> {
+            filter = "All";
+            filter_events(etSearch.getText().toString().trim());
+        });
+        filterWorkshopbtn.setOnClickListener(v -> {
+            filter = "Workshops/Seminars";
+            filter_events(etSearch.getText().toString().trim());
+        });
+        filterSocietybtn.setOnClickListener(v -> {
+            filter = "Society Events";
+            filter_events(etSearch.getText().toString().trim());
         });
 
-        filterALLbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                filter = "All";
-                filter_events(etSearch.getText().toString().trim());
-            }
+        navMyRegistrations.setOnClickListener(v -> {
+            Intent i = new Intent(this, MyRegistrationsActivity.class);
+            i.putExtra("userId",   userId);
+            i.putExtra("username", username);
+            startActivity(i);
         });
 
-        filterWorkshopbtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                filter = "Workshops/Seminars";
-                filter_events(etSearch.getText().toString().trim());
-            }
+        navHome.setOnClickListener(v -> {
+            Intent i = new Intent(this, AttendeeActivity.class);
+            i.putExtra("userId",   userId);
+            i.putExtra("username", username);
+            startActivity(i);
         });
 
-        filterSocietybtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                filter = "Society Events";
-                filter_events(etSearch.getText().toString().trim());
-            }
+        navNotifs.setOnClickListener(v -> {
+            Intent i = new Intent(this, NotificationsActivity.class);
+            i.putExtra("userId",   userId);
+            i.putExtra("username", username);
+            startActivity(i);
         });
 
-        navMyRegistrations.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(EventBrowsingActivity.this, MyRegistrationsActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
-                startActivity(intent);
-            }
+        logout.setOnClickListener(v -> {
+            startActivity(new Intent(this, com.lums.eventhub.auth.LoginActivity.class));
+            finish();
         });
 
-        navHome.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(EventBrowsingActivity.this, com.lums.eventhub.AttendeeActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
-                startActivity(intent);
-            }
-        });
-
-        navNotifs.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(EventBrowsingActivity.this, NotificationsActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
-                startActivity(intent);
-            }
-        });
-
-        logout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(EventBrowsingActivity.this, com.lums.eventhub.auth.LoginActivity.class));
-                finish(); // ← clear from back stack on logout
-            }
-        });
-
-        navBrowseEvents.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // already here
-            }
-        });
+        navBrowseEvents.setOnClickListener(v -> { /* already here */ });
     }
+
+    // ── Filter & display ──────────────────────────────────────────────────────
 
     private void filter_events(String text) {
         filteredEvents.clear();
         for (Event event : allEvents) {
-            if (!filter.equals("All") && !event.category.equals(filter)) continue;
+            if (!"All".equals(filter) && !filter.equals(event.category)) continue;
             if (!text.isEmpty() && !event.title.toLowerCase().contains(text.toLowerCase())) continue;
             filteredEvents.add(event);
         }
@@ -187,7 +161,6 @@ public class EventBrowsingActivity extends AppCompatActivity {
                         LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
                 row.addView(spacer);
             }
-
             eventGrid.addView(row);
         }
     }
@@ -201,7 +174,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
         TextView tvDate      = card.findViewById(R.id.tvDate);
         TextView tvVenue     = card.findViewById(R.id.tvVenue);
         TextView tvSeats     = card.findViewById(R.id.tvSeats);
-        Button btnDetails    = card.findViewById(R.id.btnViewDetails);
+        Button   btnDetails  = card.findViewById(R.id.btnViewDetails);
 
         tvCategory.setText(event.category);
         tvTitle.setText(event.title);
@@ -218,52 +191,91 @@ public class EventBrowsingActivity extends AppCompatActivity {
 
         btnDetails.setOnClickListener(v -> {
             Intent intent = new Intent(this, EventDetailsActivity.class);
-            intent.putExtra("userId", userId); // ← pass forward
-            intent.putExtra("eventId", event.id);
-            intent.putExtra("eventTitle", event.title);
-            intent.putExtra("eventOrganizer", event.organizer);
-            intent.putExtra("eventDate", event.date);
-            intent.putExtra("eventVenue", event.venue);
+            intent.putExtra("userId",        userId);
+            intent.putExtra("username",      username);       // NEW — pass forward
+            intent.putExtra("eventId",       event.id);
+            intent.putExtra("eventTitle",    event.title);
+            intent.putExtra("eventOrganizer",event.organizer);
             intent.putExtra("eventCategory", event.category);
-            intent.putExtra("eventSeatsBooked", event.seatsbooked);
-            intent.putExtra("eventSeatsTotal", event.seatsTotal);
-            intent.putExtra("Description", event.desc);
-            intent.putExtra("RegClosingDate", event.deadline);
-            intent.putExtra("Time", event.time);
-            intent.putExtra("fee", event.fee);
+            // All other data (dates, fees, schedule) loaded live inside EventDetailsActivity
             startActivity(intent);
         });
 
         return card;
     }
 
+    // ── Load from Firestore ───────────────────────────────────────────────────
+
     private void loadEventsFromFirebase() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Load from events/ (admin-approved)
         db.collection("events")
                 .whereEqualTo("status", "Approved")
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
+                .addOnSuccessListener(snap -> {
                     allEvents.clear();
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        Event event = new Event(
-                                doc.getId(),
-                                doc.getString("title"),
-                                doc.getString("organizer"),
-                                doc.getString("date"),
-                                doc.getString("venue"),
-                                doc.getString("category"),
-                                doc.getString("description"),
-                                doc.getString("RegistrationClosingDate"),
-                                doc.getString("Time"),
-                                doc.getString("fee"),
-                                doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0,
-                                doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0
-                        );
-                        allEvents.add(event);
+                    for (QueryDocumentSnapshot doc : snap) {
+                        allEvents.add(eventFromDoc(doc));
+                    }
+                    // Also load from proposals/ with status Approved
+                    loadApprovedProposals(db);
+                })
+                .addOnFailureListener(e -> loadApprovedProposals(db));
+    }
+
+    private void loadApprovedProposals(FirebaseFirestore db) {
+        db.collection("proposals")
+                .whereEqualTo("status", "Approved")
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        // Avoid duplicates
+                        String id = doc.getId();
+                        boolean exists = false;
+                        for (Event e : allEvents) if (e.id.equals(id)) { exists = true; break; }
+                        if (!exists) allEvents.add(eventFromDoc(doc));
                     }
                     filter = "All";
                     filter_events("");
                 })
-                .addOnFailureListener(e -> count_results.setText("Failed to load events"));
+                .addOnFailureListener(e -> {
+                    filter = "All";
+                    filter_events("");
+                    count_results.setText("Failed to load events");
+                });
+    }
+
+    private Event eventFromDoc(QueryDocumentSnapshot doc) {
+        // Use startDate if available, fall back to date
+        String date = doc.getString("startDate");
+        if (date == null || date.isEmpty()) date = doc.getString("date");
+
+        String category = doc.getString("category");
+        if (category == null || category.isEmpty()) {
+            String type = doc.getString("eventType");
+            category = "School-Led Workshop".equals(type) ? "Workshops/Seminars" : "Society Events";
+        }
+
+        return new Event(
+                doc.getId(),
+                nvl(doc.getString("title"), "Untitled"),
+                nvl(doc.getString("organizer"), nvl(doc.getString("societyName"), "")),
+                nvl(date, ""),
+                nvl(doc.getString("venue"), ""),
+                category,
+                nvl(doc.getString("description"), ""),
+                nvl(doc.getString("endDate"), ""),
+                "",   // time field removed
+                nvl(doc.getString("regFee"), ""),
+                doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0,
+                doc.getLong("expectedParticipants") != null
+                        ? doc.getLong("expectedParticipants").intValue()
+                        : (doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0)
+        );
+    }
+
+    private String nvl(String s, String fallback) {
+        return (s != null && !s.isEmpty()) ? s : fallback;
     }
 }

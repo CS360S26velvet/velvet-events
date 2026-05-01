@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    dialog_payment_detail.xml
-    Role: Detail dialog/panel for a single registrant's payment verification.
-    Matches the right-side panel shown in screenshot 2.
-    Shows: name, student ID, payment screenshot button, submission details,
-    rejection reason input, Confirm Approve and Reject with Reason buttons.
+    dialog_payment_detail.xml  (UPDATED)
+    Proof shown as inline ImageViews decoded from Base64.
+    IDs: imgRegProof, tvNoRegProof, tvAccomProofLabel, imgAccomProof, tvNoAccomProof
 -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -17,7 +15,7 @@
         android:orientation="vertical"
         android:padding="20dp">
 
-        <!-- Name + ID header -->
+        <!-- Name + ID -->
         <TextView
             android:id="@+id/tvDetailName"
             android:layout_width="match_parent"
@@ -37,44 +35,70 @@
             android:layout_marginTop="2dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Payment Screenshot button -->
+        <!-- REGISTRATION PROOF -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Payment Screenshot"
+            android:text="Registration Payment Proof"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#333333"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Proof placeholder box -->
-        <LinearLayout
+        <ImageView
+            android:id="@+id/imgRegProof"
             android:layout_width="match_parent"
-            android:layout_height="160dp"
-            android:orientation="vertical"
-            android:gravity="center"
+            android:layout_height="220dp"
+            android:scaleType="fitCenter"
             android:background="#F0F4FF"
-            android:layout_marginBottom="8dp">
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"/>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📄"
-                android:textSize="36sp"/>
+        <TextView
+            android:id="@+id/tvNoRegProof"
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:text="No proof image uploaded"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textColor="#999999"
+            android:background="#F8F8F8"
+            android:layout_marginBottom="16dp"/>
 
-            <Button
-                android:id="@+id/btnViewProof"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="View Screenshot"
-                android:backgroundTint="#1565C0"
-                android:textColor="#FFFFFF"
-                android:textSize="12sp"
-                android:layout_marginTop="8dp"/>
+        <!-- ACCOMMODATION PROOF (hidden if not applicable) -->
+        <TextView
+            android:id="@+id/tvAccomProofLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Accommodation Payment Proof"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#00796B"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"/>
 
-        </LinearLayout>
+        <ImageView
+            android:id="@+id/imgAccomProof"
+            android:layout_width="match_parent"
+            android:layout_height="220dp"
+            android:scaleType="fitCenter"
+            android:background="#E8F5E9"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"/>
 
-        <!-- Submission details card -->
+        <TextView
+            android:id="@+id/tvNoAccomProof"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No accommodation proof uploaded"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textColor="#999999"
+            android:background="#F8F8F8"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Submission details -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -92,71 +116,38 @@
                 android:textColor="#333333"
                 android:layout_marginBottom="8dp"/>
 
-            <!-- Submitted -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="horizontal"
                 android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Submitted:"
-                    android:textSize="13sp"
-                    android:textColor="#666666"/>
-                <TextView
-                    android:id="@+id/tvDetailSubmitted"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textSize="13sp"
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Submitted:"
+                    android:textSize="13sp" android:textColor="#666666"/>
+                <TextView android:id="@+id/tvDetailSubmitted"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="13sp" android:textColor="#222222"/>
+            </LinearLayout>
+
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Amount:"
+                    android:textSize="13sp" android:textColor="#666666"/>
+                <TextView android:id="@+id/tvDetailAmount"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="13sp" android:textStyle="bold"
                     android:textColor="#222222"/>
             </LinearLayout>
 
-            <!-- Amount -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="6dp">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Amount:"
-                    android:textSize="13sp"
-                    android:textColor="#666666"/>
-                <TextView
-                    android:id="@+id/tvDetailAmount"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="—"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#222222"/>
-            </LinearLayout>
-
-            <!-- Status -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal">
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Status:"
-                    android:textSize="13sp"
-                    android:textColor="#666666"/>
-                <TextView
-                    android:id="@+id/tvDetailStatus"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Pending"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:textColor="#FF9800"/>
+            <LinearLayout android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:orientation="horizontal">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="Status:"
+                    android:textSize="13sp" android:textColor="#666666"/>
+                <TextView android:id="@+id/tvDetailStatus"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Pending" android:textSize="13sp"
+                    android:textStyle="bold" android:textColor="#FF9800"/>
             </LinearLayout>
 
         </LinearLayout>
@@ -183,7 +174,6 @@
             android:padding="10dp"
             android:layout_marginBottom="16dp"/>
 
-        <!-- Confirm Approve -->
         <Button
             android:id="@+id/btnConfirmApprove"
             android:layout_width="match_parent"
@@ -195,7 +185,6 @@
             android:backgroundTint="#4CAF50"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Reject with Reason -->
         <Button
             android:id="@+id/btnRejectWithReason"
             android:layout_width="match_parent"

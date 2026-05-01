@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_fee_block.xml
-    Role: Single locked card in FormBuilder for the Registration Fee block
-    or Accommodation block. Shows all fields in one card — not separate questions.
-
-    IDs used by FormBuilderActivity.QuestionAdapter.BlockViewHolder:
-      tvBlockTitle, tvAccomQuestion, tvFeeLabel, tvFeeAmount, tvBankInfo, btnPickFile
+    item_fee_block.xml  (UPDATED)
+    NEW: llAccomConditional — shown only for AccomBlock, previews the MCQ + conditional logic.
+    UPDATED: tvAccomQuestion now lives inside llAccomConditional.
+    All existing IDs preserved.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -17,7 +15,7 @@
     android:layout_marginStart="8dp"
     android:layout_marginEnd="8dp">
 
-    <!-- Block title + lock badge -->
+    <!-- Title row -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -30,7 +28,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Registration Payment"
+            android:text="Registration Payment  [built-in, required]"
             android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="#E65100"/>
@@ -38,29 +36,39 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔒 locked"
+            android:text="🔒 required"
             android:textSize="11sp"
             android:textColor="#BF360C"
             android:background="#FFCCBC"
-            android:paddingStart="6dp"
-            android:paddingEnd="6dp"
-            android:paddingTop="2dp"
-            android:paddingBottom="2dp"/>
+            android:paddingStart="6dp" android:paddingEnd="6dp"
+            android:paddingTop="2dp" android:paddingBottom="2dp"/>
 
     </LinearLayout>
 
-    <!-- Accommodation question (only visible for accom block) -->
-    <TextView
-        android:id="@+id/tvAccomQuestion"
+    <!--
+        AccomBlock conditional preview — only VISIBLE for AccomBlock.
+        Shows description of MCQ + conditional reveal behaviour.
+        tvAccomQuestion holds the full description text.
+    -->
+    <LinearLayout
+        android:id="@+id/llAccomConditional"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Do you want accommodation? (Fee = …)   Yes / No"
-        android:textSize="13sp"
-        android:textColor="#333333"
-        android:background="#FFFFFF"
+        android:orientation="vertical"
+        android:background="#E8F5E9"
         android:padding="10dp"
         android:layout_marginBottom="8dp"
-        android:visibility="gone"/>
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/tvAccomQuestion"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="MCQ: Do you want accommodation? (Fee = …)\n  ○ Yes  ○ No\nIf Yes → fee, bank info, and proof upload shown."
+            android:textSize="12sp"
+            android:textColor="#1B5E20"/>
+
+    </LinearLayout>
 
     <!-- Fee row -->
     <LinearLayout
@@ -121,15 +129,14 @@
 
     </LinearLayout>
 
-    <!-- File upload row -->
+    <!-- Proof upload button -->
     <Button
         android:id="@+id/btnPickFile"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:text="Attach Proof — Tap to Upload"
+        android:text="Attach Proof — Tap to Upload (required)"
         android:textSize="13sp"
         android:textColor="#1565C0"
-        android:backgroundTint="#E3F2FD"
-        android:drawableStart="@android:drawable/ic_menu_upload"/>
+        android:backgroundTint="#E3F2FD"/>
 
 </LinearLayout>
