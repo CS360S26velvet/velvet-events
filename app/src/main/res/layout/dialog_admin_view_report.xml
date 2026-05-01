@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Title -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View Event Report"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#1565C0"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvAdminReportTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A2E"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvAdminReportSociety"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#1565C0"
+            android:layout_marginBottom="4dp"/>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/tvAdminReportDate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Event Date: —"
+                android:textSize="12sp"
+                android:textColor="#666666"/>
+
+            <TextView
+                android:id="@+id/tvAdminReportAttendees"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Attendees: 0"
+                android:textSize="12sp"
+                android:textColor="#666666"/>
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvAdminReportSubmitted"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Submitted: —"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Divider -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#EEEEEE" android:layout_marginBottom="16dp"/>
+
+        <!-- Report image -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submitted Report Image"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp"/>
+
+        <ImageView
+            android:id="@+id/imgAdminReport"
+            android:layout_width="match_parent"
+            android:layout_height="260dp"
+            android:scaleType="fitCenter"
+            android:background="#F0F4FF"
+            android:visibility="gone"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/tvAdminReportNoImage"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:text="No image submitted"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textColor="#999999"
+            android:background="#F8F8F8"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Notes -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Submitted Notes"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="6dp"/>
+
+        <TextView
+            android:id="@+id/tvAdminReportNotes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#555555"
+            android:background="#F8F8F8"
+            android:padding="12dp"/>
+
+    </LinearLayout>
+</ScrollView>

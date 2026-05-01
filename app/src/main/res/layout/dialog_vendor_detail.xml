@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    dialog_vendor_detail.xml
+    Scrollable vendor detail panel matching the Figma right-side panel.
+    IDs: tvVDetailName, tvVDetailCategory, tvVDetailRating, tvVDetailUsedBy,
+         imgVDetailLogo, tvVDetailAbout, tvVDetailPhone, tvVDetailEmail,
+         tvVDetailAddress, llVDetailHistory, btnMarkUsed, btnSaveFavourite
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Logo (optional) -->
+        <ImageView
+            android:id="@+id/imgVDetailLogo"
+            android:layout_width="64dp"
+            android:layout_height="64dp"
+            android:scaleType="centerCrop"
+            android:layout_marginBottom="12dp"
+            android:visibility="gone"/>
+
+        <!-- Name -->
+        <TextView
+            android:id="@+id/tvVDetailName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vendor Name"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#1A1A2E"/>
+
+        <!-- Category badge -->
+        <TextView
+            android:id="@+id/tvVDetailCategory"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Category"
+            android:textSize="12sp"
+            android:textColor="#1565C0"
+            android:background="#E8EAF6"
+            android:paddingStart="10dp" android:paddingEnd="10dp"
+            android:paddingTop="3dp" android:paddingBottom="3dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="12dp"/>
+
+        <!-- Rating -->
+        <TextView
+            android:id="@+id/tvVDetailRating"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="★★★★☆  4.3"
+            android:textSize="16sp"
+            android:textColor="#F5A623"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <!-- Used by -->
+        <TextView
+            android:id="@+id/tvVDetailUsedBy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Used by 0 societies"
+            android:textSize="13sp"
+            android:textColor="#666666"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Divider -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#EEEEEE" android:layout_marginBottom="14dp"/>
+
+        <!-- About -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="About"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="6dp"/>
+
+        <TextView
+            android:id="@+id/tvVDetailAbout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="13sp"
+            android:textColor="#555555"
+            android:lineSpacingExtra="3dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Contact Information -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Contact Information"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- Phone -->
+        <LinearLayout android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <TextView android:layout_width="24dp" android:layout_height="wrap_content"
+                android:text="📞" android:textSize="14sp" android:layout_marginEnd="10dp"/>
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Phone" android:textSize="11sp" android:textColor="#999999"/>
+                <TextView android:id="@+id/tvVDetailPhone"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="13sp" android:textColor="#1A1A2E"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Email -->
+        <LinearLayout android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+            <TextView android:layout_width="24dp" android:layout_height="wrap_content"
+                android:text="✉️" android:textSize="14sp" android:layout_marginEnd="10dp"/>
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Email" android:textSize="11sp" android:textColor="#999999"/>
+                <TextView android:id="@+id/tvVDetailEmail"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="13sp" android:textColor="#1A1A2E"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Address -->
+        <LinearLayout android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical"
+            android:layout_marginBottom="16dp">
+            <TextView android:layout_width="24dp" android:layout_height="wrap_content"
+                android:text="📍" android:textSize="14sp" android:layout_marginEnd="10dp"/>
+            <LinearLayout android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:orientation="vertical">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Address" android:textSize="11sp" android:textColor="#999999"/>
+                <TextView android:id="@+id/tvVDetailAddress"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="—" android:textSize="13sp" android:textColor="#1A1A2E"
+                    android:textStyle="bold"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Divider -->
+        <View android:layout_width="match_parent" android:layout_height="1dp"
+            android:background="#EEEEEE" android:layout_marginBottom="14dp"/>
+
+        <!-- Past Usage History -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Past Usage History"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="10dp"/>
+
+        <LinearLayout
+            android:id="@+id/llVDetailHistory"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="20dp"/>
+
+        <!-- Mark as Used -->
+        <Button
+            android:id="@+id/btnMarkUsed"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Mark as Used"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:backgroundTint="#1565C0"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- Save to Favourites -->
+        <Button
+            android:id="@+id/btnSaveFavourite"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="☆ Save to Favourites"
+            android:textColor="#1565C0"
+            android:textSize="14sp"
+            android:backgroundTint="#E8EAF6"/>
+
+    </LinearLayout>
+
+</ScrollView>

@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_add_vendor.xml
+    Blue header, white scrollable form. Image pick only (JPEG/PNG).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F0F4FF">
+
+    <!-- HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add New Vendor"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Add a vendor to the directory for all societies to use"
+            android:textColor="#BBDEFB"
+            android:textSize="12sp"
+            android:layout_marginTop="2dp"/>
+
+    </LinearLayout>
+
+    <!-- FORM -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Logo section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="16dp"
+                android:layout_marginBottom="12dp"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/imgLogoPreview"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:scaleType="centerCrop"
+                    android:background="#E8EAF6"
+                    android:layout_marginBottom="10dp"
+                    android:visibility="gone"/>
+
+                <Button
+                    android:id="@+id/btnPickLogo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📷 Upload Logo (optional)"
+                    android:backgroundTint="#E8EAF6"
+                    android:textColor="#1565C0"
+                    android:textSize="13sp"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="JPEG or PNG image"
+                    android:textSize="11sp"
+                    android:textColor="#999999"
+                    android:layout_marginTop="4dp"/>
+
+            </LinearLayout>
+
+            <!-- Vendor Name -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Vendor Name *" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etVendorName"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp"
+                android:hint="e.g. AV Masters Lahore"
+                android:layout_marginBottom="12dp" android:singleLine="true"/>
+
+            <!-- Category -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Category *" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <Spinner android:id="@+id/spinnerVendorCategory"
+                android:layout_width="match_parent" android:layout_height="48dp"
+                android:background="#FFFFFF"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- About -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="About" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etVendorAbout"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp"
+                android:hint="Brief description of services..."
+                android:minLines="3" android:inputType="textMultiLine" android:gravity="top"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Phone -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Phone" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etVendorPhone"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp"
+                android:hint="+92 300 0000000" android:inputType="phone"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Email -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Email" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etVendorEmail"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp"
+                android:hint="vendor@example.com" android:inputType="textEmailAddress"
+                android:layout_marginBottom="12dp"/>
+
+            <!-- Address -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Address" android:textColor="#333333" android:textSize="13sp"
+                android:textStyle="bold" android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etVendorAddress"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp"
+                android:hint="DHA Phase 5, Lahore"
+                android:layout_marginBottom="16dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- BOTTOM BUTTONS -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#FFFFFF"
+        android:padding="12dp"
+        android:orientation="horizontal"
+        android:elevation="4dp">
+
+        <Button
+            android:id="@+id/btnCancelVendor"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="1"
+            android:text="Cancel"
+            android:backgroundTint="#E8EAF6"
+            android:textColor="#1565C0"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnSaveVendor"
+            android:layout_width="0dp"
+            android:layout_height="50dp"
+            android:layout_weight="2"
+            android:text="Save Vendor"
+            android:backgroundTint="#1565C0"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+
+</LinearLayout>

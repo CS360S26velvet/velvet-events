@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_usage_history_row.xml
+    One past usage row: event name on left, date on right.
+    IDs: tvHistoryEvent, tvHistoryDate
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp"
+    android:gravity="center_vertical">
+
+    <TextView
+        android:id="@+id/tvHistoryEvent"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Event Name"
+        android:textSize="13sp"
+        android:textColor="#333333"/>
+
+    <TextView
+        android:id="@+id/tvHistoryDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Jan 2026"
+        android:textSize="12sp"
+        android:textColor="#888888"/>
+
+</LinearLayout>

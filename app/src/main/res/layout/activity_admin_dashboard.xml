@@ -534,9 +534,27 @@
             android:layout_marginBottom="32dp">
 
             <LinearLayout
-                android:id="@+id/btnRegisterOrganizer"
-                android:layout_width="match_parent"
+                android:id="@+id/btnEventReports"
+                android:layout_width="0dp"
                 android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1565C0"
+                android:layout_marginEnd="8dp"
+                android:elevation="3dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="📊" android:textSize="22sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Event Reports" android:textSize="11sp"
+                    android:textStyle="bold" android:textColor="#FFFFFF" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/btnRegisterOrganizer"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:background="@drawable/bg_nav_card_teal"

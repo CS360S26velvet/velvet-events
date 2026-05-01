@@ -318,6 +318,47 @@
 
         </LinearLayout>
 
+        <!-- ROW 4: Vendor Directory -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:layout_marginBottom="12dp">
+            <LinearLayout
+                android:id="@+id/btnNavVendors"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#1976D2"
+                android:elevation="3dp"
+                android:layout_marginEnd="8dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="🏪" android:textSize="22sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Vendor Directory" android:textSize="11sp"
+                    android:textStyle="bold" android:textColor="#FFFFFF" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+            <LinearLayout
+                android:id="@+id/btnNavReports"
+                android:layout_width="0dp"
+                android:layout_height="80dp"
+                android:layout_weight="1"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:background="#0D47A1"
+                android:elevation="3dp">
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="📊" android:textSize="22sp" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="Event Reports" android:textSize="11sp"
+                    android:textStyle="bold" android:textColor="#FFFFFF" android:layout_marginTop="4dp"/>
+            </LinearLayout>
+        </LinearLayout>
+
         <!-- NOTIFICATIONS SECTION HEADER -->
         <TextView
             android:layout_width="match_parent"
@@ -351,18 +392,6 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
-            android:layout_marginBottom="24dp" />
-
-        <!-- LOGOUT BUTTON -->
-        <Button
-            android:id="@+id/btnLogoutOrganizer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Logout"
-            android:backgroundTint="#1565C0"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
             android:layout_marginBottom="24dp" />
 
     </LinearLayout>
