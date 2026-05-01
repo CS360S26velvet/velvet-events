@@ -1,33 +1,36 @@
 package com.lums.eventhub;
 
 /**
- * FormBuilderActivity.java
+ * FormBuilderActivity.java  (UPDATED v3)
  *
- * Role: Organizer builds / edits the registration form for a specific event.
- * This IS the registration form — building it = defining what attendees will fill.
+ * FIXES:
+ *   1. Fee/Accommodation default fields are ONE block each (not separate Qs)
+ *      — shown as a single locked card containing: fee amount, bank info, file upload
+ *   2. Bank info entered by organiser IS displayed inside the card
+ *   3. File Upload questions open an actual file/image picker (ACTION_GET_CONTENT)
+ *   4. Save = draft only (does NOT set formReleased = true)
+ *   5. New "Release to Attendees" button — sets formReleased = true in Firestore
  *
- * Flow:
- *   - Receives eventId + eventName from AttendeeRegistrationActivity via Intent extras
- *   - Loads existing saved questions from events/{eventId}/formQuestions (if any)
- *   - If no saved questions: blank builder (create from scratch)
- *   - Organizer adds/edits/reorders/duplicates/deletes questions
- *   - Preview: shows an AlertDialog simulating how attendees see the form
- *   - Save: writes all questions to Firestore as events/{eventId}/formQuestions
- *           and sets events/{eventId}.formActive = true so attendees can see it
+ * DEFAULT BLOCKS injected at top (locked, cannot delete):
+ *   If hasRegFee:
+ *     One card labelled "Registration Fee Block" showing:
+ *       • Registration Fee: <amount>
+ *       • Bank Account Information: <organiser text>
+ *       • Attach Registration Proof  [File Upload]
+ *   If hasAccommodation:
+ *     One card labelled "Accommodation Block" showing:
+ *       • Do you want accommodation? (Fee = <amount>)  [Yes/No]
+ *       • Accommodation Fee: <amount>
+ *       • Bank Account Information: <organiser text>
+ *       • Attach Accommodation Payment Proof  [File Upload]
  *
- * Wires to existing IDs in activity_form_builder.xml:
- *   btnPreview, btnSaveForm,
- *   btnAddShortText, btnAddParagraph, btnAddMultiChoice,
- *   btnAddDropdown, btnAddDate, btnAddFileUpload,
- *   recyclerViewQuestions
- *
- * Note: organizerId == societyId — same concept, using organizerId everywhere.
- *
- * User Stories: Org US-18, US-19, US-22
+ * File upload picker request codes:
+ *   100 + position  (capped at position 0..49 to stay < 65535)
  */
 
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -36,7 +39,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -51,7 +53,6 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.google.firebase.firestore.WriteBatch;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,11 +65,24 @@ public class FormBuilderActivity extends AppCompatActivity {
 
     private RecyclerView       recyclerViewQuestions;
     private QuestionAdapter    adapter;
-    private List<FormQuestion> questions = new ArrayList<>();
+    private final List<FormQuestion> questions = new ArrayList<>();
     private FirebaseFirestore  db;
 
-    private String eventId;
-    private String eventName;
+    private String  eventId;
+    private String  eventName;
+
+    // Fee setup data from RegistrationFeeSetupActivity
+    private boolean hasRegFee;
+    private String  regFee             = "";
+    private String  regBankInfo        = "";
+    private boolean hasAccommodation;
+    private String  accommodationFee   = "";
+    private String  accommodationBankInfo = "";
+
+    // Tracks which recycler position is waiting for a file pick result
+    private int     pendingFilePickPosition = -1;
+
+    private static final int FILE_PICK_BASE = 200;
 
     // -------------------------------------------------------------------------
     // Lifecycle
@@ -83,27 +97,34 @@ public class FormBuilderActivity extends AppCompatActivity {
         eventId   = getIntent().getStringExtra("eventId");
         eventName = getIntent().getStringExtra("eventName");
 
+        hasRegFee          = getIntent().getBooleanExtra(RegistrationFeeSetupActivity.EXTRA_HAS_REG_FEE,       false);
+        regFee             = nvl(getIntent().getStringExtra(RegistrationFeeSetupActivity.EXTRA_REG_FEE));
+        regBankInfo        = nvl(getIntent().getStringExtra(RegistrationFeeSetupActivity.EXTRA_REG_BANK_INFO));
+        hasAccommodation   = getIntent().getBooleanExtra(RegistrationFeeSetupActivity.EXTRA_HAS_ACCOMMODATION, false);
+        accommodationFee   = nvl(getIntent().getStringExtra(RegistrationFeeSetupActivity.EXTRA_ACCOMMODATION_FEE));
+        accommodationBankInfo = nvl(getIntent().getStringExtra(RegistrationFeeSetupActivity.EXTRA_ACCOMMODATION_BANK));
+
         if (eventId == null || eventId.isEmpty()) {
             Toast.makeText(this, "No event selected.", Toast.LENGTH_SHORT).show();
             finish();
             return;
         }
 
-        // Update header title to show which event this form is for
         TextView headerTitle = findViewById(R.id.tvFormBuilderTitle);
-        if (headerTitle != null) {
-            headerTitle.setText("Form Builder — " + eventName);
-        }
+        if (headerTitle != null) headerTitle.setText("Form Builder — " + eventName);
 
         setupRecyclerView();
         wireTypeButtons();
         wirePreview();
         wireSave();
+        wireRelease();
         loadExistingQuestions();
     }
 
+    private String nvl(String s) { return s != null ? s : ""; }
+
     // -------------------------------------------------------------------------
-    // RecyclerView setup
+    // RecyclerView
     // -------------------------------------------------------------------------
 
     private void setupRecyclerView() {
@@ -114,36 +135,28 @@ public class FormBuilderActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------------------------
-    // Wire type buttons
+    // Type buttons
     // -------------------------------------------------------------------------
 
     private void wireTypeButtons() {
         findViewById(R.id.btnAddShortText).setOnClickListener(v ->
                 addQuestion(new FormQuestion("Short Text")));
-
         findViewById(R.id.btnAddParagraph).setOnClickListener(v ->
                 addQuestion(new FormQuestion("Paragraph")));
-
         findViewById(R.id.btnAddMultiChoice).setOnClickListener(v -> {
             FormQuestion q = new FormQuestion("Multiple Choice");
-            q.options.add("");
-            addQuestion(q);
+            q.options.add(""); addQuestion(q);
         });
-
         findViewById(R.id.btnAddDropdown).setOnClickListener(v -> {
             FormQuestion q = new FormQuestion("Dropdown");
-            q.options.add("");
-            addQuestion(q);
+            q.options.add(""); addQuestion(q);
         });
-
         findViewById(R.id.btnAddDate).setOnClickListener(v ->
                 addQuestion(new FormQuestion("Date")));
-
         findViewById(R.id.btnAddFileUpload).setOnClickListener(v ->
                 addQuestion(new FormQuestion("File Upload")));
     }
 
-    /** Adds a question, notifies adapter, scrolls to bottom. */
     private void addQuestion(FormQuestion q) {
         questions.add(q);
         int pos = questions.size() - 1;
@@ -152,48 +165,70 @@ public class FormBuilderActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------------------------
+    // Default BLOCKS (one locked card per fee type, NOT separate questions)
+    // -------------------------------------------------------------------------
+
+    private List<FormQuestion> buildDefaultBlocks() {
+        List<FormQuestion> defaults = new ArrayList<>();
+
+        if (hasRegFee) {
+            FormQuestion block = new FormQuestion("FeeBlock");
+            block.label              = "Registration Payment";
+            block.locked             = true;
+            block.feeAmount          = regFee;
+            block.bankInfo           = regBankInfo;
+            block.blockType          = "reg";
+            defaults.add(block);
+        }
+
+        if (hasAccommodation) {
+            FormQuestion block = new FormQuestion("AccomBlock");
+            block.label              = "Accommodation Payment";
+            block.locked             = true;
+            block.feeAmount          = accommodationFee;
+            block.bankInfo           = accommodationBankInfo;
+            block.blockType          = "accom";
+            defaults.add(block);
+        }
+
+        return defaults;
+    }
+
+    // -------------------------------------------------------------------------
     // Load from Firestore
     // -------------------------------------------------------------------------
 
-    /**
-     * Loads existing formQuestions subcollection from Firestore.
-     * Stored under proposals/{eventId}/formQuestions — proposals is the
-     * collection used by OrganizerDashboard, not events/.
-     * If empty, leaves blank builder ready for fresh creation.
-     * Questions are ordered by their saved "order" field.
-     */
     private void loadExistingQuestions() {
         db.collection("proposals").document(eventId)
                 .collection("formQuestions")
                 .orderBy("order")
                 .get()
-                .addOnSuccessListener(querySnapshot -> {
+                .addOnSuccessListener(snap -> {
                     questions.clear();
-                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                    questions.addAll(buildDefaultBlocks());
+
+                    for (QueryDocumentSnapshot doc : snap) {
+                        if (Boolean.TRUE.equals(doc.getBoolean("locked"))) continue;
                         FormQuestion q = new FormQuestion(
-                                doc.getString("type") != null ? doc.getString("type") : "Short Text");
-                        q.label    = doc.getString("label")    != null ? doc.getString("label")    : "";
+                                nvl(doc.getString("type")).isEmpty() ? "Short Text" : doc.getString("type"));
+                        q.label    = nvl(doc.getString("label"));
                         q.required = Boolean.TRUE.equals(doc.getBoolean("required"));
                         q.docId    = doc.getId();
-
-                        // Load options for choice-type questions
-                        Object rawOptions = doc.get("options");
-                        if (rawOptions instanceof List) {
+                        Object raw = doc.get("options");
+                        if (raw instanceof List) {
                             //noinspection unchecked
-                            List<Object> opts = (List<Object>) rawOptions;
-                            q.options.clear();
-                            for (Object o : opts) {
+                            for (Object o : (List<Object>) raw)
                                 q.options.add(o != null ? o.toString() : "");
-                            }
                         }
                         questions.add(q);
                     }
                     adapter.notifyDataSetChanged();
                 })
                 .addOnFailureListener(e -> {
-                    // Firestore unreachable or no sub-collection yet — blank builder
-                    Toast.makeText(this,
-                            "Could not load saved form. Starting fresh.", Toast.LENGTH_SHORT).show();
+                    questions.clear();
+                    questions.addAll(buildDefaultBlocks());
+                    adapter.notifyDataSetChanged();
+                    Toast.makeText(this, "Could not load saved form. Starting fresh.", Toast.LENGTH_SHORT).show();
                 });
     }
 
@@ -201,35 +236,33 @@ public class FormBuilderActivity extends AppCompatActivity {
     // Preview
     // -------------------------------------------------------------------------
 
-    /**
-     * Shows an AlertDialog preview of how the form looks to attendees.
-     * Displays each question label, type, and whether it's required.
-     */
     private void wirePreview() {
         findViewById(R.id.btnPreview).setOnClickListener(v -> {
             if (questions.isEmpty()) {
                 Toast.makeText(this, "Add at least one question to preview.", Toast.LENGTH_SHORT).show();
                 return;
             }
-
             StringBuilder sb = new StringBuilder();
             sb.append("── ").append(eventName).append(" Registration ──\n\n");
             for (int i = 0; i < questions.size(); i++) {
                 FormQuestion q = questions.get(i);
-                sb.append("Q").append(i + 1).append(". ")
-                        .append(q.label.isEmpty() ? "(No label)" : q.label)
-                        .append(q.required ? "  *required" : "  (optional)")
-                        .append("\n  Type: ").append(q.type);
-                if (!q.options.isEmpty()) {
-                    sb.append("\n  Options: ");
-                    for (int j = 0; j < q.options.size(); j++) {
-                        sb.append("\n    ").append(j + 1).append(". ")
-                                .append(q.options.get(j).isEmpty() ? "(empty)" : q.options.get(j));
+                if (q.isBlock()) {
+                    sb.append("── ").append(q.label).append(" [built-in block] ──\n");
+                    sb.append("  Fee: ").append(q.feeAmount).append("\n");
+                    sb.append("  Bank Info: ").append(q.bankInfo.isEmpty() ? "(not entered)" : q.bankInfo).append("\n");
+                    sb.append("  Attach proof: File Upload\n\n");
+                } else {
+                    sb.append("Q").append(i + 1).append(". ")
+                            .append(q.label.isEmpty() ? "(No label)" : q.label)
+                            .append(q.required ? "  *required" : "  (optional)")
+                            .append("\n  Type: ").append(q.type);
+                    if (!q.options.isEmpty()) {
+                        for (int j = 0; j < q.options.size(); j++)
+                            sb.append("\n    ").append(j+1).append(". ").append(q.options.get(j));
                     }
+                    sb.append("\n\n");
                 }
-                sb.append("\n\n");
             }
-
             new AlertDialog.Builder(this)
                     .setTitle("Form Preview")
                     .setMessage(sb.toString())
@@ -239,254 +272,338 @@ public class FormBuilderActivity extends AppCompatActivity {
     }
 
     // -------------------------------------------------------------------------
+    // Save (draft — does NOT release to attendees)
+    // -------------------------------------------------------------------------
+
+    private void wireSave() {
+        findViewById(R.id.btnSaveForm).setOnClickListener(v -> saveForm(false));
+    }
+
+    // -------------------------------------------------------------------------
+    // Release to Attendees
+    // -------------------------------------------------------------------------
+
+    private void wireRelease() {
+        Button btnRelease = findViewById(R.id.btnReleaseForm);
+        if (btnRelease == null) return;
+        btnRelease.setOnClickListener(v -> {
+            if (questions.isEmpty()) {
+                Toast.makeText(this, "Add at least one question before releasing.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            new AlertDialog.Builder(this)
+                    .setTitle("Release to Attendees?")
+                    .setMessage("This will make the form visible to attendees. You can still edit and re-release later.")
+                    .setPositiveButton("Release", (d, w) -> saveForm(true))
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
+    }
+
+    // -------------------------------------------------------------------------
     // Save to Firestore
     // -------------------------------------------------------------------------
 
-    /**
-     * Writes all questions to proposals/{eventId}/formQuestions using a batch write.
-     * proposals/ is the collection used by OrganizerDashboard (not events/).
-     * Deletes old docs first, then writes fresh ones in order.
-     * Also sets proposals/{eventId}.formActive = true.
-     */
-    private void wireSave() {
-        findViewById(R.id.btnSaveForm).setOnClickListener(v -> saveForm());
-    }
-
-    private void saveForm() {
-        if (questions.isEmpty()) {
-            Toast.makeText(this, "Add at least one question before saving.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // First delete existing formQuestions docs, then write fresh
+    private void saveForm(boolean release) {
         db.collection("proposals").document(eventId)
                 .collection("formQuestions")
                 .get()
                 .addOnSuccessListener(existing -> {
                     WriteBatch batch = db.batch();
+                    for (QueryDocumentSnapshot doc : existing) batch.delete(doc.getReference());
 
-                    // Delete all existing question docs
-                    for (QueryDocumentSnapshot doc : existing) {
-                        batch.delete(doc.getReference());
-                    }
-
-                    // Write each question as a new doc with an order field
                     for (int i = 0; i < questions.size(); i++) {
                         FormQuestion q = questions.get(i);
                         Map<String, Object> data = new HashMap<>();
-                        data.put("label",    q.label);
-                        data.put("type",     q.type);
-                        data.put("required", q.required);
-                        data.put("options",  q.options);
-                        data.put("order",    i);
+                        data.put("label",     q.label);
+                        data.put("type",      q.type);
+                        data.put("required",  q.required);
+                        data.put("options",   q.options);
+                        data.put("order",     i);
+                        data.put("locked",    q.locked);
+                        data.put("feeAmount", q.feeAmount);
+                        data.put("bankInfo",  q.bankInfo);
+                        data.put("blockType", q.blockType);
                         batch.set(
                                 db.collection("proposals").document(eventId)
                                         .collection("formQuestions").document(),
-                                data
-                        );
+                                data);
                     }
 
-                    // Mark form as active on the proposal document
-                    // (proposals/ is the collection used by OrganizerDashboard, not events/)
-                    batch.update(
-                            db.collection("proposals").document(eventId),
-                            "formActive", true
-                    );
+                    Map<String, Object> proposalUpdate = new HashMap<>();
+                    proposalUpdate.put("formActive",   true);
+                    proposalUpdate.put("formReleased", release);
+                    batch.update(db.collection("proposals").document(eventId), proposalUpdate);
 
                     batch.commit()
-                            .addOnSuccessListener(unused ->
-                                    Toast.makeText(this,
-                                            "Form saved! Attendees can now see it.",
-                                            Toast.LENGTH_LONG).show())
+                            .addOnSuccessListener(unused -> {
+                                String msg = release
+                                        ? "Form released to attendees!"
+                                        : "Form saved as draft.";
+                                Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
+                            })
                             .addOnFailureListener(e ->
-                                    Toast.makeText(this,
-                                            "Save failed: " + e.getMessage(),
-                                            Toast.LENGTH_SHORT).show());
+                                    Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this,
-                                "Error reading existing form: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    // -------------------------------------------------------------------------
+    // File picker
+    // -------------------------------------------------------------------------
+
+    public void openFilePicker(int position) {
+        pendingFilePickPosition = position;
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("*/*");
+        intent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{
+                "image/jpeg", "image/png", "application/pdf",
+                "application/msword",
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        });
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        startActivityForResult(Intent.createChooser(intent, "Select File"), FILE_PICK_BASE + (position % 200));
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri uri = data.getData();
+            String fileName = getFileNameFromUri(uri);
+            if (pendingFilePickPosition >= 0 && pendingFilePickPosition < questions.size()) {
+                questions.get(pendingFilePickPosition).pickedFileName = fileName;
+                questions.get(pendingFilePickPosition).pickedFileUri  = uri.toString();
+                adapter.notifyItemChanged(pendingFilePickPosition);
+            }
+        }
+        pendingFilePickPosition = -1;
+    }
+
+    private String getFileNameFromUri(Uri uri) {
+        String path = uri.getLastPathSegment();
+        return path != null ? path : uri.toString();
     }
 
     // -------------------------------------------------------------------------
     // FormQuestion model
     // -------------------------------------------------------------------------
 
-    /**
-     * Model for a single form question in the builder.
-     * type     — "Short Text" | "Paragraph" | "Multiple Choice" |
-     *            "Checkboxes" | "Dropdown" | "Date" | "File Upload"
-     * label    — the question text
-     * required — whether attendee must answer
-     * options  — list of option strings (for choice-type questions)
-     * docId    — Firestore document ID (if loaded from Firestore; null for new)
-     */
     static class FormQuestion {
         String       type;
-        String       label    = "";
-        boolean      required = false;
-        List<String> options  = new ArrayList<>();
-        String       docId    = null;   // null = not yet saved
+        String       label         = "";
+        boolean      required      = false;
+        List<String> options       = new ArrayList<>();
+        String       docId         = null;
+        boolean      locked        = false;
+        // Block-specific fields
+        String       feeAmount     = "";
+        String       bankInfo      = "";
+        String       blockType     = "";   // "reg" | "accom" | ""
+        // File pick result (runtime only, not saved to Firestore)
+        String       pickedFileName = "";
+        String       pickedFileUri  = "";
 
-        FormQuestion(String type) {
-            this.type = type;
+        FormQuestion(String type) { this.type = type; }
+
+        boolean isBlock() {
+            return "FeeBlock".equals(type) || "AccomBlock".equals(type);
         }
 
-        /** Deep copy for Duplicate. */
-        FormQuestion copy() {
-            FormQuestion c = new FormQuestion(this.type);
-            c.label    = this.label;
-            c.required = this.required;
-            c.options  = new ArrayList<>(this.options);
-            // docId intentionally null — copy is a new unsaved question
-            return c;
-        }
-
-        /** Returns true if this type uses an options list. */
         boolean hasOptions() {
-            return type.equals("Multiple Choice")
-                    || type.equals("Checkboxes")
-                    || type.equals("Dropdown");
+            return type.equals("Multiple Choice") || type.equals("Checkboxes") || type.equals("Dropdown");
+        }
+
+        FormQuestion copy() {
+            FormQuestion c = new FormQuestion(type);
+            c.label    = label; c.required = required;
+            c.options  = new ArrayList<>(options);
+            return c;
         }
     }
 
     // -------------------------------------------------------------------------
-    // RecyclerView Adapter
+    // Adapter
     // -------------------------------------------------------------------------
 
-    class QuestionAdapter extends RecyclerView.Adapter<QuestionAdapter.ViewHolder> {
+    class QuestionAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+        private static final int TYPE_BLOCK    = 0;
+        private static final int TYPE_QUESTION = 1;
 
         private final List<FormQuestion> list;
-
         QuestionAdapter(List<FormQuestion> list) { this.list = list; }
 
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_question_editor, parent, false);
-            return new ViewHolder(v);
+        public int getItemViewType(int position) {
+            return list.get(position).isBlock() ? TYPE_BLOCK : TYPE_QUESTION;
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            FormQuestion q = list.get(position);
-
-            // Q number
-            holder.tvQuestionNumber.setText("Q" + (position + 1));
-
-            // Label — set text without triggering watcher, then attach watcher
-            holder.etQuestionLabel.removeTextChangedListener(holder.labelWatcher);
-            holder.etQuestionLabel.setText(q.label);
-            holder.labelWatcher = new SimpleTextWatcher(s -> q.label = s);
-            holder.etQuestionLabel.addTextChangedListener(holder.labelWatcher);
-
-            // Type label
-            holder.tvQuestionType.setText(q.type);
-
-            // Required switch
-            holder.swRequired.setOnCheckedChangeListener(null);
-            holder.swRequired.setChecked(q.required);
-            holder.swRequired.setOnCheckedChangeListener((btn, checked) -> q.required = checked);
-
-            // Options section
-            if (q.hasOptions()) {
-                holder.llOptions.setVisibility(View.VISIBLE);
-                rebuildOptionRows(holder, q);
-                holder.btnAddOption.setOnClickListener(v -> {
-                    q.options.add("");
-                    rebuildOptionRows(holder, q);
-                });
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            LayoutInflater inf = LayoutInflater.from(parent.getContext());
+            if (viewType == TYPE_BLOCK) {
+                View v = inf.inflate(R.layout.item_fee_block, parent, false);
+                return new BlockViewHolder(v);
             } else {
-                holder.llOptions.setVisibility(View.GONE);
+                View v = inf.inflate(R.layout.item_question_editor, parent, false);
+                return new QuestionViewHolder(v);
+            }
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            FormQuestion q = list.get(position);
+            if (holder instanceof BlockViewHolder) {
+                bindBlock((BlockViewHolder) holder, q, position);
+            } else {
+                bindQuestion((QuestionViewHolder) holder, q, position);
+            }
+        }
+
+        // -- Block card binding --
+
+        private void bindBlock(BlockViewHolder h, FormQuestion q, int position) {
+            if ("reg".equals(q.blockType)) {
+                h.tvBlockTitle.setText("Registration Payment  [built-in]");
+                h.tvFeeLabel.setText("Registration Fee:");
+                h.tvAccomQuestion.setVisibility(View.GONE);
+            } else {
+                h.tvBlockTitle.setText("Accommodation Payment  [built-in]");
+                h.tvFeeLabel.setText("Accommodation Fee:");
+                h.tvAccomQuestion.setVisibility(View.VISIBLE);
+                h.tvAccomQuestion.setText("Do you want accommodation? (Fee = " + q.feeAmount + ")   Yes / No");
             }
 
-            // Duplicate
-            holder.btnDuplicate.setOnClickListener(v -> {
-                int pos = holder.getAdapterPosition();
-                if (pos == RecyclerView.NO_ID) return;
-                FormQuestion copy = list.get(pos).copy();
-                list.add(pos + 1, copy);
+            h.tvFeeAmount.setText(q.feeAmount.isEmpty() ? "(not set)" : q.feeAmount);
+            h.tvBankInfo.setText(q.bankInfo.isEmpty() ? "(not entered)" : q.bankInfo);
+
+            // File pick button
+            String picked = q.pickedFileName;
+            h.btnPickFile.setText(picked != null && !picked.isEmpty()
+                    ? "📎 " + picked : "Attach Proof — Tap to Upload");
+            h.btnPickFile.setOnClickListener(v -> openFilePicker(position));
+        }
+
+        // -- Regular question binding --
+
+        private void bindQuestion(QuestionViewHolder h, FormQuestion q, int position) {
+            h.tvQuestionNumber.setText("Q" + (position + 1));
+
+            h.etQuestionLabel.removeTextChangedListener(h.labelWatcher);
+            h.etQuestionLabel.setText(q.label);
+            h.labelWatcher = new SimpleTextWatcher(s -> q.label = s);
+            h.etQuestionLabel.addTextChangedListener(h.labelWatcher);
+
+            h.tvQuestionType.setText(q.type);
+
+            h.swRequired.setOnCheckedChangeListener(null);
+            h.swRequired.setChecked(q.required);
+            h.swRequired.setOnCheckedChangeListener((btn, checked) -> q.required = checked);
+
+            // File upload — show pick button
+            if ("File Upload".equals(q.type)) {
+                h.btnFilePickInline.setVisibility(View.VISIBLE);
+                String picked = q.pickedFileName;
+                h.btnFilePickInline.setText(picked != null && !picked.isEmpty()
+                        ? "📎 " + picked : "Tap to select file");
+                h.btnFilePickInline.setOnClickListener(v -> openFilePicker(position));
+            } else {
+                h.btnFilePickInline.setVisibility(View.GONE);
+            }
+
+            if (q.hasOptions()) {
+                h.llOptions.setVisibility(View.VISIBLE);
+                rebuildOptionRows(h, q);
+                h.btnAddOption.setOnClickListener(v -> {
+                    q.options.add(""); rebuildOptionRows(h, q);
+                });
+            } else {
+                h.llOptions.setVisibility(View.GONE);
+            }
+
+            h.btnDuplicate.setOnClickListener(v -> {
+                int pos = h.getAdapterPosition();
+                if (pos < 0) return;
+                list.add(pos + 1, list.get(pos).copy());
                 notifyItemInserted(pos + 1);
                 notifyItemRangeChanged(pos + 1, list.size() - pos - 1);
                 recyclerViewQuestions.scrollToPosition(pos + 1);
             });
 
-            // Delete
-            holder.btnDelete.setOnClickListener(v -> {
-                int pos = holder.getAdapterPosition();
-                if (pos == RecyclerView.NO_ID) return;
+            h.btnDelete.setOnClickListener(v -> {
+                int pos = h.getAdapterPosition();
+                if (pos < 0) return;
                 list.remove(pos);
                 notifyItemRemoved(pos);
                 notifyItemRangeChanged(pos, list.size() - pos);
             });
         }
 
-        /**
-         * Rebuilds the option rows inside llOptions for choice-type questions.
-         * Removes all child views except btnAddOption, then re-adds option rows.
-         */
-        private void rebuildOptionRows(ViewHolder holder, FormQuestion q) {
-            LinearLayout ll = holder.llOptions;
-
-            // Remove all views except btnAddOption (last child)
+        private void rebuildOptionRows(QuestionViewHolder h, FormQuestion q) {
+            LinearLayout ll = h.llOptions;
             int count = ll.getChildCount();
-            if (count > 1) {
-                ll.removeViews(0, count - 1);
-            }
-
-            // Re-add one row per option, inserted before btnAddOption
+            if (count > 1) ll.removeViews(0, count - 1);
             for (int i = 0; i < q.options.size(); i++) {
-                final int index = i;
+                final int idx = i;
                 View row = LayoutInflater.from(ll.getContext())
                         .inflate(R.layout.item_option_row, ll, false);
-
-                EditText etOption  = row.findViewById(R.id.etOptionText);
-                Button   btnRemove = row.findViewById(R.id.btnRemoveOption);
-
-                etOption.setText(q.options.get(i));
-                etOption.addTextChangedListener(new SimpleTextWatcher(s -> {
-                    if (index < q.options.size()) q.options.set(index, s);
+                EditText et  = row.findViewById(R.id.etOptionText);
+                Button   rem = row.findViewById(R.id.btnRemoveOption);
+                et.setText(q.options.get(i));
+                et.addTextChangedListener(new SimpleTextWatcher(s -> {
+                    if (idx < q.options.size()) q.options.set(idx, s);
                 }));
-
-                btnRemove.setOnClickListener(v -> {
-                    if (index < q.options.size()) {
-                        q.options.remove(index);
-                        rebuildOptionRows(holder, q);
-                    }
+                rem.setOnClickListener(v -> {
+                    if (idx < q.options.size()) { q.options.remove(idx); rebuildOptionRows(h, q); }
                 });
-
-                ll.addView(row, ll.getChildCount() - 1); // insert before btnAddOption
+                ll.addView(row, ll.getChildCount() - 1);
             }
         }
 
-        @Override
-        public int getItemCount() { return list.size(); }
+        @Override public int getItemCount() { return list.size(); }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
+        // -- ViewHolders --
+
+        class BlockViewHolder extends RecyclerView.ViewHolder {
+            TextView tvBlockTitle, tvAccomQuestion, tvFeeLabel, tvFeeAmount, tvBankInfo;
+            Button   btnPickFile;
+            BlockViewHolder(View v) {
+                super(v);
+                tvBlockTitle    = v.findViewById(R.id.tvBlockTitle);
+                tvAccomQuestion = v.findViewById(R.id.tvAccomQuestion);
+                tvFeeLabel      = v.findViewById(R.id.tvFeeLabel);
+                tvFeeAmount     = v.findViewById(R.id.tvFeeAmount);
+                tvBankInfo      = v.findViewById(R.id.tvBankInfo);
+                btnPickFile     = v.findViewById(R.id.btnPickFile);
+            }
+        }
+
+        class QuestionViewHolder extends RecyclerView.ViewHolder {
             TextView     tvQuestionNumber, tvQuestionType;
             EditText     etQuestionLabel;
             Switch       swRequired;
             LinearLayout llOptions;
-            Button       btnAddOption, btnDuplicate, btnDelete;
+            Button       btnAddOption, btnDuplicate, btnDelete, btnFilePickInline;
             TextWatcher  labelWatcher;
-
-            ViewHolder(View v) {
+            QuestionViewHolder(View v) {
                 super(v);
-                tvQuestionNumber = v.findViewById(R.id.tvQuestionNumber);
-                etQuestionLabel  = v.findViewById(R.id.etQuestionLabel);
-                tvQuestionType   = v.findViewById(R.id.tvQuestionType);
-                swRequired       = v.findViewById(R.id.swRequired);
-                llOptions        = v.findViewById(R.id.llOptions);
-                btnAddOption     = v.findViewById(R.id.btnAddOption);
-                btnDuplicate     = v.findViewById(R.id.btnDuplicate);
-                btnDelete        = v.findViewById(R.id.btnDelete);
+                tvQuestionNumber  = v.findViewById(R.id.tvQuestionNumber);
+                etQuestionLabel   = v.findViewById(R.id.etQuestionLabel);
+                tvQuestionType    = v.findViewById(R.id.tvQuestionType);
+                swRequired        = v.findViewById(R.id.swRequired);
+                llOptions         = v.findViewById(R.id.llOptions);
+                btnAddOption      = v.findViewById(R.id.btnAddOption);
+                btnDuplicate      = v.findViewById(R.id.btnDuplicate);
+                btnDelete         = v.findViewById(R.id.btnDelete);
+                btnFilePickInline = v.findViewById(R.id.btnFilePickInline);
             }
         }
     }
 
     // -------------------------------------------------------------------------
-    // Helper: simple TextWatcher
+    // SimpleTextWatcher
     // -------------------------------------------------------------------------
 
     interface TextCallback { void onText(String s); }
@@ -495,9 +612,7 @@ public class FormBuilderActivity extends AppCompatActivity {
         private final TextCallback cb;
         SimpleTextWatcher(TextCallback cb) { this.cb = cb; }
         public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-        public void onTextChanged(CharSequence s, int start, int before, int count) {
-            cb.onText(s.toString());
-        }
+        public void onTextChanged(CharSequence s, int start, int before, int count) { cb.onText(s.toString()); }
         public void afterTextChanged(Editable s) {}
     }
 }

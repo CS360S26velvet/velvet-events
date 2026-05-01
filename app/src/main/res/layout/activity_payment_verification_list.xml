@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_payment_verification_list.xml
+    Role: Lists all approved events. Each row has a "Check Payments" button.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:padding="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvPaymentListTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Payment Verification"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Select an approved event to verify payments"
+            android:textColor="#BBDEFB"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"/>
+
+    </LinearLayout>
+
+    <!-- No events message -->
+    <TextView
+        android:id="@+id/tvNoApprovedEvents"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No approved events found. Events must be approved by admin first."
+        android:textSize="15sp"
+        android:textColor="#666666"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="gone"/>
+
+    <!-- Event list -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewApprovedEvents"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp"/>
+
+</LinearLayout>

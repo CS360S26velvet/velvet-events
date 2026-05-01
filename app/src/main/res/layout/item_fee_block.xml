@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_fee_block.xml
+    Role: Single locked card in FormBuilder for the Registration Fee block
+    or Accommodation block. Shows all fields in one card — not separate questions.
+
+    IDs used by FormBuilderActivity.QuestionAdapter.BlockViewHolder:
+      tvBlockTitle, tvAccomQuestion, tvFeeLabel, tvFeeAmount, tvBankInfo, btnPickFile
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFF8E1"
+    android:padding="14dp"
+    android:layout_marginBottom="8dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp">
+
+    <!-- Block title + lock badge -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="10dp">
+
+        <TextView
+            android:id="@+id/tvBlockTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Registration Payment"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#E65100"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔒 locked"
+            android:textSize="11sp"
+            android:textColor="#BF360C"
+            android:background="#FFCCBC"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"/>
+
+    </LinearLayout>
+
+    <!-- Accommodation question (only visible for accom block) -->
+    <TextView
+        android:id="@+id/tvAccomQuestion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Do you want accommodation? (Fee = …)   Yes / No"
+        android:textSize="13sp"
+        android:textColor="#333333"
+        android:background="#FFFFFF"
+        android:padding="10dp"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"/>
+
+    <!-- Fee row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="#FFFFFF"
+        android:padding="10dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/tvFeeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Registration Fee:"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#555555"
+            android:layout_marginEnd="8dp"/>
+
+        <TextView
+            android:id="@+id/tvFeeAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PKR 500"
+            android:textSize="13sp"
+            android:textColor="#1565C0"
+            android:textStyle="bold"/>
+
+    </LinearLayout>
+
+    <!-- Bank info row -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="#FFFFFF"
+        android:padding="10dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Bank Account Information:"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#555555"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvBankInfo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="(not entered)"
+            android:textSize="13sp"
+            android:textColor="#333333"/>
+
+    </LinearLayout>
+
+    <!-- File upload row -->
+    <Button
+        android:id="@+id/btnPickFile"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="Attach Proof — Tap to Upload"
+        android:textSize="13sp"
+        android:textColor="#1565C0"
+        android:backgroundTint="#E3F2FD"
+        android:drawableStart="@android:drawable/ic_menu_upload"/>
+
+</LinearLayout>

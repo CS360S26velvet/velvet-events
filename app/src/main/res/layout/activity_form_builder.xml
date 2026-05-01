@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    activity_form_builder.xml
-    Role: Layout for the Form Builder screen (US-18, US-19, US-22)
-    Allows organizers to create custom registration forms by adding questions
+    activity_form_builder.xml  (UPDATED)
+    Added: btnReleaseForm — "Release to Attendees" button in header.
+    Save = draft only. Release = makes form visible to attendees.
+    All other IDs unchanged.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -15,7 +16,10 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="#1565C0"
-        android:padding="16dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
@@ -26,27 +30,38 @@
             android:layout_weight="1"
             android:text="Registration Form Builder"
             android:textColor="#FFFFFF"
-            android:textSize="18sp"
+            android:textSize="16sp"
             android:textStyle="bold"/>
 
         <Button
             android:id="@+id/btnPreview"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
             android:text="Preview"
             android:backgroundTint="#FFFFFF"
             android:textColor="#1565C0"
-            android:textSize="12sp"/>
+            android:textSize="11sp"
+            android:layout_marginEnd="4dp"/>
 
         <Button
             android:id="@+id/btnSaveForm"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Save"
+            android:layout_height="36dp"
+            android:text="Save Draft"
             android:backgroundTint="#0D47A1"
             android:textColor="#FFFFFF"
-            android:textSize="12sp"
-            android:layout_marginStart="8dp"/>
+            android:textSize="11sp"
+            android:layout_marginEnd="4dp"/>
+
+        <Button
+            android:id="@+id/btnReleaseForm"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="Release ▶"
+            android:backgroundTint="#00C853"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"/>
+
     </LinearLayout>
 
     <!-- Question Type Selector -->
@@ -119,6 +134,7 @@
                 android:backgroundTint="#1565C0"
                 android:textColor="#FFFFFF"
                 android:textSize="11sp"/>
+
         </LinearLayout>
     </HorizontalScrollView>
 

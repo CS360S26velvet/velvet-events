@@ -17,24 +17,23 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.ArrayList;
 import java.util.List;
-/**
- * AttendeeRegistrationActivity.java
- *
- * Role: Shows all events belonging to this society (organizerId = "ORG0012").
- * Each event row has a "Build Reg Form" button that opens FormBuilderActivity
- * for that specific event.
- *
- * If no events exist in Firestore for this organizerId, shows a "No events yet" message.
- *
- * Note: organizerId == societyId — same concept, using organizerId everywhere.
- *
- * Firestore reads: events/ where organizerId == "ORG0012"
- *
- */
 
+/**
+ * AttendeeRegistrationActivity.java  (UPDATED)
+ *
+ * Role: Shows all events belonging to this society.
+ * Each event row has an "Edit Reg Form" button.
+ *
+ * CHANGE FROM ORIGINAL:
+ *   Clicking "Edit Reg Form" now first opens RegistrationFeeSetupActivity
+ *   (which asks about reg fee / accommodation).
+ *   RegistrationFeeSetupActivity then launches FormBuilderActivity
+ *   with the fee data as extras.
+ *
+ * Firestore reads: events/ where organizerUsername == organizerUsername
+ */
 public class AttendeeRegistrationActivity extends AppCompatActivity {
 
-    // organizerId == societyId — same thing, using organizerId everywhere
     private String organizerUsername;
 
     private RecyclerView     recyclerViewEvents;
@@ -63,18 +62,6 @@ public class AttendeeRegistrationActivity extends AppCompatActivity {
         loadEvents();
     }
 
-    /**
-     * Loads all submitted proposals for this society from Firestore.
-     * Queries the "proposals" collection (not "events") because that is where
-     * ProposalFormActivity and OrganizerDashboardActivity save event data.
-     * organizerId field == societyId (same concept).
-     * Only shows proposals with status == "Submitted".
-     *
-     * TODO: Change status filter to "Approved" once CCA approval flow is implemented.
-     * TODO: If a separate "events" collection is introduced post-approval, switch collection here.
-     *
-     * Shows "No events yet" if none found or on failure.
-     */
     private void loadEvents() {
         db.collection("events")
                 .whereEqualTo("organizerUsername", organizerUsername)
@@ -136,10 +123,12 @@ public class AttendeeRegistrationActivity extends AppCompatActivity {
         public void onBindViewHolder(ViewHolder holder, int position) {
             EventItem event = list.get(position);
             holder.tvEventName.setText(event.title);
+
+            // UPDATED: opens RegistrationFeeSetupActivity first, not FormBuilderActivity directly
             holder.btnBuildForm.setOnClickListener(v -> {
                 Intent intent = new Intent(
                         AttendeeRegistrationActivity.this,
-                        FormBuilderActivity.class);
+                        RegistrationFeeSetupActivity.class);
                 intent.putExtra("eventId",   event.id);
                 intent.putExtra("eventName", event.title);
                 startActivity(intent);

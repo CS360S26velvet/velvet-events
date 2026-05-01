@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    item_question_editor.xml
-    Role: Single question card in the Form Builder RecyclerView.
-    Contains: question number, label EditText, required Switch, type label,
-    options LinearLayout (for Multiple Choice / Checkboxes / Dropdown),
-    Duplicate and Delete buttons.
+    item_question_editor.xml  (UPDATED)
+    Added: btnFilePickInline — visible only for File Upload type questions,
+    lets organiser/attendee actually pick a file from device.
+    All other IDs unchanged.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -12,7 +11,9 @@
     android:orientation="vertical"
     android:background="#FFFFFF"
     android:padding="12dp"
-    android:layout_marginBottom="8dp">
+    android:layout_marginBottom="8dp"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp">
 
     <!-- Row 1: Q number + label + required switch -->
     <LinearLayout
@@ -63,7 +64,20 @@
         android:layout_marginTop="4dp"
         android:layout_marginBottom="4dp"/>
 
-    <!-- Options section (visible only for Multiple Choice / Checkboxes / Dropdown) -->
+    <!-- File Upload pick button — only shown for File Upload type -->
+    <Button
+        android:id="@+id/btnFilePickInline"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:text="Tap to select file"
+        android:textSize="13sp"
+        android:textColor="#1565C0"
+        android:backgroundTint="#E3F2FD"
+        android:visibility="gone"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp"/>
+
+    <!-- Options section (Multiple Choice / Checkboxes / Dropdown) -->
     <LinearLayout
         android:id="@+id/llOptions"
         android:layout_width="match_parent"
@@ -71,8 +85,6 @@
         android:orientation="vertical"
         android:visibility="gone"
         android:layout_marginTop="4dp">
-
-        <!-- Option rows will be added programmatically here -->
 
         <Button
             android:id="@+id/btnAddOption"
@@ -86,7 +98,7 @@
 
     </LinearLayout>
 
-    <!-- Row last: Duplicate + Delete buttons -->
+    <!-- Duplicate + Delete -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

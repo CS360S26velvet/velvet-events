@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_payment_event.xml
+    Role: Single event row in PaymentVerificationListActivity.
+    Shows event name, status badge, and "Check Payments" button.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#FFFFFF"
+    android:padding="16dp"
+    android:layout_marginBottom="8dp"
+    android:gravity="center_vertical"
+    android:elevation="2dp">
+
+    <!-- Event Name -->
+    <TextView
+        android:id="@+id/tvPaymentEventName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Event Name"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:textColor="#000000"/>
+
+    <!-- Status badge -->
+    <TextView
+        android:id="@+id/tvPaymentEventStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Approved"
+        android:textSize="11sp"
+        android:textColor="#4CAF50"
+        android:textStyle="bold"
+        android:layout_marginEnd="12dp"/>
+
+    <!-- Check Payments button -->
+    <Button
+        android:id="@+id/btnCheckPayments"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Check Payments"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"/>
+
+</LinearLayout>

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    item_registrant_payment.xml
+    Role: Single row in PaymentVerificationActivity's RecyclerView.
+    Matches the table design from the screenshots.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:background="#FFFFFF"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:gravity="center_vertical">
+
+    <!-- Divider line on bottom (simulated by outer wrapper) -->
+
+    <!-- Student Name -->
+    <TextView
+        android:id="@+id/tvRegistrantName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:text="Student Name"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:textColor="#222222"/>
+
+    <!-- Student ID -->
+    <TextView
+        android:id="@+id/tvRegistrantStudentId"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.5"
+        android:text="AT0000"
+        android:textSize="12sp"
+        android:textColor="#555555"/>
+
+    <!-- Submitted date -->
+    <TextView
+        android:id="@+id/tvRegistrantDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1.5"
+        android:text="Mar 8, 2026"
+        android:textSize="12sp"
+        android:textColor="#555555"/>
+
+    <!-- Proof link -->
+    <TextView
+        android:id="@+id/tvRegistrantProofLink"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="0"
+        android:visibility="gone"/>
+
+    <!-- Amount -->
+    <TextView
+        android:id="@+id/tvRegistrantAmount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="PKR 500"
+        android:textSize="12sp"
+        android:textColor="#333333"/>
+
+    <!-- Status badge -->
+    <TextView
+        android:id="@+id/tvRegistrantStatus"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Pending"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="#FF9800"/>
+
+    <!-- Actions -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="2"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btnApproveRegistrant"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="Approve"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginEnd="4dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnRejectRegistrant"
+            android:layout_width="wrap_content"
+            android:layout_height="32dp"
+            android:text="Reject"
+            android:textSize="10sp"
+            android:textColor="#FFFFFF"
+            android:backgroundTint="#F44336"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"/>
+
+    </LinearLayout>
+
+</LinearLayout>

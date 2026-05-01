@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    dialog_payment_detail.xml
+    Role: Detail dialog/panel for a single registrant's payment verification.
+    Matches the right-side panel shown in screenshot 2.
+    Shows: name, student ID, payment screenshot button, submission details,
+    rejection reason input, Confirm Approve and Reject with Reason buttons.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <!-- Name + ID header -->
+        <TextView
+            android:id="@+id/tvDetailName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Student Name"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#111111"/>
+
+        <TextView
+            android:id="@+id/tvDetailId"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="AT0000"
+            android:textSize="14sp"
+            android:textColor="#666666"
+            android:layout_marginTop="2dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Payment Screenshot button -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Payment Screenshot"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Proof placeholder box -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="160dp"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:background="#F0F4FF"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📄"
+                android:textSize="36sp"/>
+
+            <Button
+                android:id="@+id/btnViewProof"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View Screenshot"
+                android:backgroundTint="#1565C0"
+                android:textColor="#FFFFFF"
+                android:textSize="12sp"
+                android:layout_marginTop="8dp"/>
+
+        </LinearLayout>
+
+        <!-- Submission details card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#F8F8F8"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Submission Details"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- Submitted -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Submitted:"
+                    android:textSize="13sp"
+                    android:textColor="#666666"/>
+                <TextView
+                    android:id="@+id/tvDetailSubmitted"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="13sp"
+                    android:textColor="#222222"/>
+            </LinearLayout>
+
+            <!-- Amount -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="6dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Amount:"
+                    android:textSize="13sp"
+                    android:textColor="#666666"/>
+                <TextView
+                    android:id="@+id/tvDetailAmount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="—"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#222222"/>
+            </LinearLayout>
+
+            <!-- Status -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Status:"
+                    android:textSize="13sp"
+                    android:textColor="#666666"/>
+                <TextView
+                    android:id="@+id/tvDetailStatus"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Pending"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:textColor="#FF9800"/>
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Rejection reason -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Rejection Reason (if rejecting)"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#333333"
+            android:layout_marginBottom="6dp"/>
+
+        <EditText
+            android:id="@+id/etRejectionReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Provide a reason for rejection..."
+            android:inputType="textMultiLine"
+            android:minLines="3"
+            android:gravity="top|start"
+            android:background="@drawable/bg_input_field"
+            android:padding="10dp"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Confirm Approve -->
+        <Button
+            android:id="@+id/btnConfirmApprove"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Confirm Approve"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#4CAF50"
+            android:layout_marginBottom="8dp"/>
+
+        <!-- Reject with Reason -->
+        <Button
+            android:id="@+id/btnRejectWithReason"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:text="Reject with Reason"
+            android:textColor="#FFFFFF"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:backgroundTint="#F44336"/>
+
+    </LinearLayout>
+
+</ScrollView>
