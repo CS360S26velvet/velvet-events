@@ -293,9 +293,56 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                     updateStats();
                     rebuildShown();
                     Toast.makeText(this, r.studentName + " approved.", Toast.LENGTH_SHORT).show();
+
+                    // ADDED: If attendee also selected accommodation, write to accommodationData subcollection
+                    // so the admin can download it grouped by society/event.
+                    writeAccommodationDataIfNeeded(r);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    /**
+     * Checks whether this registrant selected accommodation.
+     * If yes, writes/updates a document in:
+     *   accommodationData/{eventId}/attendees/{registrationDocId}
+     * containing name, studentId, amount, eventId — for the admin to download.
+     */
+    private void writeAccommodationDataIfNeeded(Registrant r) {
+        // Re-read the registration doc to get wantsAccommodation field
+        db.collection("registrations").document(r.docId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String wants = doc.getString("wantsAccommodation");
+                    if (!"Yes".equals(wants)) return; // not selected — nothing to write
+
+                    String accomAmount = doc.getString("accommodationAmount");
+                    if (accomAmount == null) accomAmount = "";
+
+                    Map<String, Object> accomData = new HashMap<>();
+                    accomData.put("studentName",          r.studentName);
+                    accomData.put("studentId",            r.studentId);
+                    accomData.put("accommodationAmount",  accomAmount);
+                    accomData.put("eventId",              eventId);
+                    accomData.put("eventName",            eventName);
+                    accomData.put("paymentStatus",        "Approved");
+                    accomData.put("wantsAccommodation",   "Yes");
+                    accomData.put("approvedAt",           System.currentTimeMillis());
+
+                    // Top-level registrations doc already has these fields.
+                    // We also write a convenience copy to accommodationData/<eventId>/attendees/<regId>
+                    // so the admin query is a simple collection-group query.
+                    db.collection("accommodationData")
+                            .document(eventId)
+                            .collection("attendees")
+                            .document(r.docId)
+                            .set(accomData)
+                            .addOnFailureListener(e -> {
+                                // Non-critical — do not show error to organizer
+                                android.util.Log.w("PaymentVerif",
+                                        "Could not write accommodationData: " + e.getMessage());
+                            });
+                });
     }
 
     private void rejectRegistrant(Registrant r, String reason) {

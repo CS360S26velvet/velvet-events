@@ -56,8 +56,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnCalendar).setOnClickListener(v ->
                 startActivity(new Intent(this, CalendarActivity.class)));
 
+        // CHANGED: now opens society-grouped accommodation view
         findViewById(R.id.btnAccommodation).setOnClickListener(v ->
-                startActivity(new Intent(this, AccommodationActivity.class)));
+                startActivity(new Intent(this, com.lums.eventhub.admin.accommodation.AdminAccommodationBySocietyActivity.class)));
 
         // Register New Organizer button
         findViewById(R.id.btnRegisterOrganizer).setOnClickListener(v ->
@@ -67,8 +68,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.tvViewAll).setOnClickListener(v ->
                 startActivity(new Intent(this, ProposalListActivity.class)));
 
-        // Sign out
-        findViewById(R.id.btnSignOut).setOnClickListener(v -> finish());
+        // Sign out — CHANGED: persistent logout to LoginActivity
+        findViewById(R.id.btnSignOut).setOnClickListener(v -> {
+            Intent intent = new Intent(this, com.lums.eventhub.auth.LoginActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
+                    | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
 
         loadStats();
         loadPendingProposals();

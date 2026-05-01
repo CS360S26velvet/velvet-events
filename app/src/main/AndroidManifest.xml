@@ -33,6 +33,7 @@
         <activity android:name=".admin.auditorium.AuditoriumActivity" />
         <activity android:name=".admin.calendar.CalendarActivity" />
         <activity android:name=".admin.accommodation.AccommodationActivity" />
+        <activity android:name=".admin.accommodation.AdminAccommodationBySocietyActivity" android:exported="false"/>
 
         <!-- Organizer module -->
         <activity android:name=".OrganizerDashboardActivity" />
