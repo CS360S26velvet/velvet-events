@@ -98,8 +98,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnNavRegistrants).setOnClickListener(v ->
                 startActivity(new Intent(this, RegistrantDashboardActivity.class)));
 
-        findViewById(R.id.btnNavCheckIn).setOnClickListener(v ->
-                startActivity(new Intent(this, CheckInActivity.class)));
+        findViewById(R.id.btnNavCheckIn).setOnClickListener(v -> {
+            Intent ciIntent = new Intent(this, CheckInActivity.class);
+            ciIntent.putExtra("organizerUsername", organizerUsername);
+            startActivity(ciIntent);
+        });
 
         findViewById(R.id.btnNavFormSettings).setOnClickListener(v ->
                 startActivity(new Intent(this, CapacitySettingActivity.class)));

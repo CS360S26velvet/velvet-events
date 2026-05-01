@@ -1,10 +1,5 @@
 package com.lums.eventhub;
-/**
- * CheckInActivity.java
- * Role: Manages live event check-in for organizers (US-30)
- * Pattern: RecyclerView with Adapter pattern
- * Outstanding issues: None
- */
+
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -13,28 +8,58 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+/**
+ * CheckInActivity.java (UPDATED)
+ *
+ * Shows ONLY attendees whose paymentStatus == "Approved" in registrations/.
+ * Pending payments are NOT shown here at all.
+ *
+ * On "Check In" tap:
+ *   - Sets checkedIn = true, checkedInAt = current timestamp in Firestore
+ *   - Button turns grey "Checked In ✓ HH:MM AM/PM"
+ *   - Stats + progress bar update live
+ *
+ * Receives from OrganizerDashboardActivity:
+ *   "organizerUsername" — used to find the current approved event
+ */
 public class CheckInActivity extends AppCompatActivity {
 
-    RecyclerView recyclerView;
-    EditText etSearch;
-    TextView tvCheckedIn, tvRemaining, tvTotalRegistered;
-    AttendeeAdapter adapter;
-    List<Attendee> attendeeList = new ArrayList<>();
-    List<Attendee> filteredList = new ArrayList<>();
-    int checkedInCount = 0;
-    FirebaseFirestore db;
+    private RecyclerView     recyclerView;
+    private EditText         etSearch;
+    private TextView         tvTitle, tvSubtitle;
+    private TextView         tvTotalRegistered, tvCheckedIn, tvRemaining, tvProgress;
+    private ProgressBar      progressBar;
+    private AttendeeAdapter  adapter;
+
+    private final List<Attendee> allList      = new ArrayList<>();
+    private final List<Attendee> filteredList = new ArrayList<>();
+    private int checkedInCount = 0;
+
+    private String organizerUsername  = "ORG0012";
+    private String currentEventId     = "";
+    private String currentEventTitle  = "Event";
+    private String currentEventVenue  = "";
+
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,161 +67,237 @@ public class CheckInActivity extends AppCompatActivity {
         setContentView(R.layout.activity_check_in);
 
         db = FirebaseFirestore.getInstance();
+        organizerUsername = getIntent().getStringExtra("organizerUsername");
+        if (organizerUsername == null) organizerUsername = "ORG0012";
 
-        recyclerView = findViewById(R.id.recyclerView);
-        etSearch = findViewById(R.id.etSearch);
-        tvCheckedIn = findViewById(R.id.tvCheckedIn);
-        tvRemaining = findViewById(R.id.tvRemaining);
-        tvTotalRegistered = findViewById(R.id.tvTotalRegistered);
+        bindViews();
 
         adapter = new AttendeeAdapter(filteredList);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        loadAttendeesFromFirestore();
-
         etSearch.addTextChangedListener(new TextWatcher() {
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-            public void onTextChanged(CharSequence s, int start, int before, int count) {
-                filterList(s.toString());
-            }
+            public void beforeTextChanged(CharSequence s, int a, int b, int c) {}
             public void afterTextChanged(Editable s) {}
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterList(s.toString().trim());
+            }
         });
+
+        findViewById(R.id.btnCheckInBack).setOnClickListener(v -> finish());
+
+        loadCurrentEvent();
     }
 
-    void loadAttendeesFromFirestore() {
-        db.collection("attendees")
+    // ── Bind views ─────────────────────────────────────────────────────────────
+
+    private void bindViews() {
+        tvTitle           = findViewById(R.id.tvCheckInTitle);
+        tvSubtitle        = findViewById(R.id.tvCheckInSubtitle);
+        tvTotalRegistered = findViewById(R.id.tvTotalRegistered);
+        tvCheckedIn       = findViewById(R.id.tvCheckedIn);
+        tvRemaining       = findViewById(R.id.tvRemaining);
+        tvProgress        = findViewById(R.id.tvCheckInProgress);
+        progressBar       = findViewById(R.id.progressCheckIn);
+        etSearch          = findViewById(R.id.etSearch);
+        recyclerView      = findViewById(R.id.recyclerView);
+    }
+
+    // ── Load current approved event ────────────────────────────────────────────
+
+    private void loadCurrentEvent() {
+        db.collection("proposals")
+                .whereEqualTo("organizerUsername", organizerUsername)
+                .whereEqualTo("status", "Approved")
+                .limit(1)
                 .get()
-                .addOnSuccessListener(queryDocumentSnapshots -> {
-                    attendeeList.clear();
-                    checkedInCount = 0;
-                    for (QueryDocumentSnapshot doc : queryDocumentSnapshots) {
-                        String name = doc.getString("name");
-                        String studentId = doc.getString("studentId");
-                        String paymentStatus = doc.getString("paymentStatus");
-                        Boolean isCheckedIn = doc.getBoolean("isCheckedIn");
-                        if (name != null) {
-                            Attendee a = new Attendee(
-                                    doc.getId(), name, studentId, paymentStatus,
-                                    isCheckedIn != null && isCheckedIn);
-                            attendeeList.add(a);
-                            if (a.isCheckedIn) checkedInCount++;
-                        }
+                .addOnSuccessListener(snap -> {
+                    if (!snap.isEmpty()) {
+                        QueryDocumentSnapshot doc =
+                                (QueryDocumentSnapshot) snap.getDocuments().get(0);
+                        currentEventId    = doc.getId();
+                        currentEventTitle = nvl(doc.getString("title"), "Event");
+                        currentEventVenue = nvl(doc.getString("venue"), "");
                     }
-                    // If no data in Firestore yet, add sample data
-                    if (attendeeList.isEmpty()) {
-                        addSampleData();
-                    } else {
-                        filteredList.addAll(attendeeList);
-                        updateStats();
-                        adapter.notifyDataSetChanged();
-                    }
+                    tvTitle.setText("Live Check-In — " + currentEventTitle);
+                    tvSubtitle.setText(currentEventVenue);
+                    loadApprovedAttendees();
                 })
                 .addOnFailureListener(e -> {
-                    addSampleData();
+                    tvTitle.setText("Live Check-In — " + currentEventTitle);
+                    loadApprovedAttendees();
                 });
     }
 
-    void addSampleData() {
-        attendeeList.add(new Attendee("", "Fatima Malik", "AT0023", "Paid", true));
-        attendeeList.add(new Attendee("", "Hassan Raza", "AT0041", "Paid", false));
-        attendeeList.add(new Attendee("", "Zainab Ali", "AT0055", "Paid", true));
-        attendeeList.add(new Attendee("", "Bilal Khan", "AT0067", "Pending", false));
-        attendeeList.add(new Attendee("", "Sara Ahmed", "AT0078", "Paid", false));
-        attendeeList.add(new Attendee("", "Usman Tariq", "AT0089", "Paid", false));
-        for (Attendee a : attendeeList) {
-            if (a.isCheckedIn) checkedInCount++;
+    // ── Load ONLY Approved registrations ──────────────────────────────────────
+
+    private void loadApprovedAttendees() {
+        com.google.firebase.firestore.Query query;
+
+        if (!currentEventId.isEmpty()) {
+            query = db.collection("registrations")
+                    .whereEqualTo("eventId", currentEventId)
+                    .whereEqualTo("paymentStatus", "Approved");
+        } else {
+            // fallback: all approved registrations for this organiser
+            query = db.collection("registrations")
+                    .whereEqualTo("paymentStatus", "Approved");
         }
-        filteredList.addAll(attendeeList);
-        updateStats();
-        adapter.notifyDataSetChanged();
+
+        query.get()
+                .addOnSuccessListener(snap -> {
+                    allList.clear();
+                    checkedInCount = 0;
+
+                    for (QueryDocumentSnapshot doc : snap) {
+                        Attendee a    = new Attendee();
+                        a.id          = doc.getId();
+                        a.name        = nvl(doc.getString("studentName"), "Unknown");
+                        a.studentId   = nvl(doc.getString("studentId"),   "—");
+                        Boolean ci    = doc.getBoolean("checkedIn");
+                        a.checkedIn   = Boolean.TRUE.equals(ci);
+                        Long ts       = doc.getLong("checkedInAt");
+                        a.checkedInAt = ts != null
+                                ? new SimpleDateFormat("hh:mm a", Locale.getDefault())
+                                .format(new Date(ts))
+                                : "";
+                        if (a.checkedIn) checkedInCount++;
+                        allList.add(a);
+                    }
+
+                    filteredList.clear();
+                    filteredList.addAll(allList);
+                    updateStats();
+                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed to load attendees: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 
-    void filterList(String query) {
+    // ── Search filter ──────────────────────────────────────────────────────────
+
+    private void filterList(String query) {
         filteredList.clear();
-        for (Attendee a : attendeeList) {
-            if (a.name.toLowerCase().contains(query.toLowerCase()) ||
-                    a.studentId.toLowerCase().contains(query.toLowerCase())) {
-                filteredList.add(a);
+        if (query.isEmpty()) {
+            filteredList.addAll(allList);
+        } else {
+            String q = query.toLowerCase();
+            for (Attendee a : allList) {
+                if (a.name.toLowerCase().contains(q)
+                        || a.studentId.toLowerCase().contains(q)) {
+                    filteredList.add(a);
+                }
             }
         }
         adapter.notifyDataSetChanged();
     }
 
-    void updateStats() {
-        tvTotalRegistered.setText(String.valueOf(attendeeList.size()));
+    // ── Stats ──────────────────────────────────────────────────────────────────
+
+    private void updateStats() {
+        int total     = allList.size();
+        int remaining = total - checkedInCount;
+        int pct       = total > 0 ? (checkedInCount * 100) / total : 0;
+
+        tvTotalRegistered.setText(String.valueOf(total));
         tvCheckedIn.setText(String.valueOf(checkedInCount));
-        tvRemaining.setText(String.valueOf(attendeeList.size() - checkedInCount));
+        tvRemaining.setText(String.valueOf(remaining));
+        tvProgress.setText(pct + "% checked in");
+        progressBar.setProgress(pct);
     }
 
-    class Attendee {
-        String id, name, studentId, paymentStatus;
-        boolean isCheckedIn;
-        Attendee(String id, String name, String studentId, String paymentStatus, boolean isCheckedIn) {
-            this.id = id;
-            this.name = name;
-            this.studentId = studentId;
-            this.paymentStatus = paymentStatus;
-            this.isCheckedIn = isCheckedIn;
-        }
-    }
+    // ── Check in a single attendee ─────────────────────────────────────────────
 
-    class AttendeeAdapter extends RecyclerView.Adapter<AttendeeAdapter.ViewHolder> {
-        List<Attendee> list;
-        AttendeeAdapter(List<Attendee> list) { this.list = list; }
+    private void checkInAttendee(Attendee a, int position) {
+        long now = System.currentTimeMillis();
+        Map<String, Object> update = new HashMap<>();
+        update.put("checkedIn",   true);
+        update.put("checkedInAt", now);
 
-        public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_attendee, parent, false);
-            return new ViewHolder(v);
-        }
-
-        public void onBindViewHolder(ViewHolder holder, int position) {
-            Attendee a = list.get(position);
-            holder.tvName.setText(a.name);
-            holder.tvStudentId.setText(a.studentId);
-            holder.tvPaymentStatus.setText(a.paymentStatus.equals("Paid") ? "Paid ✓" : "Pending ⚠");
-            holder.tvPaymentStatus.setTextColor(a.paymentStatus.equals("Paid") ?
-                    0xFF4CAF50 : 0xFFFF9800);
-
-            if (a.isCheckedIn) {
-                holder.btnCheckIn.setText("Checked In ✓");
-                holder.btnCheckIn.setEnabled(false);
-                holder.btnCheckIn.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
-            } else {
-                holder.btnCheckIn.setText("Check In");
-                holder.btnCheckIn.setEnabled(true);
-                holder.btnCheckIn.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFF1565C0));
-                holder.btnCheckIn.setOnClickListener(v -> {
-                    a.isCheckedIn = true;
+        db.collection("registrations").document(a.id)
+                .update(update)
+                .addOnSuccessListener(v -> {
+                    a.checkedIn   = true;
+                    a.checkedInAt = new SimpleDateFormat("hh:mm a", Locale.getDefault())
+                            .format(new Date(now));
                     checkedInCount++;
                     updateStats();
-                    notifyItemChanged(position);
-                    // Save to Firestore if has ID
-                    if (!a.id.isEmpty()) {
-                        Map<String, Object> update = new HashMap<>();
-                        update.put("isCheckedIn", true);
-                        db.collection("attendees").document(a.id).update(update);
-                    }
-                    Toast.makeText(CheckInActivity.this,
-                            a.name + " checked in!", Toast.LENGTH_SHORT).show();
+                    adapter.notifyItemChanged(position);
+                    Toast.makeText(this,
+                            a.name + " checked in ✓", Toast.LENGTH_SHORT).show();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    private String nvl(String s, String fallback) {
+        return (s != null && !s.isEmpty()) ? s : fallback;
+    }
+
+    // ── Model ──────────────────────────────────────────────────────────────────
+
+    static class Attendee {
+        String  id, name, studentId, checkedInAt;
+        boolean checkedIn;
+    }
+
+    // ── Adapter ────────────────────────────────────────────────────────────────
+
+    class AttendeeAdapter extends RecyclerView.Adapter<AttendeeAdapter.VH> {
+
+        private final List<Attendee> list;
+        AttendeeAdapter(List<Attendee> list) { this.list = list; }
+
+        @Override
+        public VH onCreateViewHolder(ViewGroup parent, int viewType) {
+            View v = LayoutInflater.from(parent.getContext())
+                    .inflate(R.layout.item_attendee, parent, false);
+            return new VH(v);
+        }
+
+        @Override
+        public void onBindViewHolder(VH h, int position) {
+            Attendee a = list.get(position);
+
+            h.tvName.setText(a.name);
+            h.tvStudentId.setText(a.studentId);
+
+            if (a.checkedIn) {
+                h.tvCheckInStatus.setText("● Checked In  " + a.checkedInAt);
+                h.tvCheckInStatus.setTextColor(0xFF2E7D32);
+                h.btnCheckIn.setText("Checked In ✓");
+                h.btnCheckIn.setEnabled(false);
+                h.btnCheckIn.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
+            } else {
+                h.tvCheckInStatus.setText("Not yet");
+                h.tvCheckInStatus.setTextColor(0xFF888888);
+                h.btnCheckIn.setText("Check In");
+                h.btnCheckIn.setEnabled(true);
+                h.btnCheckIn.setBackgroundTintList(
+                        android.content.res.ColorStateList.valueOf(0xFF1565C0));
+                h.btnCheckIn.setOnClickListener(v -> {
+                    int pos = h.getAdapterPosition();
+                    if (pos != RecyclerView.NO_ID) checkInAttendee(a, pos);
                 });
             }
         }
 
+        @Override
         public int getItemCount() { return list.size(); }
 
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName, tvStudentId, tvPaymentStatus;
-            Button btnCheckIn;
-            ViewHolder(View v) {
+        class VH extends RecyclerView.ViewHolder {
+            TextView tvName, tvStudentId, tvCheckInStatus;
+            Button   btnCheckIn;
+            VH(View v) {
                 super(v);
-                tvName = v.findViewById(R.id.tvName);
-                tvStudentId = v.findViewById(R.id.tvStudentId);
-                tvPaymentStatus = v.findViewById(R.id.tvPaymentStatus);
-                btnCheckIn = v.findViewById(R.id.btnCheckIn);
+                tvName          = v.findViewById(R.id.tvName);
+                tvStudentId     = v.findViewById(R.id.tvStudentId);
+                tvCheckInStatus = v.findViewById(R.id.tvCheckInStatus);
+                btnCheckIn      = v.findViewById(R.id.btnCheckIn);
             }
         }
     }
