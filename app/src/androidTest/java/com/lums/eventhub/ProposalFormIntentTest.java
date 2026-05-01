@@ -150,7 +150,7 @@ public class ProposalFormIntentTest {
         onView(withId(R.id.etDescription))
                 .perform(scrollTo(), click(), typeText("Annual event"), closeSoftKeyboard());
         onView(withId(R.id.rbSocietyEvent)).perform(scrollTo(), click());
-        onView(withId(R.id.etDate))
+        onView(withId(R.id.etStartDate))
                 .perform(scrollTo(), click(), clearText(), closeSoftKeyboard());
         androidx.test.espresso.Espresso.closeSoftKeyboard();
         onView(withId(R.id.btnSubmitCCA)).perform(click());
@@ -168,7 +168,7 @@ public class ProposalFormIntentTest {
         onView(withId(R.id.etDescription))
                 .perform(scrollTo(), click(), typeText("Annual event"), closeSoftKeyboard());
         onView(withId(R.id.rbSocietyEvent)).perform(scrollTo(), click());
-        onView(withId(R.id.etDate))
+        onView(withId(R.id.etStartDate))
                 .perform(scrollTo(), click(), typeText("2025-12-01"), closeSoftKeyboard());
         onView(withId(R.id.etVenue))
                 .perform(scrollTo(), click(), clearText(), closeSoftKeyboard());

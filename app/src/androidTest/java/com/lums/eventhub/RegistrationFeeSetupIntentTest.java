@@ -2,6 +2,7 @@ package com.lums.eventhub;
 
 import static androidx.test.espresso.Espresso.onView;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 import static androidx.test.espresso.action.ViewActions.typeText;
 import static androidx.test.espresso.action.ViewActions.closeSoftKeyboard;
 import static androidx.test.espresso.assertion.ViewAssertions.matches;
@@ -31,7 +32,9 @@ public class RegistrationFeeSetupIntentTest {
                 RegistrationFeeSetupActivity.class);
         intent.putExtra("eventId",   "test_event_id");
         intent.putExtra("eventName", "SPADES 2025");
-        return ActivityScenario.launch(intent);
+        ActivityScenario<RegistrationFeeSetupActivity> scenario = ActivityScenario.launch(intent);
+        try { Thread.sleep(500); } catch (InterruptedException ignored) {}
+        return scenario;
     }
 
     /** Screen loads successfully */
@@ -64,7 +67,9 @@ public class RegistrationFeeSetupIntentTest {
     @Test
     public void testRegFeeNoCheckedByDefault() {
         try (ActivityScenario<RegistrationFeeSetupActivity> s = launch()) {
-            onView(withId(R.id.rbRegFeeNo)).check(matches(isChecked()));
+            onView(withId(R.id.rbRegFeeNo))
+                    .perform(scrollTo())
+                    .check(matches(isChecked()));
         }
     }
 
@@ -72,7 +77,9 @@ public class RegistrationFeeSetupIntentTest {
     @Test
     public void testAccomNoCheckedByDefault() {
         try (ActivityScenario<RegistrationFeeSetupActivity> s = launch()) {
-            onView(withId(R.id.rbAccomNo)).check(matches(isChecked()));
+            onView(withId(R.id.rbAccomNo))
+                    .perform(scrollTo())
+                    .check(matches(isChecked()));
         }
     }
 
