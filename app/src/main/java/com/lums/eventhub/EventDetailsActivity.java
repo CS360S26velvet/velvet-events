@@ -35,6 +35,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * EventDetailsActivity.java  (UPDATED v5)
@@ -721,15 +725,43 @@ public class EventDetailsActivity extends AppCompatActivity {
     // ── Calendar ───────────────────────────────────────────────────────────────
 
     private void addToCalendar() {
+        // Store date as ISO "yyyy-MM-dd" so AttendeeCalendarActivity can parse it reliably
+        String isoDate = toIsoDate(startDate);
+
         Map<String, Object> cal = new HashMap<>();
-        cal.put("title", eventTitle); cal.put("venue", venue);
-        cal.put("date", startDate);   cal.put("category", eventCategory);
+        cal.put("title",    eventTitle);
+        cal.put("venue",    venue);
+        cal.put("date",     isoDate);
+        cal.put("category", eventCategory);
         db.collection("users").document(userId)
                 .collection("calendarEvents").document(eventId).set(cal)
                 .addOnSuccessListener(v ->
                         Toast.makeText(this, "Added to Calendar!", Toast.LENGTH_SHORT).show())
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed to add to calendar", Toast.LENGTH_SHORT).show());
+    }
+
+    /** Normalises any date string to ISO "yyyy-MM-dd". Falls back to original if unparseable. */
+    private String toIsoDate(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return "";
+        dateStr = dateStr.trim();
+        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        iso.setLenient(false);
+        try { iso.parse(dateStr); return dateStr; } catch (ParseException ignored) {}
+        try {
+            SimpleDateFormat dmy = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
+            dmy.setLenient(false);
+            return iso.format(dmy.parse(dateStr));
+        } catch (ParseException ignored) {}
+        for (String fmt : new String[]{"MMM d, yyyy", "MMM dd, yyyy", "MMM d yyyy", "MMM dd yyyy"}) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(fmt, Locale.ENGLISH);
+                f.setLenient(false);
+                Date d = f.parse(dateStr);
+                return iso.format(d);
+            } catch (ParseException ignored) {}
+        }
+        return dateStr;
     }
 
     // ── Already registered ─────────────────────────────────────────────────────

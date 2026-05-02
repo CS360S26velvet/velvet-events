@@ -41,7 +41,7 @@ public class ProposalFormActivity extends AppCompatActivity {
 
     // UPDATED: replaced etDate with etStartDate + etEndDate
     private EditText etTitle, etDescription, etAboutEvent, etSocietyName;
-    private EditText etStartDate, etEndDate, etVenue;
+    private EditText etStartDate, etEndDate, etRegDeadline, etVenue;
     private RadioGroup rgEventType;
     private EditText     etParticipants;
     private LinearLayout llGuestRows;
@@ -91,6 +91,7 @@ public class ProposalFormActivity extends AppCompatActivity {
         etSocietyName         = findViewById(R.id.etSocietyName);
         etStartDate           = findViewById(R.id.etStartDate);           // NEW (was etDate)
         etEndDate             = findViewById(R.id.etEndDate);             // NEW
+        etRegDeadline         = findViewById(R.id.etRegDeadline);         // NEW
         etVenue               = findViewById(R.id.etVenue);
         etParticipants        = findViewById(R.id.etParticipants);
         llGuestRows           = findViewById(R.id.llGuestRows);
@@ -212,6 +213,7 @@ public class ProposalFormActivity extends AppCompatActivity {
         String aboutEvent = etAboutEvent.getText().toString().trim();   // NEW
         String startDate  = etStartDate.getText().toString().trim();    // NEW
         String endDate    = etEndDate.getText().toString().trim();      // NEW
+        String regDeadline= etRegDeadline.getText().toString().trim();  // NEW
         String venue      = etVenue.getText().toString().trim();
 
         String eventType = "";
@@ -236,6 +238,8 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("societyName",           societyName);
         data.put("startDate",             startDate);           // NEW (replaces "date")
         data.put("endDate",               endDate);             // NEW
+        // registrationDeadline — if blank, falls back to endDate on attendee side
+        data.put("registrationDeadline",  regDeadline.isEmpty() ? endDate : regDeadline);
         // Keep "date" = startDate for backward-compat with existing queries
         data.put("date",                  startDate);
         data.put("venue",                 venue);
@@ -322,6 +326,7 @@ public class ProposalFormActivity extends AppCompatActivity {
                     setText(etStartDate,   doc.getString("startDate") != null
                             ? doc.getString("startDate") : doc.getString("date")); // NEW + fallback
                     setText(etEndDate,     doc.getString("endDate"));     // NEW
+                    setText(etRegDeadline, doc.getString("registrationDeadline")); // NEW
                     setText(etVenue,       doc.getString("venue"));
                     setText(etSocietyName, doc.getString("societyName"));
 
