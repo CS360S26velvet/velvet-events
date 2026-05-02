@@ -69,6 +69,7 @@
         <activity android:name=".AttendeeCalendarActivity"      android:exported="false" />
         <activity android:name=".RegistrationConfirmationActivity" />
         <activity android:name=".FeedbackActivity" />
+        <activity android:name=".CheckInParticipantsActivity" android:exported="false" />
 
     </application>
 
