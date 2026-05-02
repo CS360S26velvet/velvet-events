@@ -5,7 +5,6 @@ package com.lums.eventhub;
  *
  * Role: Shows all registrants who submitted payment proof for a given event.
  * Organiser can Approve or Reject each submission.
- * Matches the design shown in the sample screenshots.
  *
  * Firestore structure assumed:
  *   registrations/{regId}
@@ -184,7 +183,6 @@ public class PaymentVerificationActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     private void loadRegistrants() {
-        String collection = eventId.isEmpty() ? "registrations" : "registrations";
         Query query = db.collection("registrations")
                 .whereEqualTo("eventId", eventId);
 
@@ -193,16 +191,18 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                     allRegistrants.clear();
                     for (QueryDocumentSnapshot doc : snap) {
                         Registrant r = new Registrant();
-                        r.docId           = doc.getId();
-                        r.studentName     = doc.getString("studentName");
-                        r.studentId       = doc.getString("studentId");
-                        r.paymentProofUrl = doc.getString("paymentProofUrl");
+                        r.docId                    = doc.getId();
+                        r.studentName              = doc.getString("studentName");
+                        r.studentId                = doc.getString("studentId");
+                        r.paymentProofUrl          = doc.getString("paymentProofUrl");
                         r.accommodationProofUrl    = doc.getString("accommodationProofUrl");
                         r.paymentProofBase64       = doc.getString("paymentProofBase64");
                         r.accommodationProofBase64 = doc.getString("accommodationProofBase64");
-                        r.amount          = doc.getString("amount");
-                        r.paymentStatus   = doc.getString("paymentStatus");
-                        r.rejectionReason = doc.getString("rejectionReason");
+                        r.amount                   = doc.getString("amount");
+                        r.paymentStatus            = doc.getString("paymentStatus");
+                        r.rejectionReason          = doc.getString("rejectionReason");
+                        r.userId                   = doc.getString("userId");
+                        if (r.userId == null) r.userId = "";
 
                         // Parse submitted timestamp
                         Object ts = doc.get("submittedAt");
@@ -214,14 +214,14 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                             r.submittedDate = "—";
                         }
 
-                        if (r.studentName    == null) r.studentName    = "Unknown";
-                        if (r.studentId      == null) r.studentId      = "—";
-                        if (r.amount         == null) r.amount         = "PKR 500";
-                        if (r.paymentStatus  == null) r.paymentStatus  = "Pending";
-                        if (r.rejectionReason== null) r.rejectionReason= "";
-                        if (r.accommodationProofUrl    == null) r.accommodationProofUrl    = "";
-                        if (r.paymentProofBase64       == null) r.paymentProofBase64       = "";
-                        if (r.accommodationProofBase64 == null) r.accommodationProofBase64 = "";
+                        if (r.studentName             == null) r.studentName             = "Unknown";
+                        if (r.studentId               == null) r.studentId               = "—";
+                        if (r.amount                  == null) r.amount                  = "PKR 500";
+                        if (r.paymentStatus           == null) r.paymentStatus           = "Pending";
+                        if (r.rejectionReason         == null) r.rejectionReason         = "";
+                        if (r.accommodationProofUrl   == null) r.accommodationProofUrl   = "";
+                        if (r.paymentProofBase64      == null) r.paymentProofBase64      = "";
+                        if (r.accommodationProofBase64== null) r.accommodationProofBase64= "";
 
                         allRegistrants.add(r);
                     }
@@ -293,13 +293,44 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                     updateStats();
                     rebuildShown();
                     Toast.makeText(this, r.studentName + " approved.", Toast.LENGTH_SHORT).show();
-
-                    // ADDED: If attendee also selected accommodation, write to accommodationData subcollection
-                    // so the admin can download it grouped by society/event.
+                    // Increment seatsBooked on the event/proposal document
+                    incrementSeatsBooked(1);
+                    // Notify attendee their payment was approved
+                    sendPaymentNotification(r.userId, r.studentName, eventName,
+                            "payment_approved",
+                            "Payment Approved",
+                            "Your payment for " + eventName + " has been approved! You are now registered.");
+                    // If attendee also selected accommodation, write to accommodationData subcollection
                     writeAccommodationDataIfNeeded(r);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+    }
+
+    /** Increments (or decrements) the seatsBooked field on the event document */
+    private void incrementSeatsBooked(int delta) {
+        if (eventId == null || eventId.isEmpty()) return;
+        // Try proposals/ first, then events/
+        db.collection("proposals").document(eventId)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        long current = doc.getLong("seatsBooked") != null
+                                ? doc.getLong("seatsBooked") : 0;
+                        db.collection("proposals").document(eventId)
+                                .update("seatsBooked", Math.max(0, current + delta));
+                    } else {
+                        db.collection("events").document(eventId).get()
+                                .addOnSuccessListener(evDoc -> {
+                                    if (evDoc.exists()) {
+                                        long current = evDoc.getLong("seatsBooked") != null
+                                                ? evDoc.getLong("seatsBooked") : 0;
+                                        db.collection("events").document(eventId)
+                                                .update("seatsBooked", Math.max(0, current + delta));
+                                    }
+                                });
+                    }
+                });
     }
 
     /**
@@ -320,18 +351,15 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                     if (accomAmount == null) accomAmount = "";
 
                     Map<String, Object> accomData = new HashMap<>();
-                    accomData.put("studentName",          r.studentName);
-                    accomData.put("studentId",            r.studentId);
-                    accomData.put("accommodationAmount",  accomAmount);
-                    accomData.put("eventId",              eventId);
-                    accomData.put("eventName",            eventName);
-                    accomData.put("paymentStatus",        "Approved");
-                    accomData.put("wantsAccommodation",   "Yes");
-                    accomData.put("approvedAt",           System.currentTimeMillis());
+                    accomData.put("studentName",         r.studentName);
+                    accomData.put("studentId",           r.studentId);
+                    accomData.put("accommodationAmount", accomAmount);
+                    accomData.put("eventId",             eventId);
+                    accomData.put("eventName",           eventName);
+                    accomData.put("paymentStatus",       "Approved");
+                    accomData.put("wantsAccommodation",  "Yes");
+                    accomData.put("approvedAt",          System.currentTimeMillis());
 
-                    // Top-level registrations doc already has these fields.
-                    // We also write a convenience copy to accommodationData/<eventId>/attendees/<regId>
-                    // so the admin query is a simple collection-group query.
                     db.collection("accommodationData")
                             .document(eventId)
                             .collection("attendees")
@@ -346,6 +374,7 @@ public class PaymentVerificationActivity extends AppCompatActivity {
     }
 
     private void rejectRegistrant(Registrant r, String reason) {
+        boolean wasApproved = "Approved".equals(r.paymentStatus);
         Map<String, Object> update = new HashMap<>();
         update.put("paymentStatus",   "Rejected");
         update.put("rejectionReason", reason);
@@ -357,32 +386,60 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                     updateStats();
                     rebuildShown();
                     Toast.makeText(this, r.studentName + " rejected.", Toast.LENGTH_SHORT).show();
+                    // If was previously Approved, decrement seatsBooked
+                    if (wasApproved) incrementSeatsBooked(-1);
+                    // Send notification to attendee with rejection reason
+                    sendPaymentNotification(r.userId, r.studentName, eventName,
+                            "payment_rejected",
+                            "Payment Rejected",
+                            "Your payment for " + eventName + " was rejected. Reason: " + reason
+                                    + ". Please re-submit with correct proof.");
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
     }
 
+    /**
+     * Writes a notification document to users/{userId}/notifications
+     * so the attendee sees it in NotificationsActivity.
+     */
+    private void sendPaymentNotification(String userId, String studentName,
+                                         String eventTitle, String type,
+                                         String title, String message) {
+        if (userId == null || userId.isEmpty()) return;
+        Map<String, Object> notif = new HashMap<>();
+        notif.put("type",      type);
+        notif.put("title",     title);
+        notif.put("message",   message);
+        notif.put("eventName", eventTitle);
+        notif.put("read",      false);
+        notif.put("timestamp", System.currentTimeMillis());
+        db.collection("users").document(userId)
+                .collection("notifications")
+                .add(notif);
+    }
+
     // -------------------------------------------------------------------------
-    // Show detail panel (side drawer simulation via AlertDialog)
+    // Show detail dialog
     // -------------------------------------------------------------------------
 
     private void showDetailDialog(Registrant r) {
         View dialogView = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_payment_detail, null);
 
-        TextView  tvName      = dialogView.findViewById(R.id.tvDetailName);
-        TextView  tvId        = dialogView.findViewById(R.id.tvDetailId);
-        TextView  tvSubmitted = dialogView.findViewById(R.id.tvDetailSubmitted);
-        TextView  tvAmount    = dialogView.findViewById(R.id.tvDetailAmount);
-        TextView  tvStatus    = dialogView.findViewById(R.id.tvDetailStatus);
+        TextView  tvName           = dialogView.findViewById(R.id.tvDetailName);
+        TextView  tvId             = dialogView.findViewById(R.id.tvDetailId);
+        TextView  tvSubmitted      = dialogView.findViewById(R.id.tvDetailSubmitted);
+        TextView  tvAmount         = dialogView.findViewById(R.id.tvDetailAmount);
+        TextView  tvStatus         = dialogView.findViewById(R.id.tvDetailStatus);
         ImageView imgRegProof      = dialogView.findViewById(R.id.imgRegProof);
         ImageView imgAccomProof    = dialogView.findViewById(R.id.imgAccomProof);
         TextView  tvNoRegProof     = dialogView.findViewById(R.id.tvNoRegProof);
         TextView  tvNoAccomProof   = dialogView.findViewById(R.id.tvNoAccomProof);
         TextView  tvAccomProofLabel= dialogView.findViewById(R.id.tvAccomProofLabel);
-        EditText  etReason    = dialogView.findViewById(R.id.etRejectionReason);
-        Button    btnApprove  = dialogView.findViewById(R.id.btnConfirmApprove);
-        Button    btnReject   = dialogView.findViewById(R.id.btnRejectWithReason);
+        EditText  etReason         = dialogView.findViewById(R.id.etRejectionReason);
+        Button    btnApprove       = dialogView.findViewById(R.id.btnConfirmApprove);
+        Button    btnReject        = dialogView.findViewById(R.id.btnRejectWithReason);
 
         tvName.setText(r.studentName);
         tvId.setText(r.studentId);
@@ -405,36 +462,36 @@ public class PaymentVerificationActivity extends AppCompatActivity {
             Bitmap bmp = base64ToBitmap(r.paymentProofBase64);
             if (bmp != null) {
                 imgRegProof.setImageBitmap(bmp);
-                imgRegProof.setVisibility(android.view.View.VISIBLE);
-                if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.GONE);
+                imgRegProof.setVisibility(View.VISIBLE);
+                if (tvNoRegProof != null) tvNoRegProof.setVisibility(View.GONE);
             } else {
-                imgRegProof.setVisibility(android.view.View.GONE);
-                if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.VISIBLE);
+                imgRegProof.setVisibility(View.GONE);
+                if (tvNoRegProof != null) tvNoRegProof.setVisibility(View.VISIBLE);
             }
         } else {
-            imgRegProof.setVisibility(android.view.View.GONE);
-            if (tvNoRegProof != null) tvNoRegProof.setVisibility(android.view.View.VISIBLE);
+            imgRegProof.setVisibility(View.GONE);
+            if (tvNoRegProof != null) tvNoRegProof.setVisibility(View.VISIBLE);
         }
 
         // ── Accommodation Proof image ──────────────────────────────────────
         boolean hasAccomProof = r.accommodationProofBase64 != null
                 && !r.accommodationProofBase64.isEmpty();
         if (tvAccomProofLabel != null)
-            tvAccomProofLabel.setVisibility(hasAccomProof ? android.view.View.VISIBLE : android.view.View.GONE);
+            tvAccomProofLabel.setVisibility(hasAccomProof ? View.VISIBLE : View.GONE);
 
         if (hasAccomProof) {
             Bitmap bmp = base64ToBitmap(r.accommodationProofBase64);
             if (bmp != null) {
                 imgAccomProof.setImageBitmap(bmp);
-                imgAccomProof.setVisibility(android.view.View.VISIBLE);
-                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(android.view.View.GONE);
+                imgAccomProof.setVisibility(View.VISIBLE);
+                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(View.GONE);
             } else {
-                imgAccomProof.setVisibility(android.view.View.GONE);
-                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(android.view.View.VISIBLE);
+                imgAccomProof.setVisibility(View.GONE);
+                if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(View.VISIBLE);
             }
         } else {
-            if (imgAccomProof != null)   imgAccomProof.setVisibility(android.view.View.GONE);
-            if (tvNoAccomProof != null)  tvNoAccomProof.setVisibility(android.view.View.GONE);
+            if (imgAccomProof  != null) imgAccomProof.setVisibility(View.GONE);
+            if (tvNoAccomProof != null) tvNoAccomProof.setVisibility(View.GONE);
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
@@ -472,7 +529,7 @@ public class PaymentVerificationActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     static class Registrant {
-        String docId, studentName, studentId, submittedDate;
+        String docId, studentName, studentId, submittedDate, userId;
         String paymentProofUrl, accommodationProofUrl, amount, paymentStatus, rejectionReason;
         String paymentProofBase64, accommodationProofBase64;
     }

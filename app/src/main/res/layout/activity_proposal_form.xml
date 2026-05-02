@@ -128,6 +128,19 @@
                 android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
                 android:hint="dd/mm/yyyy" android:inputType="text"/>
 
+            <!-- Registration Deadline -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Registration Deadline"
+                android:textColor="#666666" android:textSize="13sp"/>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="Last date attendees can register (leave blank to use End Date)"
+                android:textColor="#999999" android:textSize="11sp"
+                android:layout_marginBottom="4dp"/>
+            <EditText android:id="@+id/etRegDeadline"
+                android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
+                android:hint="dd/mm/yyyy (optional)" android:inputType="text"/>
+
             <!-- Venue -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Venue *" android:textColor="#666666" android:textSize="13sp"/>

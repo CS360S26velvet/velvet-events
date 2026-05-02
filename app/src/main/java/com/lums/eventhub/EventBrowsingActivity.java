@@ -173,7 +173,6 @@ public class EventBrowsingActivity extends AppCompatActivity {
         TextView tvOrganizer = card.findViewById(R.id.tvOrganizer);
         TextView tvDate      = card.findViewById(R.id.tvDate);
         TextView tvVenue     = card.findViewById(R.id.tvVenue);
-        TextView tvSeats     = card.findViewById(R.id.tvSeats);
         Button   btnDetails  = card.findViewById(R.id.btnViewDetails);
 
         tvCategory.setText(event.category);
@@ -181,7 +180,8 @@ public class EventBrowsingActivity extends AppCompatActivity {
         tvOrganizer.setText(event.organizer);
         tvDate.setText(event.date);
         tvVenue.setText(event.venue);
-        tvSeats.setText((event.seatsTotal - event.seatsbooked) + " / " + event.seatsTotal + " seats available");
+        View tvSeats = card.findViewById(R.id.tvSeats);
+        if (tvSeats != null) tvSeats.setVisibility(android.view.View.GONE);
 
         if ("Society Events".equals(event.category)) {
             tvCategory.setBackgroundColor(0xFFE91E8C);

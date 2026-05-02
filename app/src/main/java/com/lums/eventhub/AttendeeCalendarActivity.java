@@ -14,29 +14,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
-
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-/**
- * AttendeeCalendarActivity.java
- * Displays a monthly calendar view for the logged-in attendee.
- * Events that the user has saved to their calendar are highlighted
- * on the calendar grid in dark purple.
- *
- * Features:
- * - Navigate between months using previous/next buttons
- * - Tap a date to see saved events for that day
- * - Displays a full list of all saved calendar events below the grid
- *
- * Calendar events are loaded from:
- * users/{userId}/calendarEvents
- *
- * Receives userId from the previous activity via Intent.
- */
 
 public class AttendeeCalendarActivity extends AppCompatActivity {
 
@@ -46,12 +32,13 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
     Button navDashboard, navBrowseEvents, navMyRegistrations, navNotifications, btnLogout;
 
     FirebaseFirestore db;
-    String userId; // ← no longer hardcoded
+    String userId;
 
     Calendar currentCalendar = Calendar.getInstance();
     int selectedDay = -1;
 
-    Map<Integer, List<CalendarEvent>> eventsByDay = new HashMap<>();
+    // FIX: keyed "YYYY-MM-DD" so highlights are month+year aware
+    Map<String, List<CalendarEvent>> eventsByDay = new HashMap<>();
     List<CalendarEvent> allEvents = new ArrayList<>();
 
     @SuppressLint("MissingInflatedId")
@@ -60,7 +47,6 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.attendee_calendar_activity);
 
-        // ← Receive userId from previous activity
         userId = getIntent().getStringExtra("userId");
 
         calendarGrid       = findViewById(R.id.calendarGrid);
@@ -82,8 +68,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         loadCalendarEventsFromFirebase();
 
         btnPrevMonth.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 currentCalendar.add(Calendar.MONTH, -1);
                 selectedDay = -1;
                 updateCalendar();
@@ -91,8 +76,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         });
 
         btnNextMonth.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 currentCalendar.add(Calendar.MONTH, 1);
                 selectedDay = -1;
                 updateCalendar();
@@ -100,50 +84,47 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         });
 
         navDashboard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 Intent intent = new Intent(AttendeeCalendarActivity.this, AttendeeActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                intent.putExtra("userId", userId);
                 startActivity(intent);
                 finish();
             }
         });
 
         navBrowseEvents.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 Intent intent = new Intent(AttendeeCalendarActivity.this, EventBrowsingActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
 
         navMyRegistrations.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 Intent intent = new Intent(AttendeeCalendarActivity.this, MyRegistrationsActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
 
         navNotifications.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 Intent intent = new Intent(AttendeeCalendarActivity.this, NotificationsActivity.class);
-                intent.putExtra("userId", userId); // ← pass forward
+                intent.putExtra("userId", userId);
                 startActivity(intent);
             }
         });
 
         btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
+            @Override public void onClick(View v) {
                 startActivity(new Intent(AttendeeCalendarActivity.this, com.lums.eventhub.auth.LoginActivity.class));
-                finish(); // ← clear from back stack on logout
+                finish();
             }
         });
     }
+
+    // ── Load events ───────────────────────────────────────────────────────────
 
     private void loadCalendarEventsFromFirebase() {
         db.collection("users").document(userId).collection("calendarEvents").get()
@@ -160,14 +141,21 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
                         event.venue    = doc.getString("venue");
                         event.category = doc.getString("category");
 
+                        if (event.title    == null) event.title    = "Untitled";
+                        if (event.date     == null) event.date     = "";
+                        if (event.time     == null) event.time     = "";
+                        if (event.venue    == null) event.venue    = "";
+                        if (event.category == null) event.category = "";
+
                         allEvents.add(event);
 
-                        int day = parseDayFromDate(event.date);
-                        if (day != -1) {
-                            if (!eventsByDay.containsKey(day)) {
-                                eventsByDay.put(day, new ArrayList<>());
+                        // FIX: parse into a "YYYY-MM-DD" key
+                        String key = parseDateToKey(event.date);
+                        if (key != null) {
+                            if (!eventsByDay.containsKey(key)) {
+                                eventsByDay.put(key, new ArrayList<>());
                             }
-                            eventsByDay.get(day).add(event);
+                            eventsByDay.get(key).add(event);
                         }
                     }
                     updateCalendar();
@@ -176,18 +164,70 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
                         tvSelectedDate.setText("Failed to load events that you added to the calendar"));
     }
 
-    private int parseDayFromDate(String dateStr) {
+    // ── Date parsing ──────────────────────────────────────────────────────────
+
+    /**
+     * Converts any date string to a canonical "YYYY-MM-DD" key.
+     * Handles: "2025-05-22", "May 22, 2025", "May 22 2025", "May 22" (assumes current year).
+     * Returns null if unparseable.
+     */
+    private String parseDateToKey(String dateStr) {
+        if (dateStr == null || dateStr.trim().isEmpty()) return null;
+        dateStr = dateStr.trim();
+
+        SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
+        iso.setLenient(false);
+
+        // Already ISO "yyyy-MM-dd"?
+        try { iso.parse(dateStr); return dateStr; } catch (ParseException ignored) {}
+
+        // DD/MM/YYYY — what Firestore currently stores e.g. "22/05/2026"
         try {
-            if (dateStr == null) return -1;
-            String[] parts = dateStr.trim().split(" ");
-            if (parts.length >= 2) {
-                return Integer.parseInt(parts[1].replace(",", ""));
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            SimpleDateFormat dmyFmt = new SimpleDateFormat("dd/MM/yyyy", Locale.ENGLISH);
+            dmyFmt.setLenient(false);
+            Date d = dmyFmt.parse(dateStr);
+            return iso.format(d);
+        } catch (ParseException ignored) {}
+
+        // MM/DD/YYYY fallback
+        try {
+            SimpleDateFormat mdyFmt = new SimpleDateFormat("MM/dd/yyyy", Locale.ENGLISH);
+            mdyFmt.setLenient(false);
+            Date d = mdyFmt.parse(dateStr);
+            return iso.format(d);
+        } catch (ParseException ignored) {}
+
+        // Human-readable with year
+        for (String fmt : new String[]{"MMM d, yyyy", "MMM dd, yyyy", "MMM d yyyy", "MMM dd yyyy"}) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(fmt, Locale.ENGLISH);
+                f.setLenient(false);
+                Date d = f.parse(dateStr);
+                return iso.format(d);
+            } catch (ParseException ignored) {}
         }
-        return -1;
+
+        // No year — append current year
+        int currentYear = Calendar.getInstance().get(Calendar.YEAR);
+        for (String fmt : new String[]{"MMM d yyyy", "MMM dd yyyy"}) {
+            try {
+                SimpleDateFormat f = new SimpleDateFormat(fmt, Locale.ENGLISH);
+                f.setLenient(false);
+                Date d = f.parse(dateStr + " " + currentYear);
+                return iso.format(d);
+            } catch (ParseException ignored) {}
+        }
+
+        return null;
     }
+
+    /** Builds the lookup key for a given cell in the displayed month/year. */
+    private String buildKey(int year, int month, int day) {
+        // Calendar.MONTH is 0-based, so add 1
+        return String.format(Locale.ENGLISH, "%04d-%02d-%02d", year, month + 1, day);
+    }
+
+    // ── Calendar rendering ────────────────────────────────────────────────────
 
     private void updateCalendar() {
         calendarGrid.removeAllViews();
@@ -233,7 +273,8 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
                     cell.setText(String.valueOf(day));
 
                     boolean isToday  = (day == todayDay && month == todayMonth && year == todayYear);
-                    boolean hasEvent = eventsByDay.containsKey(day);
+                    // FIX: check month+year-aware key, not bare day int
+                    boolean hasEvent = eventsByDay.containsKey(buildKey(year, month, day));
 
                     if (isToday) {
                         cell.setBackgroundColor(0xFFDDD8F5);
@@ -248,7 +289,8 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
 
                     cell.setOnClickListener(v -> {
                         selectedDay = day;
-                        showEventsForDay(day, months[month], year);
+                        // FIX: pass month+year so showEventsForDay uses the right key
+                        showEventsForDay(day, month, year, months[month]);
                     });
 
                     dayCounter++;
@@ -261,7 +303,7 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         }
 
         if (selectedDay != -1) {
-            showEventsForDay(selectedDay, months[month], year);
+            showEventsForDay(selectedDay, month, year, months[month]);
         } else {
             tvSelectedDate.setText("Tap a date to see your saved events");
             selectedDateEvents.removeAllViews();
@@ -269,11 +311,13 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         }
     }
 
-    private void showEventsForDay(int day, String monthName, int year) {
+    private void showEventsForDay(int day, int month, int year, String monthName) {
         selectedDateEvents.removeAllViews();
         tvSelectedDate.setText("Events on " + monthName + " " + day + ", " + year);
 
-        List<CalendarEvent> events = eventsByDay.get(day);
+        // FIX: look up by full "YYYY-MM-DD" key
+        String key = buildKey(year, month, day);
+        List<CalendarEvent> events = eventsByDay.get(key);
         if (events == null || events.isEmpty()) {
             tvNoEvents.setVisibility(View.VISIBLE);
         } else {
@@ -283,6 +327,8 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
             }
         }
     }
+
+    // ── Saved events list ─────────────────────────────────────────────────────
 
     private void renderSavedEventsList() {
         savedEventsList.removeAllViews();
@@ -314,7 +360,6 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         row.setBackgroundColor(0xFFF8F6FF);
         row.setPadding(12, 12, 12, 12);
 
-        // Colored left bar
         View colorBar = new View(this);
         LinearLayout.LayoutParams barParams = new LinearLayout.LayoutParams(4,
                 LinearLayout.LayoutParams.MATCH_PARENT);
@@ -323,7 +368,6 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         colorBar.setBackgroundColor("Society Events".equals(event.category) ? 0xFFE91E8C : 0xFF00BCD4);
         row.addView(colorBar);
 
-        // Event info
         LinearLayout info = new LinearLayout(this);
         info.setOrientation(LinearLayout.VERTICAL);
         info.setLayoutParams(new LinearLayout.LayoutParams(0,
@@ -337,13 +381,14 @@ public class AttendeeCalendarActivity extends AppCompatActivity {
         info.addView(tvTitle);
 
         TextView tvDetails = new TextView(this);
-        tvDetails.setText("📅 " + event.date + "   🕐 " + event.time + "   📍 " + event.venue);
+        String timeStr  = (event.time  != null && !event.time.isEmpty())  ? event.time  : "—";
+        String venueStr = (event.venue != null && !event.venue.isEmpty()) ? event.venue : "—";
+        tvDetails.setText("📅 " + event.date + "   🕐 " + timeStr + "   📍 " + venueStr);
         tvDetails.setTextColor(0xFF888888);
         tvDetails.setTextSize(11);
         info.addView(tvDetails);
 
         row.addView(info);
-
         return row;
     }
 }
