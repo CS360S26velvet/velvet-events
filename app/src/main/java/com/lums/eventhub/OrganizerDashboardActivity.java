@@ -34,6 +34,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.lums.eventhub.auth.LoginActivity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -127,6 +128,20 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
             rIntent.putExtra("societyName", societyName);
             startActivity(rIntent);
         });
+
+        // Persistent logout — clears saved session + returns to LoginActivity
+        Button btnLogout = findViewById(R.id.btnLogoutOrganizer);
+        if (btnLogout != null) {
+            btnLogout.setOnClickListener(v -> {
+                LoginActivity.clearSession(this);
+                Intent intent = new Intent(this, LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            });
+        }
     }
 
     @Override

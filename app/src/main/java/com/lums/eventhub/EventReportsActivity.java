@@ -152,47 +152,61 @@ public class EventReportsActivity extends AppCompatActivity {
             return;
         }
 
-        // For each item check if a report doc exists
-        final int[] remaining = {items.size()};
-        for (EventReportItem item : items) {
-            db.collection("eventReports").document(item.eventId)
-                    .get()
-                    .addOnSuccessListener(doc -> {
-                        if (doc.exists()) {
-                            item.reportStatus = nvl(doc.getString("status"), "Submitted");
-                            Long ts = doc.getLong("submittedAt");
+        // Query ALL eventReports for this organizer, then match by eventId OR eventTitle
+        db.collection("eventReports")
+                .whereEqualTo("organizerUsername", organizerUsername)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    // Build map: eventId -> report doc, also title -> report doc as fallback
+                    java.util.Map<String, com.google.firebase.firestore.QueryDocumentSnapshot> byId    = new HashMap<>();
+                    java.util.Map<String, com.google.firebase.firestore.QueryDocumentSnapshot> byTitle = new HashMap<>();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        String eid   = doc.getString("eventId");
+                        String etitle = doc.getString("eventTitle");
+                        if (eid    != null) byId.put(eid, doc);
+                        if (etitle != null) byTitle.put(etitle.toLowerCase().trim(), doc);
+                    }
+
+                    for (EventReportItem item : items) {
+                        // Match by eventId first, fall back to title match
+                        com.google.firebase.firestore.QueryDocumentSnapshot matched =
+                                byId.containsKey(item.eventId) ? byId.get(item.eventId)
+                                        : byTitle.containsKey(item.eventTitle.toLowerCase().trim())
+                                        ? byTitle.get(item.eventTitle.toLowerCase().trim()) : null;
+
+                        if (matched != null) {
+                            item.reportStatus    = nvl(matched.getString("status"), "Submitted");
+                            item.rejectionReason = nvl(matched.getString("rejectionReason"), "");
+                            Long ts = matched.getLong("submittedAt");
                             if (ts != null) {
                                 item.submittedAt = new SimpleDateFormat("MMM d, yyyy",
                                         Locale.getDefault()).format(new Date(ts));
                             }
-                            item.imageBase64 = nvl(doc.getString("imageBase64"), "");
-                            item.notes       = nvl(doc.getString("notes"), "");
+                            item.imageBase64 = nvl(matched.getString("imageBase64"), "");
+                            item.notes       = nvl(matched.getString("notes"), "");
                         }
-                        remaining[0]--;
-                        if (remaining[0] == 0) {
-                            updateStats();
-                            adapter.notifyDataSetChanged();
-                        }
-                    })
-                    .addOnFailureListener(e -> {
-                        remaining[0]--;
-                        if (remaining[0] == 0) {
-                            updateStats();
-                            adapter.notifyDataSetChanged();
-                        }
-                    });
-        }
+                    }
+
+                    updateStats();
+                    adapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e -> {
+                    updateStats();
+                    adapter.notifyDataSetChanged();
+                });
     }
 
     private void updateStats() {
-        int total     = items.size();
-        int submitted = 0;
-        for (EventReportItem i : items) if ("Submitted".equals(i.reportStatus)) submitted++;
-        int pending = total - submitted;
+        int total    = items.size();
+        int reviewed = 0; // Approved or Rejected by admin
+        for (EventReportItem i : items) {
+            if ("Approved".equals(i.reportStatus) || "Rejected".equals(i.reportStatus)) reviewed++;
+        }
+        int pendingCount = total - reviewed; // not yet submitted OR submitted but awaiting
 
         tvTotalEvents.setText(String.valueOf(total));
-        tvSubmitted.setText(String.valueOf(submitted));
-        tvPending.setText(String.valueOf(pending));
+        tvSubmitted.setText(String.valueOf(reviewed));   // "Reports Submitted" = reviewed by admin
+        tvPending.setText(String.valueOf(pendingCount)); // still pending
     }
 
     // ── Add Report dialog ─────────────────────────────────────────────────────
@@ -366,6 +380,7 @@ public class EventReportsActivity extends AppCompatActivity {
     // ── Model ─────────────────────────────────────────────────────────────────
 
     static class EventReportItem {
+        String rejectionReason = ""; // set from Firestore when status == Rejected
         String eventId, eventTitle, eventDate, reportStatus, submittedAt, imageBase64, notes;
         int    attendees;
     }
@@ -392,43 +407,74 @@ public class EventReportsActivity extends AppCompatActivity {
             h.tvAttendees.setText("👥 " + item.attendees);
             h.tvStatus.setText(item.reportStatus);
 
-            boolean submitted = "Submitted".equals(item.reportStatus);
+            // Status colour and button based on reportStatus
+            switch (item.reportStatus) {
+                case "Approved":
+                    h.tvStatus.setText("✅ Approved");
+                    h.tvStatus.setTextColor(0xFF2E7D32);
+                    h.tvStatus.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
+                    h.tvSubmittedDate.setText(item.submittedAt);
+                    h.btnAction.setText("View Report");
+                    h.btnAction.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF1565C0));
+                    h.btnAction.setOnClickListener(v -> showViewReportDialog(item));
+                    // Hide rejection reason if shown
+                    if (h.tvRejectionReason != null) h.tvRejectionReason.setVisibility(View.GONE);
+                    break;
 
-            // Status colour
-            h.tvStatus.setTextColor(submitted ? 0xFF2E7D32 : 0xFFE65100);
-            h.tvStatus.setBackgroundTintList(android.content.res.ColorStateList.valueOf(
-                    submitted ? 0xFFE8F5E9 : 0xFFFFF3E0));
+                case "Rejected":
+                    h.tvStatus.setText("❌ Rejected");
+                    h.tvStatus.setTextColor(0xFFC62828);
+                    h.tvStatus.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
+                    h.tvSubmittedDate.setText(item.submittedAt);
+                    // Show rejection reason
+                    if (h.tvRejectionReason != null && !item.rejectionReason.isEmpty()) {
+                        h.tvRejectionReason.setVisibility(View.VISIBLE);
+                        h.tvRejectionReason.setText("Reason: " + item.rejectionReason);
+                    }
+                    // Show Add button (re-upload)
+                    h.btnAction.setText("Add New Report");
+                    h.btnAction.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFC62828));
+                    h.btnAction.setOnClickListener(v -> showAddReportDialog(item));
+                    break;
 
-            // Submitted date
-            h.tvSubmittedDate.setText(submitted ? item.submittedAt : "—");
-
-            // Action button
-            if (submitted) {
-                h.btnAction.setText("View Report");
-                h.btnAction.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFF1565C0));
-                h.btnAction.setOnClickListener(v -> showViewReportDialog(item));
-            } else {
-                h.btnAction.setText("Add Report");
-                h.btnAction.setBackgroundTintList(
-                        android.content.res.ColorStateList.valueOf(0xFF1565C0));
-                h.btnAction.setOnClickListener(v -> showAddReportDialog(item));
+                case "Submitted":
+                default:
+                    h.tvStatus.setText("⏳ Pending Review");
+                    h.tvStatus.setTextColor(0xFFE65100);
+                    h.tvStatus.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFFFF3E0));
+                    h.tvSubmittedDate.setText(item.submittedAt.isEmpty() ? "—" : item.submittedAt);
+                    if (h.tvRejectionReason != null) {
+                        h.tvRejectionReason.setVisibility(View.GONE);
+                        h.tvRejectionReason.setText("");
+                    }
+                    // No report submitted yet — show Add Report button
+                    h.btnAction.setText("Add Report");
+                    h.btnAction.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF1565C0));
+                    h.btnAction.setOnClickListener(v -> showAddReportDialog(item));
+                    break;
             }
         }
 
         @Override public int getItemCount() { return list.size(); }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView tvName, tvDate, tvAttendees, tvStatus, tvSubmittedDate;
+            TextView tvName, tvDate, tvAttendees, tvStatus, tvSubmittedDate, tvRejectionReason;
             Button   btnAction;
             VH(View v) {
                 super(v);
-                tvName          = v.findViewById(R.id.tvReportEventName);
-                tvDate          = v.findViewById(R.id.tvReportEventDate);
-                tvAttendees     = v.findViewById(R.id.tvReportAttendees);
-                tvStatus        = v.findViewById(R.id.tvReportStatus);
-                tvSubmittedDate = v.findViewById(R.id.tvReportSubmittedDate);
-                btnAction       = v.findViewById(R.id.btnReportAction);
+                tvName            = v.findViewById(R.id.tvReportEventName);
+                tvDate            = v.findViewById(R.id.tvReportEventDate);
+                tvAttendees       = v.findViewById(R.id.tvReportAttendees);
+                tvStatus          = v.findViewById(R.id.tvReportStatus);
+                tvSubmittedDate   = v.findViewById(R.id.tvReportSubmittedDate);
+                tvRejectionReason = v.findViewById(R.id.tvRejectionReason);
+                btnAction         = v.findViewById(R.id.btnReportAction);
             }
         }
     }

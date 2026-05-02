@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -20,101 +21,213 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
-
 import com.lums.eventhub.R;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
- * AdminEventReportsActivity.java
+ * AdminEventReportsActivity.java  (REWRITTEN)
  *
- * Admin views ALL submitted event reports from all societies.
- * Each report shows: event name, society, date, attendees, status.
- * Tapping "View Report" opens a dialog with the JPEG image + notes inline.
+ * Admin color scheme: #8B1A4A header, white cards.
  *
- * Firestore reads: eventReports/ (all documents)
+ * Layout: societies accordion (same pattern as AdminAccommodationBySocietyActivity).
+ *   Society header (tap to expand) → list of events with submitted reports.
+ *   Each event row has a "View Report" button.
+ *   View Report dialog shows image + notes + APPROVE / REJECT buttons.
+ *   Approve → sets eventReports/{id}.status = "Approved"
+ *             → organizer side sees "Approved" badge
+ *   Reject  → prompts for reason → sets status = "Rejected", rejectionReason = reason
+ *             → organizer side sees "Rejected" badge + reason + "Add" button
+ *
+ * Firestore reads:  eventReports/ where status == "Submitted"
+ * Firestore writes: eventReports/{id}  status, rejectionReason, reviewedAt
  */
 public class AdminEventReportsActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private RecyclerView      recyclerView;
-    private AdminReportAdapter adapter;
-    private final List<ReportDoc> reports = new ArrayList<>();
+    private LinearLayout      llSocieties;
+    private TextView          tvEmpty;
 
-    private TextView tvTotalReports, tvSocietiesCount;
+    // societyName -> list of reports
+    private final Map<String, List<ReportDoc>> grouped = new LinkedHashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_event_reports);
 
-        db = FirebaseFirestore.getInstance();
-
-        tvTotalReports   = findViewById(R.id.tvAdminTotalReports);
-        tvSocietiesCount = findViewById(R.id.tvAdminSocietiesCount);
-
-        recyclerView = findViewById(R.id.recyclerAdminReports);
-        adapter      = new AdminReportAdapter(reports);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        recyclerView.setAdapter(adapter);
+        db          = FirebaseFirestore.getInstance();
+        llSocieties = findViewById(R.id.llAdminReportSocieties);
+        tvEmpty     = findViewById(R.id.tvAdminReportsEmpty);
 
         findViewById(R.id.btnAdminReportsBack).setOnClickListener(v -> finish());
 
         loadReports();
     }
 
-    // ── Load all reports ──────────────────────────────────────────────────────
+    // ── Load & group by society ───────────────────────────────────────────────
 
     private void loadReports() {
         db.collection("eventReports")
                 .whereEqualTo("status", "Submitted")
                 .get()
                 .addOnSuccessListener(snap -> {
-                    reports.clear();
+                    grouped.clear();
                     for (QueryDocumentSnapshot doc : snap) {
-                        ReportDoc r = new ReportDoc();
+                        ReportDoc r      = new ReportDoc();
                         r.id             = doc.getId();
                         r.eventTitle     = nvl(doc.getString("eventTitle"), "Untitled");
-                        r.societyName    = nvl(doc.getString("societyName"), "—");
+                        r.societyName    = nvl(doc.getString("societyName"), "Unknown Society");
                         r.eventDate      = nvl(doc.getString("eventDate"), "—");
                         r.imageBase64    = nvl(doc.getString("imageBase64"), "");
                         r.notes          = nvl(doc.getString("notes"), "");
-                        Long att = doc.getLong("attendees");
+                        Long att         = doc.getLong("attendees");
                         r.attendees      = att != null ? att.intValue() : 0;
-                        Long ts = doc.getLong("submittedAt");
+                        Long ts          = doc.getLong("submittedAt");
                         r.submittedAt    = ts != null
                                 ? new SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
                                 .format(new Date(ts)) : "—";
-                        reports.add(r);
+
+                        if (!grouped.containsKey(r.societyName)) {
+                            grouped.put(r.societyName, new ArrayList<>());
+                        }
+                        grouped.get(r.societyName).add(r);
                     }
 
-                    updateStats();
-                    adapter.notifyDataSetChanged();
-
-                    if (reports.isEmpty()) {
-                        TextView tvEmpty = findViewById(R.id.tvAdminReportsEmpty);
-                        if (tvEmpty != null) tvEmpty.setVisibility(View.VISIBLE);
-                    }
+                    buildUI();
                 })
                 .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load reports", Toast.LENGTH_SHORT).show());
+                        Toast.makeText(this, "Failed to load reports: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 
-    private void updateStats() {
-        tvTotalReports.setText(String.valueOf(reports.size()));
-        // Count unique societies
-        List<String> societies = new ArrayList<>();
-        for (ReportDoc r : reports) {
-            if (!societies.contains(r.societyName)) societies.add(r.societyName);
+    // ── Build accordion UI ────────────────────────────────────────────────────
+
+    private void buildUI() {
+        llSocieties.removeAllViews();
+
+        if (grouped.isEmpty()) {
+            if (tvEmpty != null) tvEmpty.setVisibility(View.VISIBLE);
+            return;
         }
-        tvSocietiesCount.setText(String.valueOf(societies.size()));
+        if (tvEmpty != null) tvEmpty.setVisibility(View.GONE);
+
+        for (Map.Entry<String, List<ReportDoc>> entry : grouped.entrySet()) {
+            String          society = entry.getKey();
+            List<ReportDoc> list    = entry.getValue();
+
+            // Society header
+            TextView tvHeader = new TextView(this);
+            LinearLayout.LayoutParams hp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT);
+            hp.setMargins(0, 12, 0, 0);
+            tvHeader.setLayoutParams(hp);
+            tvHeader.setText(society + "  (" + list.size() + " report" +
+                    (list.size() > 1 ? "s" : "") + ") ▼");
+            tvHeader.setTextColor(0xFFFFFFFF);
+            tvHeader.setTextSize(15f);
+            tvHeader.setTypeface(null, android.graphics.Typeface.BOLD);
+            tvHeader.setBackgroundColor(0xFF8B1A4A);
+            tvHeader.setPadding(32, 24, 32, 24);
+
+            // Events container (starts expanded)
+            LinearLayout llEvents = new LinearLayout(this);
+            llEvents.setOrientation(LinearLayout.VERTICAL);
+            llEvents.setBackgroundColor(0xFFFFFFFF);
+
+            for (ReportDoc r : list) {
+                llEvents.addView(buildEventRow(r));
+            }
+
+            // Toggle expand/collapse
+            tvHeader.setOnClickListener(v -> {
+                boolean visible = llEvents.getVisibility() == View.VISIBLE;
+                llEvents.setVisibility(visible ? View.GONE : View.VISIBLE);
+                tvHeader.setText(society + "  (" + list.size() + " report" +
+                        (list.size() > 1 ? "s" : "") + (visible ? " ▶" : " ▼"));
+            });
+
+            llSocieties.addView(tvHeader);
+            llSocieties.addView(llEvents);
+        }
     }
 
-    // ── View report dialog ────────────────────────────────────────────────────
+    private View buildEventRow(ReportDoc r) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(24, 20, 24, 20);
+        row.setGravity(android.view.Gravity.CENTER_VERTICAL);
+
+        // Add a bottom divider feel with alternating background
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        row.setLayoutParams(rp);
+        row.setBackgroundColor(0xFFFAFAFA);
+
+        LinearLayout info = new LinearLayout(this);
+        info.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(0,
+                LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        info.setLayoutParams(ip);
+
+        TextView tvTitle = new TextView(this);
+        tvTitle.setText(r.eventTitle);
+        tvTitle.setTextSize(14f);
+        tvTitle.setTextColor(0xFF2D1B2E);
+        tvTitle.setTypeface(null, android.graphics.Typeface.BOLD);
+
+        TextView tvDate = new TextView(this);
+        tvDate.setText("📅 " + r.eventDate + "  •  👥 " + r.attendees);
+        tvDate.setTextSize(12f);
+        tvDate.setTextColor(0xFF666666);
+
+        TextView tvSubmitted = new TextView(this);
+        tvSubmitted.setText("Submitted: " + r.submittedAt);
+        tvSubmitted.setTextSize(11f);
+        tvSubmitted.setTextColor(0xFF999999);
+
+        info.addView(tvTitle);
+        info.addView(tvDate);
+        info.addView(tvSubmitted);
+
+        Button btnView = new Button(this);
+        btnView.setText("View Report");
+        btnView.setTextSize(12f);
+        btnView.setTextColor(0xFFFFFFFF);
+        btnView.setBackgroundTintList(
+                android.content.res.ColorStateList.valueOf(0xFF8B1A4A));
+        btnView.setPadding(16, 8, 16, 8);
+        btnView.setOnClickListener(v -> showReportDialog(r));
+
+        row.addView(info);
+        row.addView(btnView);
+
+        // Thin divider below
+        View divider = new View(this);
+        LinearLayout outer = new LinearLayout(this);
+        outer.setOrientation(LinearLayout.VERTICAL);
+        outer.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 1);
+        divider.setLayoutParams(dp);
+        divider.setBackgroundColor(0xFFEEEEEE);
+        outer.addView(row);
+        outer.addView(divider);
+        return outer;
+    }
+
+    // ── Report dialog with Approve / Reject ───────────────────────────────────
 
     private void showReportDialog(ReportDoc r) {
         View view = LayoutInflater.from(this)
@@ -148,10 +261,91 @@ public class AdminEventReportsActivity extends AppCompatActivity {
             if (tvNoImage != null) tvNoImage.setVisibility(View.VISIBLE);
         }
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setView(view)
-                .setNegativeButton("Close", null)
+                .setNeutralButton("Close", null)
+                .setPositiveButton("Approve", null)
+                .setNegativeButton("Reject", null)
+                .create();
+
+        dialog.setOnShowListener(d -> {
+            // Approve
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+                approveReport(r, dialog);
+            });
+            // Reject
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener(v -> {
+                dialog.dismiss();
+                showRejectDialog(r);
+            });
+        });
+
+        dialog.show();
+    }
+
+    private void approveReport(ReportDoc r, AlertDialog dialog) {
+        Map<String, Object> update = new HashMap<>();
+        update.put("status", "Approved");
+        update.put("rejectionReason", "");
+        update.put("reviewedAt", System.currentTimeMillis());
+
+        db.collection("eventReports").document(r.id)
+                .update(update)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Report approved.", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                    // Remove from list and refresh UI
+                    for (List<ReportDoc> list : grouped.values()) {
+                        list.removeIf(rep -> rep.id.equals(r.id));
+                    }
+                    grouped.entrySet().removeIf(e -> e.getValue().isEmpty());
+                    buildUI();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
+    }
+
+    private void showRejectDialog(ReportDoc r) {
+        EditText etReason = new EditText(this);
+        etReason.setHint("Enter rejection reason...");
+        etReason.setPadding(32, 16, 32, 16);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Reject Report")
+                .setMessage("Provide a reason for rejection. This will be shown to the organizer.")
+                .setView(etReason)
+                .setPositiveButton("Submit Rejection", (d, w) -> {
+                    String reason = etReason.getText().toString().trim();
+                    if (reason.isEmpty()) {
+                        Toast.makeText(this, "Please enter a reason.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    rejectReport(r, reason);
+                })
+                .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    private void rejectReport(ReportDoc r, String reason) {
+        Map<String, Object> update = new HashMap<>();
+        update.put("status", "Rejected");
+        update.put("rejectionReason", reason);
+        update.put("reviewedAt", System.currentTimeMillis());
+
+        db.collection("eventReports").document(r.id)
+                .update(update)
+                .addOnSuccessListener(unused -> {
+                    Toast.makeText(this, "Report rejected.", Toast.LENGTH_SHORT).show();
+                    for (List<ReportDoc> list : grouped.values()) {
+                        list.removeIf(rep -> rep.id.equals(r.id));
+                    }
+                    grouped.entrySet().removeIf(e -> e.getValue().isEmpty());
+                    buildUI();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -173,47 +367,5 @@ public class AdminEventReportsActivity extends AppCompatActivity {
         String id, eventTitle, societyName, eventDate;
         String imageBase64, notes, submittedAt;
         int    attendees;
-    }
-
-    // ── Adapter ───────────────────────────────────────────────────────────────
-
-    class AdminReportAdapter extends RecyclerView.Adapter<AdminReportAdapter.VH> {
-
-        private final List<ReportDoc> list;
-        AdminReportAdapter(List<ReportDoc> list) { this.list = list; }
-
-        @Override
-        public VH onCreateViewHolder(ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_admin_report, parent, false);
-            return new VH(v);
-        }
-
-        @Override
-        public void onBindViewHolder(VH h, int position) {
-            ReportDoc r = list.get(position);
-            h.tvEventName.setText(r.eventTitle);
-            h.tvSociety.setText(r.societyName);
-            h.tvDate.setText("📅 " + r.eventDate);
-            h.tvAttendees.setText("👥 " + r.attendees);
-            h.tvSubmitted.setText("Submitted " + r.submittedAt);
-            h.btnView.setOnClickListener(v -> showReportDialog(r));
-        }
-
-        @Override public int getItemCount() { return list.size(); }
-
-        class VH extends RecyclerView.ViewHolder {
-            TextView tvEventName, tvSociety, tvDate, tvAttendees, tvSubmitted;
-            Button   btnView;
-            VH(View v) {
-                super(v);
-                tvEventName = v.findViewById(R.id.tvAdminReportEventName);
-                tvSociety   = v.findViewById(R.id.tvAdminReportSocietyName);
-                tvDate      = v.findViewById(R.id.tvAdminReportEventDate);
-                tvAttendees = v.findViewById(R.id.tvAdminReportAttendeesCount);
-                tvSubmitted = v.findViewById(R.id.tvAdminReportSubmittedDate);
-                btnView     = v.findViewById(R.id.btnAdminViewReport);
-            }
-        }
     }
 }

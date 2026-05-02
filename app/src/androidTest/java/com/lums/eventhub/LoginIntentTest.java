@@ -13,6 +13,7 @@ import androidx.test.core.app.ActivityScenario;
 import androidx.test.espresso.intent.Intents;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.lums.eventhub.auth.LoginActivity;
 
@@ -25,6 +26,9 @@ import org.junit.runner.RunWith;
  * Espresso Intent Tests for LoginActivity - Admin US-01
  * Tests empty field validation only (no Firestore credentials needed).
  * Routing tests (#AD, #ORG, #AT) require live Firestore — tested manually.
+ *
+ * IMPORTANT: setUp() clears any saved session (SharedPreferences) before
+ * each test so that persistent login does not skip the login screen.
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -32,6 +36,11 @@ public class LoginIntentTest {
 
     @Before
     public void setUp() {
+        // Clear any saved session so LoginActivity shows the login screen
+        // instead of auto-redirecting to a dashboard
+        LoginActivity.clearSession(
+                InstrumentationRegistry.getInstrumentation().getTargetContext());
+
         Intents.init();
         ActivityScenario.launch(LoginActivity.class);
     }

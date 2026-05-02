@@ -68,8 +68,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.tvViewAll).setOnClickListener(v ->
                 startActivity(new Intent(this, ProposalListActivity.class)));
 
-        // Sign out — CHANGED: persistent logout to LoginActivity
+        // Sign out — clears saved session + navigates to LoginActivity
         findViewById(R.id.btnSignOut).setOnClickListener(v -> {
+            com.lums.eventhub.auth.LoginActivity.clearSession(this);
             Intent intent = new Intent(this, com.lums.eventhub.auth.LoginActivity.class);
             intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK
                     | Intent.FLAG_ACTIVITY_CLEAR_TASK);

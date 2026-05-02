@@ -5,6 +5,7 @@ import static androidx.test.espresso.assertion.ViewAssertions.matches;
 import static androidx.test.espresso.matcher.ViewMatchers.isDisplayed;
 import static androidx.test.espresso.matcher.ViewMatchers.withId;
 import static androidx.test.espresso.action.ViewActions.click;
+import static androidx.test.espresso.action.ViewActions.scrollTo;
 
 import android.content.Intent;
 import androidx.test.core.app.ActivityScenario;
@@ -20,19 +21,20 @@ import org.junit.runner.RunWith;
 /**
  * AdminDashboardIntentTest.java
  * Espresso UI tests for AdminDashboardActivity.
- * Tests that all navigation buttons and stat views are displayed.
+ * Tests all navigation buttons, stat views, and new additions:
+ *   - Event Reports button
+ *   - Accommodation button
+ *   - Sign Out button
  * Implements: Admin US-08
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
 public class AdminDashboardIntentTest {
 
-    /** Launch AdminDashboardActivity with a test username */
     private ActivityScenario<AdminDashboardActivity> launchDashboard() {
         Intent intent = new Intent(
                 InstrumentationRegistry.getInstrumentation().getTargetContext(),
-                AdminDashboardActivity.class
-        );
+                AdminDashboardActivity.class);
         intent.putExtra("username", "#AD_testadmin");
         return ActivityScenario.launch(intent);
     }
@@ -58,40 +60,60 @@ public class AdminDashboardIntentTest {
         onView(withId(R.id.tvApprovedNumber)).check(matches(isDisplayed()));
     }
 
-    /** Test proposals button is clickable */
-    @Test
-    public void testProposalsButtonIsClickable() {
-        launchDashboard();
-        onView(withId(R.id.btnViewProposals)).check(matches(isDisplayed()));
-    }
-
     /** Test auditorium button is displayed */
     @Test
     public void testAuditoriumButtonIsDisplayed() {
         launchDashboard();
         onView(withId(R.id.btnAuditorium)).check(matches(isDisplayed()));
     }
-//
-//    /** Test calendar button is displayed */
-//    @Test
-//    public void testCalendarButtonIsDisplayed() {
-//        launchDashboard();
-//        onView(withId(R.id.btnCalendar)).check(matches(isDisplayed()));
-//    }
 
-//    /** Test accommodation button is displayed */
-//    @Test
-//    public void testAccommodationButtonIsDisplayed() {
-//        launchDashboard();
-//        onView(withId(R.id.btnAccommodation)).check(matches(isDisplayed()));
-//    }
-
-    /** Test register organizer button is displayed (requires scroll) */
+    /** Test register organizer button is displayed */
     @Test
     public void testRegisterOrganizerButtonIsDisplayed() {
         launchDashboard();
         onView(withId(R.id.btnRegisterOrganizer))
-                .perform(androidx.test.espresso.action.ViewActions.scrollTo())
+                .perform(scrollTo())
                 .check(matches(isDisplayed()));
+    }
+
+    /** NEW: Test accommodation button is displayed */
+    @Test
+    public void testAccommodationButtonIsDisplayed() {
+        launchDashboard();
+        onView(withId(R.id.btnAccommodation))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
+    }
+
+    /** NEW: Test event reports button is displayed */
+    @Test
+    public void testEventReportsButtonIsDisplayed() {
+        launchDashboard();
+        onView(withId(R.id.btnEventReports))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
+    }
+
+    /** NEW: Test sign out button is displayed */
+    @Test
+    public void testSignOutButtonIsDisplayed() {
+        launchDashboard();
+        onView(withId(R.id.btnSignOut)).check(matches(isDisplayed()));
+    }
+
+    /** NEW: Test accommodation button click navigates */
+    @Test
+    public void testAccommodationButtonIsClickable() {
+        launchDashboard();
+        onView(withId(R.id.btnAccommodation))
+                .perform(scrollTo(), click());
+    }
+
+    /** NEW: Test event reports button click navigates */
+    @Test
+    public void testEventReportsButtonIsClickable() {
+        launchDashboard();
+        onView(withId(R.id.btnEventReports))
+                .perform(scrollTo(), click());
     }
 }

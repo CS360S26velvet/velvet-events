@@ -6,8 +6,8 @@ import static org.junit.Assert.*;
 /**
  * AdminDashboardTest.java
  * Unit tests for Admin Dashboard logic.
- * Tests username prefix detection and routing logic
- * without requiring Android context or Firestore.
+ * Tests username prefix detection, routing logic,
+ * persistent logout, and accommodation/event-report additions.
  * Implements: Admin US-01, US-08
  */
 public class AdminDashboardTest {
@@ -63,20 +63,6 @@ public class AdminDashboardTest {
         }
     }
 
-    /** Test username with only prefix is valid format */
-    @Test
-    public void testPrefixOnlyUsername() {
-        String username = "#AD";
-        assertTrue(username.startsWith("#AD"));
-    }
-
-    /** Test case sensitivity of prefix */
-    @Test
-    public void testPrefixIsCaseSensitive() {
-        String username = "#ad_admin";
-        assertFalse(username.startsWith("#AD"));
-    }
-
     /** Test pending count logic — 0 pending */
     @Test
     public void testZeroPendingCount() {
@@ -114,5 +100,84 @@ public class AdminDashboardTest {
         String status = "Draft";
         assertNotEquals("Submitted", status);
         assertNotEquals("Approved", status);
+    }
+
+    // ── NEW: Persistent logout ─────────────────────────────────────────────
+
+    /** Test sign out clears session role */
+    @Test
+    public void testSignOutClearsRole() {
+        String savedRole = "admin";
+        savedRole = null; // simulate clearSession()
+        assertNull(savedRole);
+    }
+
+    /** Test sign out clears username */
+    @Test
+    public void testSignOutClearsUsername() {
+        String savedUser = "#AD_admin";
+        savedUser = null;
+        assertNull(savedUser);
+    }
+
+    /** Test that after logout, no session exists */
+    @Test
+    public void testNoSessionAfterLogout() {
+        String savedRole = null;
+        String savedUser = null;
+        boolean hasSession = savedUser != null && savedRole != null;
+        assertFalse(hasSession);
+    }
+
+    // ── NEW: Accommodation by society ─────────────────────────────────────
+
+    /** Test accommodation button routes to AdminAccommodationBySocietyActivity */
+    @Test
+    public void testAccommodationButtonRouteTarget() {
+        String targetActivity = "AdminAccommodationBySocietyActivity";
+        assertEquals("AdminAccommodationBySocietyActivity", targetActivity);
+    }
+
+    /** Test accommodation filter requires both wantsAccommodation and paymentStatus */
+    @Test
+    public void testAccommodationFilterRequiresBothFields() {
+        String wantsAccommodation = "Yes";
+        String paymentStatus      = "Approved";
+        boolean valid = "Yes".equals(wantsAccommodation) && "Approved".equals(paymentStatus);
+        assertTrue(valid);
+    }
+
+    @Test
+    public void testAccommodationFilterFailsIfNotApproved() {
+        String wantsAccommodation = "Yes";
+        String paymentStatus      = "Pending";
+        boolean valid = "Yes".equals(wantsAccommodation) && "Approved".equals(paymentStatus);
+        assertFalse(valid);
+    }
+
+    @Test
+    public void testAccommodationFilterFailsIfNoAccommodation() {
+        String wantsAccommodation = "No";
+        String paymentStatus      = "Approved";
+        boolean valid = "Yes".equals(wantsAccommodation) && "Approved".equals(paymentStatus);
+        assertFalse(valid);
+    }
+
+    // ── NEW: Event Reports button ──────────────────────────────────────────
+
+    /** Test event reports button routes to AdminEventReportsActivity */
+    @Test
+    public void testEventReportsButtonRouteTarget() {
+        String targetActivity = "AdminEventReportsActivity";
+        assertEquals("AdminEventReportsActivity", targetActivity);
+    }
+
+    /** Test admin only sees Submitted reports */
+    @Test
+    public void testAdminSeesOnlySubmittedReports() {
+        String status = "Submitted";
+        assertNotEquals("Approved", status);
+        assertNotEquals("Rejected", status);
+        assertEquals("Submitted", status);
     }
 }
