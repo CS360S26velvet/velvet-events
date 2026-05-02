@@ -164,13 +164,20 @@ public class AttendeeActivity extends AppCompatActivity {
                     tvRegisteredCount.setText(String.valueOf(snapshots.size()));
                 });
 
+        // Count unread — check both "read" and "isRead" fields since
+        // different notification sources use different field names
         db.collection("users")
                 .document(userId)
                 .collection("notifications")
-                .whereEqualTo("isRead", false)
                 .get()
                 .addOnSuccessListener(snapshots -> {
-                    tvNotifCount.setText(String.valueOf(snapshots.size()));
+                    int unread = 0;
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot doc : snapshots) {
+                        boolean isRead = Boolean.TRUE.equals(doc.getBoolean("isRead"))
+                                || Boolean.TRUE.equals(doc.getBoolean("read"));
+                        if (!isRead) unread++;
+                    }
+                    tvNotifCount.setText(String.valueOf(unread));
                 });
     }
     /**
@@ -181,7 +188,7 @@ public class AttendeeActivity extends AppCompatActivity {
         db.collection("users")
                 .document(userId)
                 .collection("registrations")
-                .orderBy("registeredAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .orderBy("submittedAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .limit(3)
                 .get()
                 .addOnSuccessListener(snapshots -> {
@@ -190,7 +197,7 @@ public class AttendeeActivity extends AppCompatActivity {
                     if (snapshots.isEmpty()) {
                         TextView empty = new TextView(this);
                         empty.setText("No recent activity yet. Browse events to get started!");
-                        empty.setTextColor(0xFF554477);
+                        empty.setTextColor(0xFF000000);
                         empty.setTextSize(12);
                         recentActivityList.addView(empty);
                         return;
@@ -234,7 +241,7 @@ public class AttendeeActivity extends AppCompatActivity {
                         // Text
                         TextView tvText = new TextView(this);
                         tvText.setText("Registered for " + (title != null ? title : "an event"));
-                        tvText.setTextColor(0xFF1A1A2E);
+                        tvText.setTextColor(0xFF000000);
                         tvText.setTextSize(12);
                         tvText.setLayoutParams(new LinearLayout.LayoutParams(
                                 0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
@@ -243,7 +250,7 @@ public class AttendeeActivity extends AppCompatActivity {
                         // Date
                         TextView tvDate = new TextView(this);
                         tvDate.setText(date != null ? date : "");
-                        tvDate.setTextColor(0xFFBBBBBB);
+                        tvDate.setTextColor(0xFF333333);
                         tvDate.setTextSize(10);
                         row.addView(tvDate);
 

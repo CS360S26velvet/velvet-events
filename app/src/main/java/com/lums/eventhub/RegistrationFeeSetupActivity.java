@@ -58,6 +58,7 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
     public static final String EXTRA_HAS_ACCOMMODATION     = "hasAccommodation";
     public static final String EXTRA_ACCOMMODATION_FEE     = "accommodationFee";
     public static final String EXTRA_ACCOMMODATION_BANK    = "accommodationBankInfo";
+    public static final String EXTRA_REG_DEADLINE          = "registrationDeadline";
 
     // -------------------------------------------------------------------------
     // Views
@@ -65,7 +66,7 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
     private RadioGroup  rgRegFee, rgAccommodation;
     private RadioButton rbRegFeeYes, rbRegFeeNo, rbAccomYes, rbAccomNo;
     private LinearLayout layoutRegFeeFields, layoutAccommodationFields;
-    private EditText    etRegFee, etRegBankInfo, etAccommodationFee, etAccommodationBankInfo;
+    private EditText    etRegFee, etRegBankInfo, etAccommodationFee, etAccommodationBankInfo, etRegDeadline;
     private Button      btnSaveSetup;
 
     private String eventId, eventName;
@@ -117,6 +118,7 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
         etRegBankInfo         = findViewById(R.id.etRegBankInfo);
         etAccommodationFee    = findViewById(R.id.etAccommodationFee);
         etAccommodationBankInfo = findViewById(R.id.etAccommodationBankInfo);
+        etRegDeadline         = findViewById(R.id.etRegDeadline);
         btnSaveSetup          = findViewById(R.id.btnSaveSetup);
     }
 
@@ -176,6 +178,12 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
                     } else if (hasAccom != null) {
                         rbAccomNo.setChecked(true);
                     }
+
+                    // Pre-fill deadline directly from proposals/ doc (same doc we just loaded)
+                    String deadline = doc.getString("registrationDeadline");
+                    if (deadline != null && !deadline.isEmpty() && etRegDeadline != null) {
+                        etRegDeadline.setText(deadline);
+                    }
                 });
     }
 
@@ -207,34 +215,34 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
                 }
             }
 
-            // If both No, warn once then proceed immediately
-            if (!hasRegFee && !hasAccommodation) {
-                // Just go directly to FormBuilder
-                launchFormBuilder(false, "", "", false, "", "");
-                return;
-            }
+            String deadline = etRegDeadline.getText().toString().trim();
+            String regFee   = hasRegFee        ? etRegFee.getText().toString().trim()               : "";
+            String regBank  = hasRegFee        ? etRegBankInfo.getText().toString().trim()          : "";
+            String accomFee = hasAccommodation ? etAccommodationFee.getText().toString().trim()     : "";
+            String accomBank= hasAccommodation ? etAccommodationBankInfo.getText().toString().trim(): "";
 
-            String regFee       = hasRegFee        ? etRegFee.getText().toString().trim()              : "";
-            String regBank      = hasRegFee        ? etRegBankInfo.getText().toString().trim()         : "";
-            String accomFee     = hasAccommodation ? etAccommodationFee.getText().toString().trim()    : "";
-            String accomBank    = hasAccommodation ? etAccommodationBankInfo.getText().toString().trim(): "";
-
-            // Persist to Firestore so it survives re-opens
+            // Always save everything — fees, accommodation AND deadline — in one write
             Map<String, Object> data = new HashMap<>();
-            data.put("hasRegFee",          hasRegFee);
-            data.put("regFee",             regFee);
-            data.put("regBankInfo",        regBank);
-            data.put("hasAccommodation",   hasAccommodation);
-            data.put("accommodationFee",   accomFee);
+            data.put("hasRegFee",             hasRegFee);
+            data.put("regFee",                regFee);
+            data.put("regBankInfo",           regBank);
+            data.put("hasAccommodation",      hasAccommodation);
+            data.put("accommodationFee",      accomFee);
             data.put("accommodationBankInfo", accomBank);
+            data.put("registrationDeadline",  deadline);
 
             db.collection("proposals").document(eventId)
-                    .update(data)
-                    .addOnSuccessListener(unused ->
-                            launchFormBuilder(hasRegFee, regFee, regBank,
-                                    hasAccommodation, accomFee, accomBank))
+                    .set(data, com.google.firebase.firestore.SetOptions.merge())
+                    .addOnSuccessListener(unused -> {
+                        // Also write deadline to events/ for attendee side
+                        Map<String, Object> evData = new HashMap<>();
+                        evData.put("registrationDeadline", deadline);
+                        db.collection("events").document(eventId)
+                                .set(evData, com.google.firebase.firestore.SetOptions.merge());
+                        launchFormBuilder(hasRegFee, regFee, regBank,
+                                hasAccommodation, accomFee, accomBank);
+                    })
                     .addOnFailureListener(e ->
-                            // Even if Firestore fails, still proceed — data passed via Intent
                             launchFormBuilder(hasRegFee, regFee, regBank,
                                     hasAccommodation, accomFee, accomBank));
         });
@@ -257,6 +265,8 @@ public class RegistrationFeeSetupActivity extends AppCompatActivity {
         intent.putExtra(EXTRA_HAS_ACCOMMODATION, hasAccom);
         intent.putExtra(EXTRA_ACCOMMODATION_FEE, accomFee);
         intent.putExtra(EXTRA_ACCOMMODATION_BANK, accomBank);
+        intent.putExtra(EXTRA_REG_DEADLINE,
+                etRegDeadline.getText().toString().trim());
         startActivity(intent);
     }
 }

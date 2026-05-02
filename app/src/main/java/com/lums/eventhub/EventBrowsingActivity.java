@@ -168,6 +168,16 @@ public class EventBrowsingActivity extends AppCompatActivity {
     private View createEventCard(Event event) {
         View card = LayoutInflater.from(this).inflate(R.layout.event_card, null);
 
+        // Show event banner image if available
+        android.widget.ImageView imgEvent = card.findViewById(R.id.imgEvent);
+        if (event.imageBase64 != null && !event.imageBase64.isEmpty() && imgEvent != null) {
+            try {
+                byte[] bytes = android.util.Base64.decode(event.imageBase64, android.util.Base64.NO_WRAP);
+                android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                if (bmp != null) imgEvent.setImageBitmap(bmp);
+            } catch (Exception ignored) {}
+        }
+
         TextView tvCategory  = card.findViewById(R.id.tvCategory);
         TextView tvTitle     = card.findViewById(R.id.tvEventTitle);
         TextView tvOrganizer = card.findViewById(R.id.tvOrganizer);
@@ -257,7 +267,7 @@ public class EventBrowsingActivity extends AppCompatActivity {
             category = "School-Led Workshop".equals(type) ? "Workshops/Seminars" : "Society Events";
         }
 
-        return new Event(
+        Event event = new Event(
                 doc.getId(),
                 nvl(doc.getString("title"), "Untitled"),
                 nvl(doc.getString("organizer"), nvl(doc.getString("societyName"), "")),
@@ -273,6 +283,9 @@ public class EventBrowsingActivity extends AppCompatActivity {
                         ? doc.getLong("expectedParticipants").intValue()
                         : (doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0)
         );
+        String img = doc.getString("eventImageBase64");
+        event.imageBase64 = (img != null) ? img : "";
+        return event;
     }
 
     private String nvl(String s, String fallback) {

@@ -275,7 +275,7 @@
         <Button
             android:id="@+id/navDashboard"
             android:layout_width="0dp"
-            android:layout_height="60dp"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:backgroundTint="#CBAAEB"
             android:text="⌂ Home"

@@ -1,11 +1,15 @@
 package com.lums.eventhub;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
@@ -39,9 +43,14 @@ public class ProposalFormActivity extends AppCompatActivity {
     private String organizerUsername;
     private String societyName;
 
+    private static final int IMAGE_PICK_RC = 600;
+    private String eventImageBase64 = "";
+    private ImageView imgEventPreview;
+    private android.widget.Button btnPickEventImage;
+
     // UPDATED: replaced etDate with etStartDate + etEndDate
     private EditText etTitle, etDescription, etAboutEvent, etSocietyName;
-    private EditText etStartDate, etEndDate, etRegDeadline, etVenue;
+    private EditText etStartDate, etEndDate, etVenue;
     private RadioGroup rgEventType;
     private EditText     etParticipants;
     private LinearLayout llGuestRows;
@@ -89,9 +98,10 @@ public class ProposalFormActivity extends AppCompatActivity {
         etAboutEvent          = findViewById(R.id.etAboutEvent);          // NEW
         rgEventType           = findViewById(R.id.rgEventType);
         etSocietyName         = findViewById(R.id.etSocietyName);
+        imgEventPreview       = findViewById(R.id.imgEventPreview);
+        btnPickEventImage     = findViewById(R.id.btnPickEventImage);
         etStartDate           = findViewById(R.id.etStartDate);           // NEW (was etDate)
         etEndDate             = findViewById(R.id.etEndDate);             // NEW
-        etRegDeadline         = findViewById(R.id.etRegDeadline);         // NEW
         etVenue               = findViewById(R.id.etVenue);
         etParticipants        = findViewById(R.id.etParticipants);
         llGuestRows           = findViewById(R.id.llGuestRows);
@@ -103,6 +113,48 @@ public class ProposalFormActivity extends AppCompatActivity {
         etCheckIn             = findViewById(R.id.etCheckIn);
         etCheckOut            = findViewById(R.id.etCheckOut);
         etSpecialRequirements = findViewById(R.id.etSpecialRequirements);
+
+        // Wire image picker button
+        btnPickEventImage.setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            startActivityForResult(
+                    android.content.Intent.createChooser(intent, "Select Event Banner"),
+                    IMAGE_PICK_RC);
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == IMAGE_PICK_RC && resultCode == RESULT_OK
+                && data != null && data.getData() != null) {
+            try {
+                java.io.InputStream is = getContentResolver().openInputStream(data.getData());
+                android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeStream(is);
+                if (is != null) is.close();
+                if (bmp != null) {
+                    int maxPx = 1024, w = bmp.getWidth(), h = bmp.getHeight();
+                    if (w > maxPx || h > maxPx) {
+                        float s = Math.min((float) maxPx / w, (float) maxPx / h);
+                        bmp = android.graphics.Bitmap.createScaledBitmap(bmp,
+                                Math.round(w * s), Math.round(h * s), true);
+                    }
+                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                    bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos);
+                    eventImageBase64 = android.util.Base64.encodeToString(
+                            baos.toByteArray(), android.util.Base64.NO_WRAP);
+                    imgEventPreview.setImageBitmap(bmp);
+                    imgEventPreview.setVisibility(View.VISIBLE);
+                    btnPickEventImage.setText("✅ Image selected");
+                }
+            } catch (Exception e) {
+                android.widget.Toast.makeText(this, "Could not load image",
+                        android.widget.Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void wireAccommodationToggle() {
@@ -213,7 +265,6 @@ public class ProposalFormActivity extends AppCompatActivity {
         String aboutEvent = etAboutEvent.getText().toString().trim();   // NEW
         String startDate  = etStartDate.getText().toString().trim();    // NEW
         String endDate    = etEndDate.getText().toString().trim();      // NEW
-        String regDeadline= etRegDeadline.getText().toString().trim();  // NEW
         String venue      = etVenue.getText().toString().trim();
 
         String eventType = "";
@@ -237,9 +288,8 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("eventType",             eventType);
         data.put("societyName",           societyName);
         data.put("startDate",             startDate);           // NEW (replaces "date")
-        data.put("endDate",               endDate);             // NEW
-        // registrationDeadline — if blank, falls back to endDate on attendee side
-        data.put("registrationDeadline",  regDeadline.isEmpty() ? endDate : regDeadline);
+        data.put("endDate",               endDate);
+        if (!eventImageBase64.isEmpty()) data.put("eventImageBase64", eventImageBase64);             // NEW
         // Keep "date" = startDate for backward-compat with existing queries
         data.put("date",                  startDate);
         data.put("venue",                 venue);
@@ -326,7 +376,20 @@ public class ProposalFormActivity extends AppCompatActivity {
                     setText(etStartDate,   doc.getString("startDate") != null
                             ? doc.getString("startDate") : doc.getString("date")); // NEW + fallback
                     setText(etEndDate,     doc.getString("endDate"));     // NEW
-                    setText(etRegDeadline, doc.getString("registrationDeadline")); // NEW
+                    // Load existing banner image if present
+                    String existingImg = doc.getString("eventImageBase64");
+                    if (existingImg != null && !existingImg.isEmpty()) {
+                        eventImageBase64 = existingImg;
+                        try {
+                            byte[] bytes = Base64.decode(existingImg, Base64.NO_WRAP);
+                            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+                            if (bmp != null) {
+                                imgEventPreview.setImageBitmap(bmp);
+                                imgEventPreview.setVisibility(android.view.View.VISIBLE);
+                                btnPickEventImage.setText("✅ Image selected");
+                            }
+                        } catch (Exception ignored) {}
+                    }
                     setText(etVenue,       doc.getString("venue"));
                     setText(etSocietyName, doc.getString("societyName"));
 

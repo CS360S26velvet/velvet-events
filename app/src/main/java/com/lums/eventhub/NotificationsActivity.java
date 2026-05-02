@@ -43,7 +43,7 @@ import java.util.List;
 public class NotificationsActivity extends AppCompatActivity {
 
     LinearLayout notificationsList;
-    TextView tvUnreadCount, tvEmpty;
+    TextView tvEmpty;
     Button btnMarkAllRead, navDashboard, navBrowseEvents, navMyRegistrations, navNotifications, btnLogout;
 
     FirebaseFirestore db;
@@ -60,7 +60,6 @@ public class NotificationsActivity extends AppCompatActivity {
         userId = getIntent().getStringExtra("userId");
 
         notificationsList  = findViewById(R.id.notificationsList);
-        tvUnreadCount      = findViewById(R.id.tvUnreadCount);
         tvEmpty            = findViewById(R.id.tvEmpty);
         navDashboard       = findViewById(R.id.navDashboard);
         navBrowseEvents    = findViewById(R.id.navBrowseEvents);
@@ -149,10 +148,42 @@ public class NotificationsActivity extends AppCompatActivity {
                             notif.isRead = false;
                         }
 
+                        // Also check "read" field (our payment notifications use this)
+                        if (!notif.isRead) {
+                            Object readVal = doc.get("read");
+                            if (Boolean.TRUE.equals(readVal)) notif.isRead = true;
+                        }
+
                         allNotifications.add(notif);
                     }
 
                     displayNotifications();
+                    markAllAsRead();
+                });
+    }
+
+    /** Mark all unread notifications as read in Firestore */
+    private void markAllAsRead() {
+        db.collection("users").document(userId)
+                .collection("notifications")
+                .whereEqualTo("read", false)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        doc.getReference().update("read", true);
+                        doc.getReference().update("isRead", true);
+                    }
+                });
+        // Also catch docs that use isRead field
+        db.collection("users").document(userId)
+                .collection("notifications")
+                .whereEqualTo("isRead", false)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (QueryDocumentSnapshot doc : snap) {
+                        doc.getReference().update("isRead", true);
+                        doc.getReference().update("read", true);
+                    }
                 });
     }
 
@@ -161,7 +192,6 @@ public class NotificationsActivity extends AppCompatActivity {
 
         if (allNotifications.isEmpty()) {
             tvEmpty.setVisibility(View.VISIBLE);
-            tvUnreadCount.setText("0");
             return;
         }
 
@@ -171,7 +201,6 @@ public class NotificationsActivity extends AppCompatActivity {
         for (Notification n : allNotifications) {
             if (!n.isRead) unread++;
         }
-        tvUnreadCount.setText(String.valueOf(unread));
 
         // AT US-17 — show emergency/change notifications first so they
         // appear at the top of the list regardless of order from Firestore
@@ -212,11 +241,11 @@ public class NotificationsActivity extends AppCompatActivity {
 
         // AT US-17 — priority cards get a tinted background and a left border accent
         if (isEmergency) {
-            card.setBackgroundColor(0xFFFFF3F3); // light red tint
+            card.setBackgroundColor(0xFFEDD8D8); // light red tint on purple
         } else if (isChange) {
-            card.setBackgroundColor(0xFFFFF8F0); // light orange tint
+            card.setBackgroundColor(0xFFEDE0D8); // light orange tint on purple
         } else {
-            card.setBackgroundColor(0xFFFFFFFF);
+            card.setBackgroundColor(0xFFDDD8F5); // match main box background
         }
 
         // AT US-17 — priority label banner (URGENT / UPDATE) shown above the content

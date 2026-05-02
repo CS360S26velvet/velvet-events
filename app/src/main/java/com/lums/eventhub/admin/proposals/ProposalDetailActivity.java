@@ -232,6 +232,16 @@ public class ProposalDetailActivity extends AppCompatActivity {
         eventData.put("status",            "Approved");
         eventData.put("approvedAt",        System.currentTimeMillis());
         eventData.put("proposalId",        proposalId);
+        // Copy registration deadline so attendees see correct date after approval
+        String deadline = currentDoc.getString("registrationDeadline");
+        if (deadline != null && !deadline.isEmpty()) {
+            eventData.put("registrationDeadline", deadline);
+        }
+        // Copy event banner image
+        String imageBase64 = currentDoc.getString("eventImageBase64");
+        if (imageBase64 != null && !imageBase64.isEmpty()) {
+            eventData.put("eventImageBase64", imageBase64);
+        }
 
         // Same document ID as the proposal for easy cross-reference
         db.collection("events").document(proposalId)

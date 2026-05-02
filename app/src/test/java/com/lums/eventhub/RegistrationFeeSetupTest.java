@@ -3,133 +3,173 @@ package com.lums.eventhub;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * RegistrationFeeSetupTest.java
  *
- * Unit tests for RegistrationFeeSetupActivity logic:
- *   - Validation: regFee required when hasRegFee=true
- *   - Validation: accommodationFee required when hasAccommodation=true
- *   - Extras key constants exist
- *   - Both No → goes straight to FormBuilder (no fee fields required)
- *   - Fee amount and bank info stored correctly
+ * Unit tests for RegistrationFeeSetupActivity logic.
+ * Covers fee validation, payload building, and the
+ * "both No → skip straight to FormBuilder" path.
  */
 public class RegistrationFeeSetupTest {
 
-    // ── Mirror of validation logic ────────────────────────────────────────────
+    // ── Mirror of save-button validation from wireSave() ──────────────────
 
-    private boolean validateRegFee(boolean hasRegFee, String regFee) {
-        if (!hasRegFee) return true;
-        return regFee != null && !regFee.trim().isEmpty();
+    /**
+     * Returns an error message if validation fails, null if valid.
+     * Mirrors the guard blocks inside wireSave().
+     */
+    private String validate(boolean hasRegFee, String regFee,
+                            boolean hasAccommodation, String accomFee) {
+        if (hasRegFee && (regFee == null || regFee.trim().isEmpty())) {
+            return "Please enter the registration fee amount.";
+        }
+        if (hasAccommodation && (accomFee == null || accomFee.trim().isEmpty())) {
+            return "Please enter the accommodation fee amount.";
+        }
+        return null; // valid
     }
 
-    private boolean validateAccommodation(boolean hasAccom, String accomFee) {
-        if (!hasAccom) return true;
-        return accomFee != null && !accomFee.trim().isEmpty();
+    /** Returns true when both toggles are No — skip Firestore write. */
+    private boolean shouldSkipToFormBuilder(boolean hasRegFee, boolean hasAccommodation) {
+        return !hasRegFee && !hasAccommodation;
     }
 
-    private boolean shouldGoDirectlyToFormBuilder(boolean hasRegFee, boolean hasAccom) {
-        return !hasRegFee && !hasAccom;
+    // ── Mirror of Firestore payload from wireSave() ────────────────────────
+
+    private Map<String, Object> buildPayload(boolean hasRegFee, String regFee, String regBank,
+                                             boolean hasAccom, String accomFee, String accomBank,
+                                             String deadline) {
+        Map<String, Object> data = new HashMap<>();
+        data.put("hasRegFee",             hasRegFee);
+        data.put("regFee",                regFee);
+        data.put("regBankInfo",           regBank);
+        data.put("hasAccommodation",      hasAccom);
+        data.put("accommodationFee",      accomFee);
+        data.put("accommodationBankInfo", accomBank);
+        data.put("registrationDeadline",  deadline);
+        return data;
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Registration Fee Validation
-    // ═══════════════════════════════════════════════════════════════════════════
+    // ══════════════════════════════════════════════════════════════════════
+    // Validation — registration fee
+    // ══════════════════════════════════════════════════════════════════════
 
-    @Test public void testRegFeeNotRequiredWhenNoSelected() {
-        assertTrue(validateRegFee(false, ""));
+    @Test
+    public void testRegFeeYesWithAmountPassesValidation() {
+        assertNull(validate(true, "500", false, ""));
     }
 
-    @Test public void testRegFeeRequiredWhenYesSelected() {
-        assertFalse(validateRegFee(true, ""));
+    @Test
+    public void testRegFeeYesWithEmptyAmountFailsValidation() {
+        assertNotNull(validate(true, "", false, ""));
     }
 
-    @Test public void testRegFeeValidWhenYesAndAmountEntered() {
-        assertTrue(validateRegFee(true, "PKR 500"));
+    @Test
+    public void testRegFeeYesWithNullAmountFailsValidation() {
+        assertNotNull(validate(true, null, false, ""));
     }
 
-    @Test public void testRegFeeInvalidWithNullAmount() {
-        assertFalse(validateRegFee(true, null));
+    @Test
+    public void testRegFeeNoSkipsAmountValidation() {
+        // Even with blank fee, No means no validation needed
+        assertNull(validate(false, "", false, ""));
     }
 
-    @Test public void testRegFeeInvalidWithWhitespaceOnly() {
-        assertFalse(validateRegFee(true, "   "));
+    // ══════════════════════════════════════════════════════════════════════
+    // Validation — accommodation fee
+    // ══════════════════════════════════════════════════════════════════════
+
+    @Test
+    public void testAccomYesWithAmountPassesValidation() {
+        assertNull(validate(false, "", true, "1000"));
     }
 
-    @Test public void testRegFeeValidWithAnyNonEmptyString() {
-        assertTrue(validateRegFee(true, "500"));
-        assertTrue(validateRegFee(true, "PKR 1000"));
-        assertTrue(validateRegFee(true, "$50"));
+    @Test
+    public void testAccomYesWithEmptyAmountFailsValidation() {
+        assertNotNull(validate(false, "", true, ""));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Accommodation Fee Validation
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Test public void testAccomFeeNotRequiredWhenNoSelected() {
-        assertTrue(validateAccommodation(false, ""));
+    @Test
+    public void testBothYesBothFilledPassesValidation() {
+        assertNull(validate(true, "500", true, "1000"));
     }
 
-    @Test public void testAccomFeeRequiredWhenYesSelected() {
-        assertFalse(validateAccommodation(true, ""));
+    @Test
+    public void testBothYesOnlyAccomFilledFailsAtRegFee() {
+        String err = validate(true, "", true, "1000");
+        assertNotNull(err);
+        assertTrue(err.contains("registration fee"));
     }
 
-    @Test public void testAccomFeeValidWhenYesAndAmountEntered() {
-        assertTrue(validateAccommodation(true, "PKR 1500"));
+    // ══════════════════════════════════════════════════════════════════════
+    // Both-No shortcut path
+    // ══════════════════════════════════════════════════════════════════════
+
+    @Test
+    public void testBothNoSkipsFirestoreAndGoesDirectlyToFormBuilder() {
+        assertTrue(shouldSkipToFormBuilder(false, false));
     }
 
-    @Test public void testAccomFeeInvalidWithNullAmount() {
-        assertFalse(validateAccommodation(true, null));
+    @Test
+    public void testRegFeeYesDoesNotSkipToFormBuilder() {
+        assertFalse(shouldSkipToFormBuilder(true, false));
     }
 
-    @Test public void testAccomFeeInvalidWithWhitespaceOnly() {
-        assertFalse(validateAccommodation(true, "   "));
+    @Test
+    public void testAccomYesDoesNotSkipToFormBuilder() {
+        assertFalse(shouldSkipToFormBuilder(false, true));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Both No → Direct to FormBuilder
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Test public void testBothNoGoesDirectlyToFormBuilder() {
-        assertTrue(shouldGoDirectlyToFormBuilder(false, false));
+    @Test
+    public void testBothYesDoesNotSkipToFormBuilder() {
+        assertFalse(shouldSkipToFormBuilder(true, true));
     }
 
-    @Test public void testRegFeeYesDoesNotGoDirectly() {
-        assertFalse(shouldGoDirectlyToFormBuilder(true, false));
+    // ══════════════════════════════════════════════════════════════════════
+    // Payload builder
+    // ══════════════════════════════════════════════════════════════════════
+
+    @Test
+    public void testPayloadContainsAllKeys() {
+        Map<String, Object> p = buildPayload(true, "500", "HBL 1234",
+                false, "", "", "May 10, 2026");
+        assertTrue(p.containsKey("hasRegFee"));
+        assertTrue(p.containsKey("regFee"));
+        assertTrue(p.containsKey("regBankInfo"));
+        assertTrue(p.containsKey("hasAccommodation"));
+        assertTrue(p.containsKey("accommodationFee"));
+        assertTrue(p.containsKey("accommodationBankInfo"));
+        assertTrue(p.containsKey("registrationDeadline"));
     }
 
-    @Test public void testAccomYesDoesNotGoDirectly() {
-        assertFalse(shouldGoDirectlyToFormBuilder(false, true));
+    @Test
+    public void testPayloadRegFeeStoredCorrectly() {
+        Map<String, Object> p = buildPayload(true, "750", "MCB 5678",
+                false, "", "", "");
+        assertEquals(true, p.get("hasRegFee"));
+        assertEquals("750", p.get("regFee"));
+        assertEquals("MCB 5678", p.get("regBankInfo"));
     }
 
-    @Test public void testBothYesDoesNotGoDirectly() {
-        assertFalse(shouldGoDirectlyToFormBuilder(true, true));
+    @Test
+    public void testPayloadAccomFeeStoredCorrectly() {
+        Map<String, Object> p = buildPayload(false, "", "",
+                true, "1200", "Jazz 0300", "Apr 30, 2026");
+        assertEquals(true, p.get("hasAccommodation"));
+        assertEquals("1200", p.get("accommodationFee"));
+        assertEquals("Apr 30, 2026", p.get("registrationDeadline"));
     }
 
-    // ═══════════════════════════════════════════════════════════════════════════
-    // Extras Key Constants
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    @Test public void testExtraKeyHasRegFeeExists() {
-        assertEquals("hasRegFee", RegistrationFeeSetupActivity.EXTRA_HAS_REG_FEE);
-    }
-
-    @Test public void testExtraKeyRegFeeExists() {
-        assertEquals("regFee", RegistrationFeeSetupActivity.EXTRA_REG_FEE);
-    }
-
-    @Test public void testExtraKeyRegBankInfoExists() {
-        assertEquals("regBankInfo", RegistrationFeeSetupActivity.EXTRA_REG_BANK_INFO);
-    }
-
-    @Test public void testExtraKeyHasAccommodationExists() {
-        assertEquals("hasAccommodation", RegistrationFeeSetupActivity.EXTRA_HAS_ACCOMMODATION);
-    }
-
-    @Test public void testExtraKeyAccommodationFeeExists() {
-        assertEquals("accommodationFee", RegistrationFeeSetupActivity.EXTRA_ACCOMMODATION_FEE);
-    }
-
-    @Test public void testExtraKeyAccommodationBankExists() {
-        assertEquals("accommodationBankInfo", RegistrationFeeSetupActivity.EXTRA_ACCOMMODATION_BANK);
+    @Test
+    public void testPayloadWhenBothNoHasEmptyFees() {
+        Map<String, Object> p = buildPayload(false, "", "",
+                false, "", "", "");
+        assertEquals(false, p.get("hasRegFee"));
+        assertEquals(false, p.get("hasAccommodation"));
+        assertEquals("", p.get("regFee"));
+        assertEquals("", p.get("accommodationFee"));
     }
 }

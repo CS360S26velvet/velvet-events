@@ -131,7 +131,10 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                         String eventId        = doc.getString("eventId");
                         String title          = doc.getString("eventTitle");
                         String organizer      = doc.getString("organizer");
-                        String date           = doc.getString("date");
+                        // Try eventDate first (saved by new registrations), then startDate, then date
+                        String date           = doc.getString("eventDate");
+                        if (date == null || date.isEmpty()) date = doc.getString("startDate");
+                        if (date == null || date.isEmpty()) date = doc.getString("date");
                         String venue          = doc.getString("venue");
                         String time           = doc.getString("time");
                         String fee            = doc.getString("fee");
@@ -170,15 +173,48 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                                             if (s != null) paymentStatus   = s;
                                             if (r != null) rejectionReason = r;
                                         }
-                                        registrationsList.addView(
-                                                buildCard(fEventId, fTitle, fOrganizer,
-                                                        fDate, fTime, fVenue, fFee, fDesc,
-                                                        fRegClose, fCategory,
-                                                        fSeatsBooked, fSeatsTotal,
-                                                        paymentStatus, rejectionReason));
-                                        count[0]++;
-                                        tvTotalCount.setText(String.valueOf(count[0]));
-                                        tvEmpty.setVisibility(View.GONE);
+                                        final String ps = paymentStatus;
+                                        final String rr = rejectionReason;
+
+                                        // If date missing, fetch from events/ to enable feedback button
+                                        if (fDate == null || fDate.isEmpty()) {
+                                            db.collection("events").document(fEventId).get()
+                                                    .addOnSuccessListener(evDoc -> {
+                                                        String evDate = evDoc.getString("startDate");
+                                                        if (evDate == null || evDate.isEmpty())
+                                                            evDate = evDoc.getString("date");
+                                                        registrationsList.addView(
+                                                                buildCard(fEventId, fTitle, fOrganizer,
+                                                                        evDate, fTime, fVenue, fFee, fDesc,
+                                                                        fRegClose, fCategory,
+                                                                        fSeatsBooked, fSeatsTotal,
+                                                                        ps, rr));
+                                                        count[0]++;
+                                                        tvTotalCount.setText(String.valueOf(count[0]));
+                                                        tvEmpty.setVisibility(View.GONE);
+                                                    })
+                                                    .addOnFailureListener(e2 -> {
+                                                        registrationsList.addView(
+                                                                buildCard(fEventId, fTitle, fOrganizer,
+                                                                        fDate, fTime, fVenue, fFee, fDesc,
+                                                                        fRegClose, fCategory,
+                                                                        fSeatsBooked, fSeatsTotal,
+                                                                        ps, rr));
+                                                        count[0]++;
+                                                        tvTotalCount.setText(String.valueOf(count[0]));
+                                                        tvEmpty.setVisibility(View.GONE);
+                                                    });
+                                        } else {
+                                            registrationsList.addView(
+                                                    buildCard(fEventId, fTitle, fOrganizer,
+                                                            fDate, fTime, fVenue, fFee, fDesc,
+                                                            fRegClose, fCategory,
+                                                            fSeatsBooked, fSeatsTotal,
+                                                            ps, rr));
+                                            count[0]++;
+                                            tvTotalCount.setText(String.valueOf(count[0]));
+                                            tvEmpty.setVisibility(View.GONE);
+                                        }
                                     })
                                     .addOnFailureListener(e -> {
                                         // Fallback to mirror copy status
@@ -224,7 +260,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
 
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(0xFFFFFFFF);
+        card.setBackgroundColor(0xFFDDD8F5); // match main box background
         card.setElevation(4f);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -376,12 +412,25 @@ public class MyRegistrationsActivity extends AppCompatActivity {
      */
     private boolean isEventPast(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return false;
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("MMM d, yyyy", Locale.getDefault());
-            Date eventDate = sdf.parse(dateStr);
-            return eventDate != null && eventDate.before(new Date());
-        } catch (Exception e) {
-            return false;
+        String[] formats = {
+                "MMM d, yyyy", "MMM dd, yyyy",
+                "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "d/M/yy",
+                "yyyy-MM-dd", "dd-MM-yyyy"
+        };
+        for (String fmt : formats) {
+            try {
+                java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat(fmt, java.util.Locale.getDefault());
+                sdf.setLenient(false);
+                if (fmt.contains("yy") && !fmt.contains("yyyy")) {
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.set(java.util.Calendar.YEAR, 2000);
+                    sdf.set2DigitYearStart(cal.getTime());
+                }
+                java.util.Date eventDate = sdf.parse(dateStr.trim());
+                if (eventDate != null) return eventDate.before(new java.util.Date());
+            } catch (Exception ignored) {}
         }
+        return false;
     }
 }

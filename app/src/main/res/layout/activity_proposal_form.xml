@@ -90,6 +90,33 @@
                 android:hint="Write a detailed description shown to attendees on the event page..."
                 android:minLines="4" android:inputType="textMultiLine" android:gravity="top"/>
 
+            <!-- Event Banner Image -->
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Event Banner Image"
+                android:textColor="#666666" android:textSize="13sp" android:textStyle="bold"
+                android:layout_marginTop="4dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="Shown to attendees when browsing events"
+                android:textColor="#999999" android:textSize="11sp"
+                android:layout_marginBottom="6dp"/>
+            <ImageView
+                android:id="@+id/imgEventPreview"
+                android:layout_width="match_parent"
+                android:layout_height="160dp"
+                android:scaleType="centerCrop"
+                android:background="#F0F4FF"
+                android:visibility="gone"
+                android:layout_marginBottom="8dp"/>
+            <Button
+                android:id="@+id/btnPickEventImage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="📷  Choose Banner Image"
+                android:backgroundTint="#E8EAF6"
+                android:textColor="#1565C0"
+                android:textSize="13sp"
+                android:layout_marginBottom="12dp"/>
+
             <!-- Event Type -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Event Type *" android:textColor="#666666" android:textSize="13sp"/>
@@ -127,19 +154,6 @@
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
                 android:hint="dd/mm/yyyy" android:inputType="text"/>
-
-            <!-- Registration Deadline -->
-            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="Registration Deadline"
-                android:textColor="#666666" android:textSize="13sp"/>
-            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="Last date attendees can register (leave blank to use End Date)"
-                android:textColor="#999999" android:textSize="11sp"
-                android:layout_marginBottom="4dp"/>
-            <EditText android:id="@+id/etRegDeadline"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
-                android:hint="dd/mm/yyyy (optional)" android:inputType="text"/>
 
             <!-- Venue -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"

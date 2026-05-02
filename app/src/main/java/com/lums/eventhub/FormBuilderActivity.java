@@ -95,6 +95,7 @@ public class FormBuilderActivity extends AppCompatActivity {
         wirePreview();
         wireSave();
         wireRelease();
+
         loadExistingQuestions();
     }
 

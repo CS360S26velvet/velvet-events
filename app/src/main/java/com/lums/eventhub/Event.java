@@ -3,6 +3,7 @@ package com.lums.eventhub;
 public class Event {
     public String id, title, organizer, date, venue, category, desc, deadline, time, fee;
     public int seatsbooked, seatsTotal;
+    public String imageBase64;
 
     public Event(String id, String title, String org, String date, String venue, String category,String desc,String deadline, String time,String fee, int seatsBooked, int totalSeats){
         this.id = id;
@@ -17,5 +18,6 @@ public class Event {
         this.deadline = deadline;
         this.desc = desc;
         this.time = time;
+        this.imageBase64 = "";
     }
 }

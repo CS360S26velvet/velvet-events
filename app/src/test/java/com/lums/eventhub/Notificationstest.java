@@ -251,4 +251,81 @@ public class Notificationstest {
     public void testNonEmptyListDoesNotTriggerEmptyState() {
         assertFalse(notifications.isEmpty());
     }
+
+    // ═══════════════════════════════════════════════
+    // Payment approval / rejection notifications
+    // These are the notifications an attendee receives
+    // after the organizer acts on their payment proof.
+    // ═══════════════════════════════════════════════
+
+    /**
+     * Payment approval notification has the correct type and icon.
+     */
+    @Test
+    public void testPaymentApprovalNotificationHasCorrectType() {
+        NotificationItem n = new NotificationItem(
+                "Payment Approved",
+                "Your payment for Tech Summit has been approved!",
+                "payment_received",
+                false);
+        assertEquals("payment_received", n.type);
+        assertEquals("✅", resolveIcon(n.type));
+    }
+
+    /**
+     * Payment rejection notification has the correct type and icon.
+     */
+    @Test
+    public void testPaymentRejectionNotificationHasCorrectType() {
+        NotificationItem n = new NotificationItem(
+                "Payment Rejected",
+                "Your payment proof was rejected. Reason: Image unclear.",
+                "payment_rejected",
+                false);
+        assertEquals("payment_rejected", n.type);
+        assertEquals("✕", resolveIcon(n.type));
+    }
+
+    /**
+     * A freshly received payment approval notification is unread.
+     */
+    @Test
+    public void testNewPaymentApprovalIsUnread() {
+        NotificationItem n = new NotificationItem(
+                "Payment Approved", "Approved!", "payment_received", false);
+        assertFalse(n.isRead);
+    }
+
+    /**
+     * Marking a payment notification as read changes its state.
+     */
+    @Test
+    public void testMarkingPaymentNotificationAsRead() {
+        NotificationItem n = new NotificationItem(
+                "Payment Approved", "Approved!", "payment_received", false);
+        n.isRead = true;
+        assertTrue(n.isRead);
+    }
+
+    /**
+     * Unread count increases when a new payment notification arrives.
+     */
+    @Test
+    public void testUnreadCountIncreasesWithNewPaymentNotif() {
+        int before = countUnread(notifications);
+        notifications.add(new NotificationItem(
+                "Payment Approved", "Approved!", "payment_received", false));
+        assertEquals(before + 1, countUnread(notifications));
+    }
+
+    /**
+     * Unread count does not increase when the notification is pre-read.
+     */
+    @Test
+    public void testAlreadyReadPaymentNotifDoesNotIncreaseUnreadCount() {
+        int before = countUnread(notifications);
+        notifications.add(new NotificationItem(
+                "Payment Rejected", "Rejected.", "payment_rejected", true));
+        assertEquals(before, countUnread(notifications));
+    }
 }

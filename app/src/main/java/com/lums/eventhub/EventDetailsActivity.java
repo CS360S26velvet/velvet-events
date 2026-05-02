@@ -191,6 +191,27 @@ public class EventDetailsActivity extends AppCompatActivity {
             else { tvAccomFee.setText(accomFee); accomRow.setVisibility(View.VISIBLE); }
         }
         tvRegCloses.setText("Registration closes " + (endDate.isEmpty() ? startDate : endDate));
+
+        // Show event banner image in hero
+        String imageBase64 = doc.getString("eventImageBase64");
+        if (imageBase64 != null && !imageBase64.isEmpty() && imgHero != null) {
+            try {
+                byte[] bytes = android.util.Base64.decode(imageBase64, android.util.Base64.NO_WRAP);
+                android.graphics.Bitmap bmp = android.graphics.BitmapFactory
+                        .decodeByteArray(bytes, 0, bytes.length);
+                if (bmp != null) imgHero.setImageBitmap(bmp);
+            } catch (Exception ignored) {}
+        }
+
+        // Read registrationDeadline — set by organiser in RegistrationFeeSetupActivity
+        String dl = doc.getString("registrationDeadline");
+        android.util.Log.d("EventDetails", "populateFromDoc: registrationDeadline=" + dl
+                + " endDate=" + endDate + " docId=" + doc.getId());
+        if (dl != null && !dl.isEmpty()) {
+            tvRegCloses.setText("Registration closes " + dl);
+            checkDeadline(dl);
+        }
+
         loadApprovedCount();
         loadSchedule(doc);
     }
@@ -616,12 +637,13 @@ public class EventDetailsActivity extends AppCompatActivity {
         Map<String, Object> reg = new HashMap<>();
         reg.put("eventId",              eventId);
         reg.put("eventTitle",           eventTitle);
+        reg.put("eventDate",            startDate);   // saved so MyRegistrations can check if past
         reg.put("studentName",          attendeeName);
         reg.put("studentId",            username);
         reg.put("userId",               userId);
         reg.put("amount",               regFee.isEmpty() ? "Free" : regFee);
         reg.put("accommodationAmount",  accomFee.isEmpty() ? "" : accomFee);
-        reg.put("paymentStatus",        "Pending");
+        reg.put("paymentStatus", regFee.isEmpty() ? "Approved" : "Pending");
         reg.put("submittedAt",          System.currentTimeMillis());
         reg.put("answers",              answers);
         reg.put("rejectionReason",      "");
@@ -828,4 +850,40 @@ public class EventDetailsActivity extends AppCompatActivity {
         return (s != null && !s.isEmpty()) ? s : fallback;
     }
     private String nvl(String s) { return s != null ? s : ""; }
+
+    /** Parses deadline and locks the register button if it has passed */
+    private void checkDeadline(String deadlineStr) {
+        if (deadlineStr == null || deadlineStr.isEmpty()) return;
+        String[] formats = {
+                "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "d/M/yy",
+                "MMM d, yyyy", "MMM dd, yyyy", "yyyy-MM-dd"
+        };
+        for (String fmt : formats) {
+            try {
+                java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat(fmt, java.util.Locale.getDefault());
+                sdf.setLenient(false);
+                if (fmt.contains("yy") && !fmt.contains("yyyy")) {
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.set(java.util.Calendar.YEAR, 2000);
+                    sdf.set2DigitYearStart(cal.getTime());
+                }
+                java.util.Date deadline = sdf.parse(deadlineStr.trim());
+                if (deadline != null && new java.util.Date().after(deadline)) {
+                    // Deadline passed — lock the register button
+                    if (btnRegister != null) {
+                        btnRegister.setEnabled(false);
+                        btnRegister.setText("Registration Closed");
+                        btnRegister.setBackgroundTintList(
+                                android.content.res.ColorStateList.valueOf(0xFF9E9E9E));
+                    }
+                    if (tvRegCloses != null) {
+                        tvRegCloses.setText("Registration closed on " + deadlineStr);
+                        tvRegCloses.setTextColor(0xFFE53935);
+                    }
+                }
+                return; // parsed successfully
+            } catch (Exception ignored) {}
+        }
+    }
 }
