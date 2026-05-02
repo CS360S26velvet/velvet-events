@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:allowBackup="true"
@@ -32,34 +33,42 @@
         <activity android:name=".admin.auditorium.AuditoriumActivity" />
         <activity android:name=".admin.calendar.CalendarActivity" />
         <activity android:name=".admin.accommodation.AccommodationActivity" />
+        <activity android:name=".admin.accommodation.AdminAccommodationBySocietyActivity" android:exported="false"/>
 
         <!-- Organizer module -->
         <activity android:name=".OrganizerDashboardActivity" />
 
         <!-- Person C screens -->
         <activity android:name=".AttendeeRegistrationActivity" android:exported="false" />
-        <activity android:name=".FormBuilderActivity" android:exported="false" />
-        <activity android:name=".ProposalFormActivity" android:exported="false" />
-        <activity android:name=".RegistrantDashboardActivity" android:exported="false" />
-        <activity android:name=".CapacitySettingActivity" android:exported="false" />
-        <activity android:name=".CheckInActivity" android:exported="false" />
-        <activity android:name=".MainActivity" android:exported="false" />
-        <!-- NEW: Registration fee setup + Payment Verification + Vendor Directory + Reports -->
-        <activity android:name=".RegistrationFeeSetupActivity"                    android:exported="false" />
-        <activity android:name=".PaymentVerificationListActivity"                  android:exported="false" />
-        <activity android:name=".PaymentVerificationActivity"                      android:exported="false" />
-        <activity android:name=".VendorDirectoryActivity"                          android:exported="false" />
-        <activity android:name=".AddVendorActivity"                                android:exported="false" />
-        <activity android:name=".EventReportsActivity"                             android:exported="false" />
-        <activity android:name=".admin.reports.AdminEventReportsActivity"          android:exported="false" />
+        <activity android:name=".FormBuilderActivity"          android:exported="false" />
+        <activity android:name=".ProposalFormActivity"         android:exported="false" />
+        <activity android:name=".RegistrantDashboardActivity"  android:exported="false" />
+        <activity android:name=".CapacitySettingActivity"      android:exported="false" />
+        <activity android:name=".CheckInActivity"              android:exported="false" />
+        <activity android:name=".MainActivity"                 android:exported="false" />
+
+        <!-- NEW: Registration fee setup step (before FormBuilder) -->
+        <activity android:name=".RegistrationFeeSetupActivity" android:exported="false" />
+
+        <!-- NEW: Payment Verification screens -->
+        <activity android:name=".PaymentVerificationListActivity" android:exported="false" />
+        <activity android:name=".PaymentVerificationActivity"     android:exported="false" />
+
+
+        <activity android:name=".VendorDirectoryActivity" android:exported="false" />
+        <activity android:name=".AddVendorActivity" android:exported="false" />
+        <activity android:name=".EventReportsActivity" android:exported="false" />
+        <activity android:name=".admin.reports.AdminEventReportsActivity" android:exported="false" />
 
         <!-- Person D: Attendee module -->
-        <activity android:name=".AttendeeActivity" android:exported="false" />
-        <activity android:name=".EventBrowsingActivity" android:exported="false" />
-        <activity android:name=".EventDetailsActivity" android:exported="false" />
-        <activity android:name=".MyRegistrationsActivity" android:exported="false" />
-        <activity android:name=".NotificationsActivity" android:exported="false" />
-        <activity android:name=".AttendeeCalendarActivity" android:exported="false" />
+        <activity android:name=".AttendeeActivity"              android:exported="false" />
+        <activity android:name=".EventBrowsingActivity"         android:exported="false" />
+        <activity android:name=".EventDetailsActivity"          android:exported="false" />
+        <activity android:name=".MyRegistrationsActivity"       android:exported="false" />
+        <activity android:name=".NotificationsActivity"         android:exported="false" />
+        <activity android:name=".AttendeeCalendarActivity"      android:exported="false" />
+        <activity android:name=".RegistrationConfirmationActivity" />
+        <activity android:name=".FeedbackActivity" />
 
     </application>
 
