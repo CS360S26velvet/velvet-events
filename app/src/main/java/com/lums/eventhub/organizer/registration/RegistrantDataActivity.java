@@ -23,43 +23,54 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import com.lums.eventhub.R;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
- * RegistrantDataActivity.java
+ * RegistrantDataActivity
  *
- * Organizer sees:
- *   Screen 1 — List of their approved events (from events/ collection)
- *   Screen 2 — Tap an event → list of all attendees who registered
- *              (reads registrations/ where eventId == selected AND paymentStatus == Approved)
- *   Screen 3 — Tap an attendee → full read-only registration form dialog
- *              (shows all answers they filled + payment proof image)
+ * Flow A — launched from dashboard "View Registrants" button:
+ *   extras: directEventId + directEventTitle → skip event list, go straight to attendees
  *
- * Firestore reads:
- *   events/          where organizerUsername == mine AND status == Approved
- *   registrations/   where eventId == selectedEventId
+ * Flow B — launched from sidebar "Registrant Data":
+ *   extras: organizerUsername only → show event list first
+ *
+ * KEY FIX: Events are loaded from proposals/ (single-field query, no composite index needed).
+ *          Registrations are loaded with whereEqualTo("eventId", id) — also single-field.
+ *          No full-collection scans. No composite indexes required.
+ *
+ * Firestore paths written by attendee (EventDetailsActivity):
+ *   registrations/{autoId}  fields: eventId, eventTitle, studentName, studentId,
+ *                                   userId, paymentStatus, submittedAt, amount,
+ *                                   answers{}, paymentProofBase64, accommodationProofBase64
+ *   users/{userId}/registrations/{eventId}  (mirror copy)
  */
 public class RegistrantDataActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private String organizerUsername, societyName;
+    private String organizerUsername;
+    private boolean directLaunch;
 
-    // Views — event list screen
-    private LinearLayout llEventList;
+    // Screen 1 — event list
+    private LinearLayout llEventListScreen;
+    private LinearLayout llEventRows;
     private TextView     tvEventListEmpty;
-    private TextView     tvEventListHeader;
 
-    // Views — attendee list screen
+    // Screen 2 — attendee list
     private LinearLayout llAttendeeScreen;
-    private TextView     tvAttendeeHeader;
-    private RecyclerView recyclerAttendees;
+    private TextView     tvAttendeeEventName;
     private TextView     tvAttendeeEmpty;
-    private AttendeeAdapter attendeeAdapter;
-    private final List<RegistrantDoc> attendeeList = new ArrayList<>();
+    private RecyclerView recyclerAttendees;
 
-    private String selectedEventId, selectedEventTitle;
+    private AttendeeAdapter adapter;
+    private final List<RegistrantDoc> attendeeList = new ArrayList<>();
+    private String selectedEventId;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,85 +79,133 @@ public class RegistrantDataActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         organizerUsername = getIntent().getStringExtra("organizerUsername");
-        societyName       = getIntent().getStringExtra("societyName");
         if (organizerUsername == null) organizerUsername = "";
 
-        // Event list screen
-        llEventList       = findViewById(R.id.llEventRows);
+        // Screen 1
+        llEventListScreen = findViewById(R.id.llEventList);
+        llEventRows       = findViewById(R.id.llEventRows);
         tvEventListEmpty  = findViewById(R.id.tvEventListEmpty);
-        tvEventListHeader = findViewById(R.id.tvEventListHeader);
 
-        // Attendee screen
-        llAttendeeScreen  = findViewById(R.id.llAttendeeScreen);
-        tvAttendeeHeader  = findViewById(R.id.tvAttendeeEventName);
-        tvAttendeeEmpty   = findViewById(R.id.tvAttendeeEmpty);
-        recyclerAttendees = findViewById(R.id.recyclerAttendees);
+        // Screen 2
+        llAttendeeScreen    = findViewById(R.id.llAttendeeScreen);
+        tvAttendeeEventName = findViewById(R.id.tvAttendeeEventName);
+        tvAttendeeEmpty     = findViewById(R.id.tvAttendeeEmpty);
+        recyclerAttendees   = findViewById(R.id.recyclerAttendees);
 
-        attendeeAdapter = new AttendeeAdapter(attendeeList);
+        adapter = new AttendeeAdapter(attendeeList);
         recyclerAttendees.setLayoutManager(new LinearLayoutManager(this));
-        recyclerAttendees.setAdapter(attendeeAdapter);
+        recyclerAttendees.setAdapter(adapter);
 
-        // Back buttons
         findViewById(R.id.btnRegistrantDataBack).setOnClickListener(v -> finish());
-        findViewById(R.id.btnAttendeeBack).setOnClickListener(v -> showEventListScreen());
+        findViewById(R.id.btnAttendeeBack).setOnClickListener(v -> {
+            if (directLaunch) finish();
+            else showEventListScreen();
+        });
 
-        showEventListScreen();
-        loadApprovedEvents();
+        String directEventId    = getIntent().getStringExtra("directEventId");
+        String directEventTitle = getIntent().getStringExtra("directEventTitle");
+
+        if (directEventId != null && !directEventId.isEmpty()) {
+            directLaunch = true;
+            showAttendeeScreen(directEventId,
+                    directEventTitle != null ? directEventTitle : "Event");
+        } else {
+            directLaunch = false;
+            showEventListScreen();
+            loadEvents();
+        }
     }
 
     // ── Screen switching ──────────────────────────────────────────────────────
 
     private void showEventListScreen() {
-        llEventList.setVisibility(View.VISIBLE);
+        llEventListScreen.setVisibility(View.VISIBLE);
         llAttendeeScreen.setVisibility(View.GONE);
     }
 
     private void showAttendeeScreen(String eventId, String eventTitle) {
-        selectedEventId    = eventId;
-        selectedEventTitle = eventTitle;
-        llEventList.setVisibility(View.GONE);
+        selectedEventId = eventId;
+        llEventListScreen.setVisibility(View.GONE);
         llAttendeeScreen.setVisibility(View.VISIBLE);
-        tvAttendeeHeader.setText(eventTitle);
-        loadAttendees(eventId);
+        tvAttendeeEventName.setText(eventTitle);
+        attendeeList.clear();
+        adapter.notifyDataSetChanged();
+        tvAttendeeEmpty.setText("Loading registrants…");
+        tvAttendeeEmpty.setVisibility(View.VISIBLE);
+        loadRegistrants(eventId, eventTitle);
     }
 
-    // ── Load approved events ──────────────────────────────────────────────────
+    // ── Load organizer's events ───────────────────────────────────────────────
+    // Uses single-field queries only — no composite index required.
 
-    private void loadApprovedEvents() {
-        db.collection("events")
+    private void loadEvents() {
+        tvEventListEmpty.setText("Loading events…");
+        tvEventListEmpty.setVisibility(View.VISIBLE);
+
+        final java.util.LinkedHashMap<String, String[]> found = new java.util.LinkedHashMap<>();
+
+        // Query proposals/ by organizerUsername (single field — always works)
+        db.collection("proposals")
                 .whereEqualTo("organizerUsername", organizerUsername)
-                .whereEqualTo("status", "Approved")
                 .get()
-                .addOnSuccessListener(snap -> {
-                    llEventList.removeAllViews();
-                    if (snap.isEmpty()) {
-                        tvEventListEmpty.setVisibility(View.VISIBLE);
-                        return;
-                    }
-                    tvEventListEmpty.setVisibility(View.GONE);
-                    for (QueryDocumentSnapshot doc : snap) {
-                        String eid    = doc.getId();
-                        String title  = nvl(doc.getString("title"), "Untitled");
-                        String date   = nvl(doc.getString("startDate"),
+                .addOnSuccessListener(pSnap -> {
+                    for (QueryDocumentSnapshot doc : pSnap) {
+                        String status = doc.getString("status");
+                        if (!"Approved".equals(status)) continue; // only show approved
+                        String title = nvl(doc.getString("title"), "Untitled");
+                        String date  = nvl(doc.getString("startDate"),
                                 nvl(doc.getString("date"), "—"));
-                        llEventList.addView(buildEventRow(eid, title, date));
+                        found.put(doc.getId(), new String[]{title, date});
                     }
+                    // Also check events/ collection (single-field query)
+                    db.collection("events")
+                            .whereEqualTo("organizerUsername", organizerUsername)
+                            .get()
+                            .addOnSuccessListener(eSnap -> {
+                                for (QueryDocumentSnapshot doc : eSnap) {
+                                    if (found.containsKey(doc.getId())) continue; // no duplicate
+                                    String title = nvl(doc.getString("title"), "Untitled");
+                                    String date  = nvl(doc.getString("startDate"),
+                                            nvl(doc.getString("date"), "—"));
+                                    found.put(doc.getId(), new String[]{title, date});
+                                }
+                                renderEventList(found);
+                            })
+                            .addOnFailureListener(e -> renderEventList(found));
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load events: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    tvEventListEmpty.setText("Failed to load events: " + e.getMessage());
+                    tvEventListEmpty.setVisibility(View.VISIBLE);
+                });
+    }
+
+    private void renderEventList(java.util.LinkedHashMap<String, String[]> found) {
+        llEventRows.removeAllViews();
+        if (found.isEmpty()) {
+            tvEventListEmpty.setText("No approved events found.\n\nMake sure your event proposal has been approved by admin.");
+            tvEventListEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+        tvEventListEmpty.setVisibility(View.GONE);
+        for (Map.Entry<String, String[]> e : found.entrySet()) {
+            llEventRows.addView(buildEventRow(e.getKey(), e.getValue()[0], e.getValue()[1]));
+        }
     }
 
     private View buildEventRow(String eventId, String title, String date) {
+        LinearLayout wrapper = new LinearLayout(this);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setBackgroundColor(0xFFFFFFFF);
         row.setPadding(20, 20, 20, 20);
         row.setGravity(android.view.Gravity.CENTER_VERTICAL);
         LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        rp.setMargins(0, 0, 0, 8);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        rp.setMargins(0, 0, 0, 2);
         row.setLayoutParams(rp);
         row.setElevation(2f);
 
@@ -169,84 +228,133 @@ public class RegistrantDataActivity extends AppCompatActivity {
         info.addView(tvTitle);
         info.addView(tvDate);
 
-        Button btnView = new Button(this);
-        btnView.setText("View Registrants");
-        btnView.setTextSize(12f);
-        btnView.setTextColor(0xFFFFFFFF);
-        btnView.setBackgroundTintList(
-                android.content.res.ColorStateList.valueOf(0xFF1565C0));
-        btnView.setOnClickListener(v -> showAttendeeScreen(eventId, title));
+        Button btn = new Button(this);
+        btn.setText("View Registrants");
+        btn.setTextSize(12f);
+        btn.setTextColor(0xFFFFFFFF);
+        btn.setBackgroundTintList(android.content.res.ColorStateList.valueOf(0xFF1565C0));
+        btn.setOnClickListener(v -> showAttendeeScreen(eventId, title));
 
         row.addView(info);
-        row.addView(btnView);
+        row.addView(btn);
 
-        // Divider
-        LinearLayout wrapper = new LinearLayout(this);
-        wrapper.setOrientation(LinearLayout.VERTICAL);
-        wrapper.setLayoutParams(new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT));
         View divider = new View(this);
         divider.setLayoutParams(new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 1));
         divider.setBackgroundColor(0xFFEEEEEE);
+
         wrapper.addView(row);
         wrapper.addView(divider);
         return wrapper;
     }
 
-    // ── Load attendees for selected event ─────────────────────────────────────
+    // ── Load registrants ──────────────────────────────────────────────────────
+    // Single-field query: whereEqualTo("eventId", id) — no index needed.
 
-    private void loadAttendees(String eventId) {
-        attendeeList.clear();
-        attendeeAdapter.notifyDataSetChanged();
-
+    private void loadRegistrants(String eventId, String eventTitle) {
         db.collection("registrations")
                 .whereEqualTo("eventId", eventId)
                 .get()
                 .addOnSuccessListener(snap -> {
                     attendeeList.clear();
                     for (QueryDocumentSnapshot doc : snap) {
-                        RegistrantDoc r  = new RegistrantDoc();
-                        r.docId          = doc.getId();
-                        r.studentName    = nvl(doc.getString("studentName"), "Unknown");
-                        r.studentId      = nvl(doc.getString("studentId"), "—");
-                        r.paymentStatus  = nvl(doc.getString("paymentStatus"), "Pending");
-                        r.amount         = nvl(doc.getString("amount"), "—");
-                        r.proofBase64    = nvl(doc.getString("paymentProofBase64"), "");
-                        r.rejectionReason= nvl(doc.getString("rejectionReason"), "");
-                        Object ts = doc.get("submittedAt");
-                        if (ts instanceof Long) {
-                            r.submittedAt = new java.text.SimpleDateFormat("MMM d, yyyy",
-                                    java.util.Locale.getDefault()).format(new java.util.Date((Long) ts));
-                        } else {
-                            r.submittedAt = "—";
-                        }
-                        // Answers map (full form responses)
-                        Object ans = doc.get("answers");
-                        if (ans instanceof Map) {
-                            r.answers = (Map<String, Object>) ans;
-                        }
-                        attendeeList.add(r);
+                        attendeeList.add(toDoc(doc));
                     }
+                    if (!attendeeList.isEmpty()) {
+                        tvAttendeeEmpty.setVisibility(View.GONE);
+                        adapter.notifyDataSetChanged();
+                    } else {
+                        // Fallback: match by eventTitle (handles edge case where eventId differs)
+                        loadRegistrantsByTitle(eventTitle);
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    // Query failed — show the error so we can debug
+                    tvAttendeeEmpty.setText("Query failed: " + e.getMessage()
+                            + "\n\nEventId: " + eventId);
+                    tvAttendeeEmpty.setVisibility(View.VISIBLE);
+                });
+    }
 
+    private void loadRegistrantsByTitle(String eventTitle) {
+        if (eventTitle == null || eventTitle.isEmpty()) {
+            tvAttendeeEmpty.setText("No registrants found for this event yet.");
+            tvAttendeeEmpty.setVisibility(View.VISIBLE);
+            return;
+        }
+        db.collection("registrations")
+                .whereEqualTo("eventTitle", eventTitle)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    attendeeList.clear();
+                    for (QueryDocumentSnapshot doc : snap) {
+                        attendeeList.add(toDoc(doc));
+                    }
                     if (attendeeList.isEmpty()) {
+                        tvAttendeeEmpty.setText(
+                                "No registrants yet for \"" + eventTitle + "\".\n\n"
+                                        + "Once attendees fill the registration form and submit payment, "
+                                        + "they will appear here.");
                         tvAttendeeEmpty.setVisibility(View.VISIBLE);
                     } else {
                         tvAttendeeEmpty.setVisibility(View.GONE);
                     }
-                    attendeeAdapter.notifyDataSetChanged();
+                    adapter.notifyDataSetChanged();
                 })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Failed to load registrants: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+                .addOnFailureListener(e -> {
+                    tvAttendeeEmpty.setText("Error: " + e.getMessage());
+                    tvAttendeeEmpty.setVisibility(View.VISIBLE);
+                });
     }
 
-    // ── Show full read-only registration form dialog ───────────────────────────
+    // ── Firestore doc → model ─────────────────────────────────────────────────
 
     @SuppressWarnings("unchecked")
-    private void showRegistrantDetail(RegistrantDoc r) {
-        // Build scrollable dialog content programmatically
+    private RegistrantDoc toDoc(QueryDocumentSnapshot doc) {
+        RegistrantDoc r   = new RegistrantDoc();
+        r.docId           = doc.getId();
+        r.eventId         = nvl(doc.getString("eventId"),
+                selectedEventId != null ? selectedEventId : "");
+        r.studentName     = nvl(doc.getString("studentName"), "Unknown");
+        r.studentId       = nvl(doc.getString("studentId"), "—");
+        r.paymentStatus   = nvl(doc.getString("paymentStatus"), "Pending");
+        r.amount          = nvl(doc.getString("amount"), "—");
+        r.proofBase64     = nvl(doc.getString("paymentProofBase64"), "");
+        r.accomProof      = nvl(doc.getString("accommodationProofBase64"), "");
+        r.rejectionReason = nvl(doc.getString("rejectionReason"), "");
+
+        Object ts = doc.get("submittedAt");
+        if (ts instanceof Long) {
+            r.submittedAt = new SimpleDateFormat("MMM d, yyyy  HH:mm", Locale.getDefault())
+                    .format(new Date((Long) ts));
+        } else {
+            r.submittedAt = "—";
+        }
+
+        Object ans = doc.get("answers");
+        if (ans instanceof Map) r.answers = (Map<String, Object>) ans;
+        return r;
+    }
+
+    // ── Detail dialog — shows every form field the attendee filled ────────────
+
+    private void showDetail(RegistrantDoc r) {
+        // Load form question order so we display answers in the right sequence
+        db.collection("proposals").document(r.eventId)
+                .collection("formQuestions").orderBy("order").get()
+                .addOnSuccessListener(snap -> {
+                    List<String> labels = new ArrayList<>();
+                    for (QueryDocumentSnapshot q : snap) {
+                        String lbl = q.getString("label");
+                        if (lbl != null && !lbl.isEmpty()) labels.add(lbl);
+                    }
+                    buildDetailDialog(r, labels);
+                })
+                .addOnFailureListener(e -> buildDetailDialog(r, new ArrayList<>()));
+    }
+
+    @SuppressWarnings("unchecked")
+    private void buildDetailDialog(RegistrantDoc r, List<String> orderedLabels) {
         ScrollView scroll = new ScrollView(this);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -254,81 +362,88 @@ public class RegistrantDataActivity extends AppCompatActivity {
         root.setBackgroundColor(0xFFFFFFFF);
         scroll.addView(root);
 
-        // Header
-        addSection(root, r.studentName, 20f, 0xFF1A1A2E, true);
-        addField(root, "Student ID", r.studentId);
-        addField(root, "Submitted", r.submittedAt);
-        addField(root, "Amount", r.amount);
+        // ── Header ─────────────────────────────────────────────────────────────
+        addBigText(root, r.studentName);
+        addLabelValue(root, "STUDENT ID",   r.studentId);
+        addLabelValue(root, "SUBMITTED AT", r.submittedAt);
+        addLabelValue(root, "AMOUNT",       r.amount);
 
         // Payment status badge
-        TextView tvStatus = new TextView(this);
+        TextView badge = new TextView(this);
         switch (r.paymentStatus) {
             case "Approved":
-                tvStatus.setText("✅ Payment Approved");
-                tvStatus.setTextColor(0xFF2E7D32);
-                tvStatus.setBackgroundColor(0xFFE8F5E9);
+                badge.setText("✅  Payment Approved");
+                badge.setTextColor(0xFF2E7D32);
+                badge.setBackgroundColor(0xFFE8F5E9);
                 break;
             case "Rejected":
-                tvStatus.setText("❌ Payment Rejected");
-                tvStatus.setTextColor(0xFFB71C1C);
-                tvStatus.setBackgroundColor(0xFFFFEBEE);
+                badge.setText("❌  Payment Rejected");
+                badge.setTextColor(0xFFB71C1C);
+                badge.setBackgroundColor(0xFFFFEBEE);
                 break;
             default:
-                tvStatus.setText("⏳ Awaiting Verification");
-                tvStatus.setTextColor(0xFFE65100);
-                tvStatus.setBackgroundColor(0xFFFFF3E0);
+                badge.setText("⏳  Awaiting Payment Verification");
+                badge.setTextColor(0xFFE65100);
+                badge.setBackgroundColor(0xFFFFF3E0);
                 break;
         }
-        tvStatus.setTextSize(13f);
-        tvStatus.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvStatus.setPadding(16, 8, 16, 8);
-        LinearLayout.LayoutParams sp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        sp.setMargins(0, 8, 0, 16);
-        tvStatus.setLayoutParams(sp);
-        root.addView(tvStatus);
+        badge.setTextSize(13f);
+        badge.setTypeface(null, android.graphics.Typeface.BOLD);
+        badge.setPadding(16, 8, 16, 8);
+        LinearLayout.LayoutParams bp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        bp.setMargins(0, 8, 0, 4);
+        badge.setLayoutParams(bp);
+        root.addView(badge);
 
-        if (!r.rejectionReason.isEmpty()) {
-            addField(root, "Rejection Reason", r.rejectionReason);
+        if (!r.rejectionReason.isEmpty() && "Rejected".equals(r.paymentStatus)) {
+            addLabelValue(root, "REJECTION REASON", r.rejectionReason);
         }
 
-        // Divider
+        // ── Form Answers ───────────────────────────────────────────────────────
         addDivider(root);
-
-        // Registration form answers
-        addSection(root, "Registration Form Responses", 15f, 0xFF1565C0, true);
+        addSectionHeader(root, "📋  Registration Form Responses");
 
         if (r.answers != null && !r.answers.isEmpty()) {
+            java.util.Set<String> rendered = new java.util.LinkedHashSet<>();
+            // Render in form order
+            for (String lbl : orderedLabels) {
+                if (r.answers.containsKey(lbl)) {
+                    Object val = r.answers.get(lbl);
+                    addLabelValue(root, lbl, val != null ? val.toString() : "—");
+                    rendered.add(lbl);
+                }
+            }
+            // Any extra answers not in the schema (e.g. wantsAccommodation)
             for (Map.Entry<String, Object> entry : r.answers.entrySet()) {
-                String key   = entry.getKey();
-                String value = entry.getValue() != null ? entry.getValue().toString() : "—";
-                addField(root, key, value);
+                if (!rendered.contains(entry.getKey())) {
+                    Object val = entry.getValue();
+                    addLabelValue(root, entry.getKey(), val != null ? val.toString() : "—");
+                }
             }
         } else {
-            TextView noAnswers = new TextView(this);
-            noAnswers.setText("No form responses recorded.");
-            noAnswers.setTextColor(0xFF999999);
-            noAnswers.setTextSize(13f);
-            root.addView(noAnswers);
+            TextView none = new TextView(this);
+            none.setText("No form answers recorded.");
+            none.setTextColor(0xFF999999);
+            none.setTextSize(13f);
+            none.setPadding(0, 8, 0, 8);
+            root.addView(none);
         }
 
-        // Payment proof image
+        // ── Payment Proof ──────────────────────────────────────────────────────
         if (!r.proofBase64.isEmpty()) {
             addDivider(root);
-            addSection(root, "Payment Proof", 15f, 0xFF1565C0, true);
-            Bitmap bmp = bitmapFromBase64(r.proofBase64);
-            if (bmp != null) {
-                ImageView img = new ImageView(this);
-                img.setImageBitmap(bmp);
-                img.setAdjustViewBounds(true);
-                LinearLayout.LayoutParams imgP = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT);
-                imgP.setMargins(0, 8, 0, 8);
-                img.setLayoutParams(imgP);
-                root.addView(img);
-            }
+            addSectionHeader(root, "🧾  Payment Proof");
+            Bitmap bmp = decodeB64(r.proofBase64);
+            if (bmp != null) root.addView(makeImg(bmp));
+        }
+
+        // ── Accommodation Proof ────────────────────────────────────────────────
+        if (!r.accomProof.isEmpty()) {
+            addDivider(root);
+            addSectionHeader(root, "🏠  Accommodation Proof");
+            Bitmap bmp2 = decodeB64(r.accomProof);
+            if (bmp2 != null) root.addView(makeImg(bmp2));
         }
 
         new AlertDialog.Builder(this)
@@ -337,62 +452,82 @@ public class RegistrantDataActivity extends AppCompatActivity {
                 .show();
     }
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
+    // ── UI helpers ────────────────────────────────────────────────────────────
 
-    private void addSection(LinearLayout parent, String text, float size,
-                            int color, boolean bold) {
+    private void addBigText(LinearLayout p, String text) {
         TextView tv = new TextView(this);
         tv.setText(text);
-        tv.setTextSize(size);
-        tv.setTextColor(color);
-        if (bold) tv.setTypeface(null, android.graphics.Typeface.BOLD);
-        LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        p.setMargins(0, 8, 0, 8);
-        tv.setLayoutParams(p);
-        parent.addView(tv);
+        tv.setTextSize(20f);
+        tv.setTextColor(0xFF1A1A2E);
+        tv.setTypeface(null, android.graphics.Typeface.BOLD);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 0, 0, 12);
+        tv.setLayoutParams(lp);
+        p.addView(tv);
     }
 
-    private void addField(LinearLayout parent, String label, String value) {
+    private void addSectionHeader(LinearLayout p, String text) {
+        TextView tv = new TextView(this);
+        tv.setText(text);
+        tv.setTextSize(15f);
+        tv.setTextColor(0xFF1565C0);
+        tv.setTypeface(null, android.graphics.Typeface.BOLD);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMargins(0, 8, 0, 8);
+        tv.setLayoutParams(lp);
+        p.addView(tv);
+    }
+
+    private void addLabelValue(LinearLayout p, String label, String value) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
         LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        rp.setMargins(0, 4, 0, 4);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        rp.setMargins(0, 6, 0, 6);
         row.setLayoutParams(rp);
 
-        TextView tvLabel = new TextView(this);
-        tvLabel.setText(label);
-        tvLabel.setTextSize(11f);
-        tvLabel.setTextColor(0xFF999999);
-        tvLabel.setTypeface(null, android.graphics.Typeface.BOLD);
-        tvLabel.setAllCaps(true);
-        row.addView(tvLabel);
+        TextView lbl = new TextView(this);
+        lbl.setText(label.toUpperCase());
+        lbl.setTextSize(11f);
+        lbl.setTextColor(0xFF888888);
+        lbl.setTypeface(null, android.graphics.Typeface.BOLD);
+        row.addView(lbl);
 
-        TextView tvValue = new TextView(this);
-        tvValue.setText(value != null && !value.isEmpty() ? value : "—");
-        tvValue.setTextSize(14f);
-        tvValue.setTextColor(0xFF1A1A2E);
-        tvValue.setBackgroundColor(0xFFF5F5F5);
-        tvValue.setPadding(12, 8, 12, 8);
-        row.addView(tvValue);
+        TextView val = new TextView(this);
+        val.setText((value != null && !value.isEmpty()) ? value : "—");
+        val.setTextSize(14f);
+        val.setTextColor(0xFF1A1A2E);
+        val.setBackgroundColor(0xFFF5F5F5);
+        val.setPadding(12, 8, 12, 8);
+        row.addView(val);
 
-        parent.addView(row);
+        p.addView(row);
     }
 
-    private void addDivider(LinearLayout parent) {
-        View divider = new View(this);
+    private void addDivider(LinearLayout p) {
+        View div = new View(this);
         LinearLayout.LayoutParams dp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT, 1);
         dp.setMargins(0, 16, 0, 16);
-        divider.setLayoutParams(dp);
-        divider.setBackgroundColor(0xFFEEEEEE);
-        parent.addView(divider);
+        div.setLayoutParams(dp);
+        div.setBackgroundColor(0xFFE0E0E0);
+        p.addView(div);
     }
 
-    private Bitmap bitmapFromBase64(String b64) {
+    private ImageView makeImg(Bitmap bmp) {
+        ImageView iv = new ImageView(this);
+        iv.setImageBitmap(bmp);
+        iv.setAdjustViewBounds(true);
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        ip.setMargins(0, 8, 0, 8);
+        iv.setLayoutParams(ip);
+        return iv;
+    }
+
+    private Bitmap decodeB64(String b64) {
         try {
             byte[] bytes = Base64.decode(b64, Base64.NO_WRAP);
             return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
@@ -406,15 +541,15 @@ public class RegistrantDataActivity extends AppCompatActivity {
     // ── Model ─────────────────────────────────────────────────────────────────
 
     static class RegistrantDoc {
-        String docId, studentName, studentId, paymentStatus;
-        String amount, proofBase64, submittedAt, rejectionReason;
+        String docId, eventId;
+        String studentName, studentId, paymentStatus;
+        String amount, proofBase64, accomProof, submittedAt, rejectionReason;
         Map<String, Object> answers;
     }
 
-    // ── Attendee Adapter ──────────────────────────────────────────────────────
+    // ── Adapter ───────────────────────────────────────────────────────────────
 
     class AttendeeAdapter extends RecyclerView.Adapter<AttendeeAdapter.VH> {
-
         private final List<RegistrantDoc> list;
         AttendeeAdapter(List<RegistrantDoc> list) { this.list = list; }
 
@@ -426,34 +561,31 @@ public class RegistrantDataActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(VH h, int position) {
-            RegistrantDoc r = list.get(position);
+        public void onBindViewHolder(VH h, int pos) {
+            RegistrantDoc r = list.get(pos);
             h.tvName.setText(r.studentName);
-            h.tvStudentId.setText(r.studentId);
+            h.tvId.setText(r.studentId);
             h.tvStatus.setText(r.paymentStatus);
             switch (r.paymentStatus) {
-                case "Approved":
-                    h.tvStatus.setTextColor(0xFF2E7D32); break;
-                case "Rejected":
-                    h.tvStatus.setTextColor(0xFFB71C1C); break;
-                default:
-                    h.tvStatus.setTextColor(0xFFE65100); break;
+                case "Approved": h.tvStatus.setTextColor(0xFF2E7D32); break;
+                case "Rejected": h.tvStatus.setTextColor(0xFFB71C1C); break;
+                default:         h.tvStatus.setTextColor(0xFFE65100); break;
             }
-            h.btnView.setOnClickListener(v -> showRegistrantDetail(r));
-            h.itemView.setOnClickListener(v -> showRegistrantDetail(r));
+            h.btnView.setOnClickListener(v -> showDetail(r));
+            h.itemView.setOnClickListener(v -> showDetail(r));
         }
 
         @Override public int getItemCount() { return list.size(); }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView tvName, tvStudentId, tvStatus;
+            TextView tvName, tvId, tvStatus;
             Button   btnView;
             VH(View v) {
                 super(v);
-                tvName      = v.findViewById(R.id.tvAttendeeName);
-                tvStudentId = v.findViewById(R.id.tvAttendeeStudentId);
-                tvStatus    = v.findViewById(R.id.tvAttendeeStatus);
-                btnView     = v.findViewById(R.id.btnViewAttendee);
+                tvName   = v.findViewById(R.id.tvAttendeeName);
+                tvId     = v.findViewById(R.id.tvAttendeeStudentId);
+                tvStatus = v.findViewById(R.id.tvAttendeeStatus);
+                btnView  = v.findViewById(R.id.btnViewAttendee);
             }
         }
     }
