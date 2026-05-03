@@ -14,6 +14,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.lums.eventhub.attendee.registration.AttendeeRegistrationActivity;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

@@ -12,6 +12,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.test.filters.LargeTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
+import com.lums.eventhub.attendee.notifications.NotificationsActivity;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

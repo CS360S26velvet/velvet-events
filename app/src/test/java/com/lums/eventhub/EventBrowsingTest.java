@@ -3,6 +3,8 @@ package com.lums.eventhub;
 //package com.lums.eventhub;
 import static org.junit.Assert.assertEquals;
 
+import com.lums.eventhub.attendee.events.Event;
+
 import org.junit.Before;
 import org.junit.Test;
 

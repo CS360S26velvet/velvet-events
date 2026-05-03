@@ -3,8 +3,7 @@ package com.lums.eventhub;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.lums.eventhub.organizer.form.FormBuilderActivity;
 
 /**
  * Unit tests for FormBuilderActivity.FormQuestion

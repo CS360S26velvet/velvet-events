@@ -17,10 +17,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.lums.eventhub.AttendeeActivity;
+import com.lums.eventhub.attendee.dashboard.AttendeeActivity;
 import com.lums.eventhub.R;
 import com.lums.eventhub.admin.dashboard.AdminDashboardActivity;
-import com.lums.eventhub.OrganizerDashboardActivity;
+import com.lums.eventhub.organizer.dashboard.OrganizerDashboardActivity;
 
 /**
  * LoginActivity.java

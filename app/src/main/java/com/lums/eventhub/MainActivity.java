@@ -17,6 +17,13 @@ import android.widget.Button;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.lums.eventhub.attendee.registration.AttendeeRegistrationActivity;
+import com.lums.eventhub.organizer.checkin.CheckInActivity;
+import com.lums.eventhub.organizer.dashboard.OrganizerDashboardActivity;
+import com.lums.eventhub.organizer.form.CapacitySettingActivity;
+import com.lums.eventhub.organizer.proposals.ProposalFormActivity;
+import com.lums.eventhub.organizer.registration.RegistrantDashboardActivity;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override

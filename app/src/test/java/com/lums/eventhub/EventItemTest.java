@@ -1,7 +1,8 @@
 package com.lums.eventhub;
 //package com.example.event_management;
 
-import com.lums.eventhub.Event;
+import com.lums.eventhub.organizer.dashboard.OrganizerDashboardActivity;
+
 import org.junit.Test;
 import static org.junit.Assert.*;
 
