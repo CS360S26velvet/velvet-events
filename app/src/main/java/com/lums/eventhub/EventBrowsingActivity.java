@@ -229,6 +229,11 @@ public class EventBrowsingActivity extends AppCompatActivity {
                         // Skip events the organizer has hidden from attendees
                         Boolean hidden = doc.getBoolean("hiddenFromAttendees");
                         if (Boolean.TRUE.equals(hidden)) continue;
+                        // Skip expired events (end date passed)
+                        String endDate = doc.getString("endDate");
+                        if (endDate == null || endDate.isEmpty())
+                            endDate = doc.getString("startDate");
+                        if (isEventExpired(endDate)) continue;
                         allEvents.add(eventFromDoc(doc));
                     }
                     // Also load from proposals/ with status Approved
@@ -250,6 +255,11 @@ public class EventBrowsingActivity extends AppCompatActivity {
                         // Skip hidden events
                         Boolean hidden = doc.getBoolean("hiddenFromAttendees");
                         if (Boolean.TRUE.equals(hidden)) continue;
+                        // Skip expired events
+                        String endDate = doc.getString("endDate");
+                        if (endDate == null || endDate.isEmpty())
+                            endDate = doc.getString("startDate");
+                        if (isEventExpired(endDate)) continue;
                         if (!exists) allEvents.add(eventFromDoc(doc));
                     }
                     filter = "All";
@@ -296,5 +306,36 @@ public class EventBrowsingActivity extends AppCompatActivity {
 
     private String nvl(String s, String fallback) {
         return (s != null && !s.isEmpty()) ? s : fallback;
+    }
+
+    /**
+     * Returns true if the event's end date has already passed.
+     * Tries multiple date formats. If end date is missing or unparseable,
+     * returns false (show the event — don't hide it by mistake).
+     */
+    private boolean isEventExpired(String endDateStr) {
+        if (endDateStr == null || endDateStr.isEmpty()) return false;
+        String[] formats = {
+                "dd/MM/yyyy", "d/M/yyyy", "dd/MM/yy", "d/M/yy",
+                "yyyy-MM-dd", "dd-MM-yyyy",
+                "MMM d, yyyy", "MMM dd, yyyy",
+                "d/M/yyyy", "dd/M/yyyy"
+        };
+        for (String fmt : formats) {
+            try {
+                java.text.SimpleDateFormat sdf =
+                        new java.text.SimpleDateFormat(fmt, java.util.Locale.getDefault());
+                sdf.setLenient(false);
+                java.util.Date parsed = sdf.parse(endDateStr.trim());
+                if (parsed != null) {
+                    // Give a 1-day grace period so event stays visible on its end day
+                    java.util.Calendar cal = java.util.Calendar.getInstance();
+                    cal.setTime(parsed);
+                    cal.add(java.util.Calendar.DAY_OF_YEAR, 1);
+                    return cal.getTime().before(new java.util.Date());
+                }
+            } catch (Exception ignored) {}
+        }
+        return false;
     }
 }

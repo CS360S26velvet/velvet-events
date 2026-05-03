@@ -205,21 +205,35 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
      * Step 2: load approved events from events/.
      * Step 3: query eventReports to find which ones have been admin-approved.
      *         Only those get "Edit Prior Event" — the rest show "Approved" badge only.
+     *
+     * DEDUP FIX: If an event ID already appears in the proposals list (meaning the
+     * organizer has resubmitted it via "Edit Prior Event" and it is now Submitted /
+     * Revision Requested / Rejected), skip it from the events/ list entirely so it
+     * doesn't show twice.
      */
     private void loadApprovedEvents() {
+        // Collect proposal IDs already loaded (non-Approved statuses in flight)
+        Set<String> inFlightIds = new HashSet<>();
+        for (EventItem existing : eventList) {
+            if (existing.isProposal) inFlightIds.add(existing.id);
+        }
+
         db.collection("events")
                 .whereEqualTo("organizerUsername", organizerUsername)
                 .get()
                 .addOnSuccessListener(evSnap -> {
                     final List<EventItem> approvedItems = new ArrayList<>();
                     for (QueryDocumentSnapshot doc : evSnap) {
+                        // DEDUP: skip if this event is already showing as a
+                        // resubmitted proposal (Submitted / Rejected / Revision)
+                        if (inFlightIds.contains(doc.getId())) continue;
+
                         String title  = doc.getString("title");
                         String date   = doc.getString("date");
                         String status = doc.getString("status");
                         if (title  == null) title  = "Untitled";
                         if (date   == null) date   = "—";
                         if (status == null) status = "Approved";
-                        // reportStatus starts empty — filled in after report check
                         approvedItems.add(new EventItem(
                                 doc.getId(), title, date, status, false, "", ""));
                     }
@@ -240,16 +254,13 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                                 for (QueryDocumentSnapshot rdoc : reportSnap) {
                                     String eid = rdoc.getString("eventId");
                                     if (eid != null) approvedReportEventIds.add(eid);
-                                    // Also match by document ID (eventReports doc ID == eventId)
                                     approvedReportEventIds.add(rdoc.getId());
                                 }
 
                                 for (EventItem item : approvedItems) {
                                     if (approvedReportEventIds.contains(item.id)) {
-                                        // Report approved → show "Edit Prior Event"
                                         item.reportStatus = "Approved";
                                     }
-                                    // else reportStatus stays "" → show "Approved" badge only
                                 }
 
                                 eventList.addAll(approvedItems);
@@ -257,7 +268,6 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                                 else adapter.notifyDataSetChanged();
                             })
                             .addOnFailureListener(e -> {
-                                // Can't check reports — show approved events without edit button
                                 eventList.addAll(approvedItems);
                                 if (eventList.isEmpty()) loadSampleEvents();
                                 else adapter.notifyDataSetChanged();
