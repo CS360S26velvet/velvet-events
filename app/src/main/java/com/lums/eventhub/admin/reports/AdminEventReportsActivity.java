@@ -83,6 +83,7 @@ public class AdminEventReportsActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot doc : snap) {
                         ReportDoc r      = new ReportDoc();
                         r.id             = doc.getId();
+                        r.eventId        = nvl(doc.getString("eventId"), doc.getId());
                         r.eventTitle     = nvl(doc.getString("eventTitle"), "Untitled");
                         r.societyName    = nvl(doc.getString("societyName"), "Unknown Society");
                         r.eventDate      = nvl(doc.getString("eventDate"), "—");
@@ -294,6 +295,11 @@ public class AdminEventReportsActivity extends AppCompatActivity {
                 .addOnSuccessListener(unused -> {
                     Toast.makeText(this, "Report approved.", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
+                    // Also write reportStatus to events/ so organizer sees "Edit Prior Event"
+                    db.collection("events").document(r.eventId)
+                            .update("reportStatus", "Approved")
+                            .addOnFailureListener(e -> android.util.Log.w("AdminReports",
+                                    "Could not update events reportStatus: " + e.getMessage()));
                     // Remove from list and refresh UI
                     for (List<ReportDoc> list : grouped.values()) {
                         list.removeIf(rep -> rep.id.equals(r.id));
@@ -364,7 +370,7 @@ public class AdminEventReportsActivity extends AppCompatActivity {
     // ── Model ─────────────────────────────────────────────────────────────────
 
     static class ReportDoc {
-        String id, eventTitle, societyName, eventDate;
+        String id, eventId, eventTitle, societyName, eventDate;
         String imageBase64, notes, submittedAt;
         int    attendees;
     }

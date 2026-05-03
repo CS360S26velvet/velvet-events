@@ -143,7 +143,13 @@ public class AttendeeActivity extends AppCompatActivity {
         logout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(AttendeeActivity.this, com.lums.eventhub.auth.LoginActivity.class));
+                // Clear saved session so LoginActivity shows login screen
+                com.lums.eventhub.auth.LoginActivity.clearSession(AttendeeActivity.this);
+                Intent intent = new Intent(AttendeeActivity.this, com.lums.eventhub.auth.LoginActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_NEW_TASK
+                        | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
                 finish();
             }
         });

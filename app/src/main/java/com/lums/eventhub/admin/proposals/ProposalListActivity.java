@@ -107,7 +107,7 @@ public class ProposalListActivity extends AppCompatActivity {
                     ((TextView) findViewById(R.id.tvStatRejected)).setText(String.valueOf(rejected));
                     ((TextView) findViewById(R.id.tvStatTotal)).setText(String.valueOf(allProposals.size()));
 
-                    filterBy("all");
+                    filterBy(STATUS_SUBMITTED); // default: show Pending
                 });
     }
 

@@ -212,9 +212,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         if (title  == null) title  = "Untitled";
                         if (date   == null) date   = "—";
                         if (status == null) status = "Draft";
+                        String adminReason = doc.getString("adminReason");
+                        if (adminReason == null) adminReason = "";
 
                         // isProposal=true means Edit → ProposalFormActivity with proposalId
-                        eventList.add(new EventItem(doc.getId(), title, date, status, true));
+                        eventList.add(new EventItem(doc.getId(), title, date, status, true, adminReason));
                     }
 
                     // Step 2: load approved/completed from events/
@@ -223,7 +225,10 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> loadApprovedEvents());
     }
 
-    /** Step 2: load from events/ (Approved/Completed written by admin). */
+    /**
+     * Step 2: load from events/ (Approved/Completed written by admin).
+     * ALL approved events show "Edit Prior Event" button — no report check needed.
+     */
     private void loadApprovedEvents() {
         db.collection("events")
                 .whereEqualTo("organizerUsername", organizerUsername)
@@ -236,10 +241,10 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                         if (title  == null) title  = "Untitled";
                         if (date   == null) date   = "—";
                         if (status == null) status = "Approved";
-                        // isProposal=false — no edit allowed for approved events
-                        eventList.add(new EventItem(doc.getId(), title, date, status, false));
+                        // All approved events get "Edit Prior Event" — pass "Approved" as reportStatus
+                        eventList.add(new EventItem(doc.getId(), title, date, status,
+                                false, "", "Approved"));
                     }
-
                     if (eventList.isEmpty()) loadSampleEvents();
                     else adapter.notifyDataSetChanged();
                 })
@@ -304,15 +309,27 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------
 
     static class EventItem {
-        String  id, title, date, status;
-        boolean isProposal; // true = from proposals/, false = from events/
+        String  id, title, date, status, adminReason, reportStatus;
+        boolean isProposal;
 
         EventItem(String id, String title, String date, String status, boolean isProposal) {
-            this.id         = id;
-            this.title      = title;
-            this.date       = date;
-            this.status     = status;
-            this.isProposal = isProposal;
+            this(id, title, date, status, isProposal, "", "");
+        }
+
+        EventItem(String id, String title, String date, String status,
+                  boolean isProposal, String adminReason) {
+            this(id, title, date, status, isProposal, adminReason, "");
+        }
+
+        EventItem(String id, String title, String date, String status,
+                  boolean isProposal, String adminReason, String reportStatus) {
+            this.id           = id;
+            this.title        = title;
+            this.date         = date;
+            this.status       = status;
+            this.isProposal   = isProposal;
+            this.adminReason  = adminReason  != null ? adminReason  : "";
+            this.reportStatus = reportStatus != null ? reportStatus : "";
         }
     }
 
@@ -340,15 +357,26 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
             holder.tvEventDate.setText(event.date);
             holder.tvEventStatus.setText(event.status);
 
-            // Reset button state
+            // Reset
             holder.btnEventAction.setVisibility(View.GONE);
             holder.btnEventAction.setOnClickListener(null);
+            if (holder.tvAdminReason != null) {
+                holder.tvAdminReason.setVisibility(View.GONE);
+                holder.tvAdminReason.setText("");
+            }
 
             switch (event.status) {
 
                 case "Approved":
                     holder.tvEventStatus.setBackgroundColor(0xFF4CAF50);
-                    // No action — event is approved and live
+                    // If event report was approved, show "Edit Prior Event" toggle
+                    if ("Approved".equals(event.reportStatus)) {
+                        holder.btnEventAction.setVisibility(View.VISIBLE);
+                        holder.btnEventAction.setText("Edit Prior Event");
+                        holder.btnEventAction.setBackgroundTintList(
+                                android.content.res.ColorStateList.valueOf(0xFF1565C0));
+                        holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
+                    }
                     break;
 
                 case "Revision Requested":
@@ -358,11 +386,15 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                     holder.btnEventAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFF0D47A1));
                     holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
+                    // Show reason under event name
+                    if (!event.adminReason.isEmpty() && holder.tvAdminReason != null) {
+                        holder.tvAdminReason.setVisibility(View.VISIBLE);
+                        holder.tvAdminReason.setText("Reason: " + event.adminReason);
+                    }
                     break;
 
                 case "Submitted":
                     holder.tvEventStatus.setBackgroundColor(0xFFFF9800);
-                    // Awaiting admin decision — no edit allowed
                     break;
 
                 case "Rejected":
@@ -372,6 +404,11 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                     holder.btnEventAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFFC62828));
                     holder.btnEventAction.setOnClickListener(v -> openProposalForm(event.id));
+                    // Show reason under event name
+                    if (!event.adminReason.isEmpty() && holder.tvAdminReason != null) {
+                        holder.tvAdminReason.setVisibility(View.VISIBLE);
+                        holder.tvAdminReason.setText("Reason: " + event.adminReason);
+                    }
                     break;
 
                 case "Completed":
@@ -404,7 +441,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
         public int getItemCount() { return list.size(); }
 
         class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvEventName, tvEventDate, tvEventStatus;
+            TextView tvEventName, tvEventDate, tvEventStatus, tvAdminReason;
             Button   btnEventAction;
 
             ViewHolder(View v) {
@@ -412,6 +449,7 @@ public class OrganizerDashboardActivity extends AppCompatActivity {
                 tvEventName    = v.findViewById(R.id.tvEventName);
                 tvEventDate    = v.findViewById(R.id.tvEventDate);
                 tvEventStatus  = v.findViewById(R.id.tvEventStatus);
+                tvAdminReason  = v.findViewById(R.id.tvAdminReason);
                 btnEventAction = v.findViewById(R.id.btnEventAction);
             }
         }

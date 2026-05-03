@@ -294,23 +294,47 @@
             <View android:layout_width="match_parent" android:layout_height="1dp"
                 android:background="#F5D5DC" android:layout_marginBottom="16dp"/>
 
-            <Button android:id="@+id/btnApprove"
-                android:layout_width="match_parent" android:layout_height="52dp"
-                android:text="✓  APPROVE EVENT" android:textSize="15sp" android:textStyle="bold"
-                android:textColor="#FFFFFF" android:background="@drawable/bg_btn_approve"
-                android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+            <!-- Approved badge — shown instead of buttons once approved -->
+            <TextView
+                android:id="@+id/tvApprovedBadge"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="✓  EVENT APPROVED"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:background="#27AE60"
+                android:gravity="center"
+                android:padding="16dp"
+                android:visibility="gone"/>
 
-            <Button android:id="@+id/btnRevision"
-                android:layout_width="match_parent" android:layout_height="52dp"
-                android:text="↺  REQUEST REVISION" android:textSize="15sp" android:textStyle="bold"
-                android:textColor="#F39C12" android:background="@drawable/bg_btn_revision"
-                android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+            <!-- Decision buttons — hidden once approved -->
+            <LinearLayout
+                android:id="@+id/llDecisionButtons"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
 
-            <Button android:id="@+id/btnReject"
-                android:layout_width="match_parent" android:layout_height="52dp"
-                android:text="✕  REJECT PROPOSAL" android:textSize="15sp" android:textStyle="bold"
-                android:textColor="#E74C3C" android:background="@drawable/bg_btn_reject"
-                android:stateListAnimator="@null"/>
+                <Button android:id="@+id/btnApprove"
+                    android:layout_width="match_parent" android:layout_height="52dp"
+                    android:text="✓  APPROVE EVENT" android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#FFFFFF" android:background="@drawable/bg_btn_approve"
+                    android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+
+                <Button android:id="@+id/btnRevision"
+                    android:layout_width="match_parent" android:layout_height="52dp"
+                    android:text="↺  REQUEST REVISION" android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#F39C12" android:background="@drawable/bg_btn_revision"
+                    android:stateListAnimator="@null" android:layout_marginBottom="10dp"/>
+
+                <Button android:id="@+id/btnReject"
+                    android:layout_width="match_parent" android:layout_height="52dp"
+                    android:text="✕  REJECT PROPOSAL" android:textSize="15sp" android:textStyle="bold"
+                    android:textColor="#E74C3C" android:background="@drawable/bg_btn_reject"
+                    android:stateListAnimator="@null"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 

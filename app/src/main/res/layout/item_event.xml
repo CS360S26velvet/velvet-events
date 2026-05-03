@@ -36,6 +36,17 @@
             android:textSize="13sp"
             android:layout_marginTop="2dp" />
 
+        <!-- Admin reason — shown for Rejected/Revision Requested only -->
+        <TextView
+            android:id="@+id/tvAdminReason"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text=""
+            android:textSize="11sp"
+            android:textColor="#C62828"
+            android:layout_marginTop="3dp"
+            android:visibility="gone"/>
+
     </LinearLayout>
 
     <!-- Status badge -->

@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.lums.eventhub.R;
+import android.app.AlertDialog;
+import android.widget.EditText;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +63,8 @@ public class ProposalDetailActivity extends AppCompatActivity {
             tvDetailOrganizer, tvDetailSociety, tvDetailDesc,
             tvDetailEventType, tvDetailParticipants, tvDetailBudget,
             tvDetailAccommodation, tvDetailStatus;
-    private LinearLayout llSessions, llGuests;
+    private LinearLayout llSessions, llGuests, llDecisionButtons;
+    private android.widget.TextView tvApprovedBadge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,9 +83,9 @@ public class ProposalDetailActivity extends AppCompatActivity {
         // Decision buttons — canonical status values
         findViewById(R.id.btnApprove).setOnClickListener(v -> approveProposal());
         findViewById(R.id.btnRevision).setOnClickListener(v ->
-                updateStatus("Revision Requested"));
+                showReasonDialog("Revision Requested"));
         findViewById(R.id.btnReject).setOnClickListener(v ->
-                updateStatus("Rejected"));
+                showReasonDialog("Rejected"));
     }
 
     private void bindViews() {
@@ -99,6 +102,8 @@ public class ProposalDetailActivity extends AppCompatActivity {
         tvDetailStatus       = findViewById(R.id.tvDetailInfo);
         llSessions           = findViewById(R.id.llDetailSessions);
         llGuests             = findViewById(R.id.llDetailGuests);
+        llDecisionButtons    = findViewById(R.id.llDecisionButtons);
+        tvApprovedBadge      = findViewById(R.id.tvApprovedBadge);
     }
 
     private void loadProposal() {
@@ -205,6 +210,15 @@ public class ProposalDetailActivity extends AppCompatActivity {
         if (tvDetailStatus != null) {
             tvDetailStatus.setText("Current Status: " + (status != null ? status.toUpperCase() : "UNKNOWN"));
         }
+
+        // If already Approved, hide decision buttons and show approved badge
+        if ("Approved".equals(status)) {
+            if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.GONE);
+            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.VISIBLE);
+        } else {
+            if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.VISIBLE);
+            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.GONE);
+        }
     }
 
     private void approveProposal() {
@@ -214,7 +228,11 @@ public class ProposalDetailActivity extends AppCompatActivity {
         }
         db.collection("proposals").document(proposalId)
                 .update("status", "Approved")
-                .addOnSuccessListener(a -> writeToEventsCollection())
+                .addOnSuccessListener(a -> {
+                    if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.GONE);
+                    if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.VISIBLE);
+                    writeToEventsCollection();
+                })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Approval failed: " + e.getMessage(),
                                 Toast.LENGTH_SHORT).show());
@@ -258,16 +276,38 @@ public class ProposalDetailActivity extends AppCompatActivity {
                 });
     }
 
-    private void updateStatus(String status) {
+    /** Shows a reason dialog before setting Rejected or Revision Requested */
+    private void showReasonDialog(String status) {
+        EditText etReason = new EditText(this);
+        etReason.setHint("Enter reason (shown to organizer)...");
+        etReason.setPadding(32, 16, 32, 16);
+
+        String title = "Revision Requested".equals(status)
+                ? "Request Revision" : "Reject Proposal";
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage("This reason will be shown to the organizer.")
+                .setView(etReason)
+                .setPositiveButton("Submit", (d, w) -> {
+                    String reason = etReason.getText().toString().trim();
+                    updateStatusWithReason(status, reason);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void updateStatusWithReason(String status, String reason) {
+        java.util.Map<String, Object> update = new HashMap<>();
+        update.put("status", status);
+        update.put("adminReason", reason);
+        update.put("reviewedAt", System.currentTimeMillis());
+
         db.collection("proposals").document(proposalId)
-                .update("status", status)
+                .update(update)
                 .addOnSuccessListener(a -> {
-                    String msg;
-                    switch (status) {
-                        case "Rejected":           msg = "Proposal rejected";  break;
-                        case "Revision Requested": msg = "Revision requested"; break;
-                        default:                   msg = "Status updated";
-                    }
+                    String msg = "Revision Requested".equals(status)
+                            ? "Revision requested" : "Proposal rejected";
                     Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
                     finish();
                 })
