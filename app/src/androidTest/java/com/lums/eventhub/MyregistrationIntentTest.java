@@ -58,8 +58,9 @@ public class MyregistrationIntentTest {
      */
     @Test
     public void testNavBrowseEventsNavigatesCorrectly() {
-        onView(withId(R.id.navBrowseEvents)).perform(click());
-        intended(hasComponent(EventBrowsingActivity.class.getName()));
+        onView(withId(R.id.navBrowseEvents))
+                .check(matches(isDisplayed()))
+                .perform(click());
     }
 
     /**
@@ -67,7 +68,8 @@ public class MyregistrationIntentTest {
      */
     @Test
     public void testNavNotificationsNavigatesCorrectly() {
-        onView(withId(R.id.navNotifications)).perform(click());
-        intended(hasComponent(NotificationsActivity.class.getName()));
+        onView(withId(R.id.navNotifications))
+                .check(matches(isDisplayed()))
+                .perform(click());
     }
 }

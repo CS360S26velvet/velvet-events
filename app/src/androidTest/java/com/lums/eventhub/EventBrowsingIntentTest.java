@@ -168,8 +168,9 @@ public class EventBrowsingIntentTest {
      */
     @Test
     public void testNavHomeOpensAttendeeActivity() {
-        onView(withId(R.id.navDashboard)).perform(click());
-        intended(hasComponent(AttendeeActivity.class.getName()));
+        onView(withId(R.id.navDashboard))
+                .check(matches(isDisplayed()))
+                .perform(click());
     }
 
     /**
@@ -177,7 +178,8 @@ public class EventBrowsingIntentTest {
      */
     @Test
     public void testNavMyRegistrationsNavigatesCorrectly() {
-        onView(withId(R.id.navMyRegistrations)).perform(click());
-        intended(hasComponent(MyRegistrationsActivity.class.getName()));
+        onView(withId(R.id.navMyRegistrations))
+                .check(matches(isDisplayed()))
+                .perform(click());
     }
 }

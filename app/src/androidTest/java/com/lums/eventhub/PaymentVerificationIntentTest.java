@@ -49,7 +49,8 @@ public class PaymentVerificationIntentTest {
     @Test
     public void testPaymentListActivityLaunches() {
         try (ActivityScenario<PaymentVerificationListActivity> s = launchList()) {
-            onView(withId(R.id.recyclerViewApprovedEvents)).check(matches(isDisplayed()));
+            // recyclerView starts hidden until events load — check title instead
+            onView(withId(R.id.tvPaymentListTitle)).check(matches(isDisplayed()));
         }
     }
 

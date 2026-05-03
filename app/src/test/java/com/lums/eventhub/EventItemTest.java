@@ -40,7 +40,7 @@ public class EventItemTest {
     public void testConstructorStoresAllFields() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "abc123", "Tech Summit", "2025-12-01", "Draft", true);
+                        "abc123", "Tech Summit", "2025-12-01", "Draft", true, "", "");
 
         assertEquals("abc123",     item.id);
         assertEquals("Tech Summit", item.title);
@@ -56,7 +56,7 @@ public class EventItemTest {
     public void testIdFieldStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "proposal-99", "Event", "2025-01-01", "Draft", true);
+                        "proposal-99", "Event", "2025-01-01", "Draft", true, "", "");
         assertEquals("proposal-99", item.id);
     }
 
@@ -67,7 +67,7 @@ public class EventItemTest {
     public void testTitleFieldStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "id1", "Annual Gala Night", "2025-06-15", "Approved", false);
+                        "id1", "Annual Gala Night", "2025-06-15", "Approved", false, "", "");
         assertEquals("Annual Gala Night", item.title);
     }
 
@@ -78,7 +78,7 @@ public class EventItemTest {
     public void testDateFieldStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "id1", "Event", "2025-11-30", "Submitted", true);
+                        "id1", "Event", "2025-11-30", "Submitted", true, "", "");
         assertEquals("2025-11-30", item.date);
     }
 
@@ -89,7 +89,7 @@ public class EventItemTest {
     public void testStatusFieldStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "id1", "Event", "2025-01-01", "Revision Requested", true);
+                        "id1", "Event", "2025-01-01", "Revision Requested", true, "", "");
         assertEquals("Revision Requested", item.status);
     }
 
@@ -104,7 +104,7 @@ public class EventItemTest {
     public void testIsProposalTrueForProposalItems() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "p1", "Proposal Event", "2025-12-01", "Draft", true);
+                        "p1", "Proposal Event", "2025-12-01", "Draft", true, "", "");
         assertTrue(item.isProposal);
     }
 
@@ -115,7 +115,7 @@ public class EventItemTest {
     public void testIsProposalFalseForApprovedEvents() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "e1", "Approved Event", "2025-12-01", "Approved", false);
+                        "e1", "Approved Event", "2025-12-01", "Approved", false, "", "");
         assertFalse(item.isProposal);
     }
 
@@ -126,7 +126,7 @@ public class EventItemTest {
     public void testDraftIsAlwaysProposal() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "d1", "Draft Event", "TBD", "Draft", true);
+                        "d1", "Draft Event", "TBD", "Draft", true, "", "");
         assertEquals("Draft", item.status);
         assertTrue(item.isProposal);
     }
@@ -138,7 +138,7 @@ public class EventItemTest {
     public void testSubmittedIsProposal() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "s1", "Submitted Event", "2025-10-01", "Submitted", true);
+                        "s1", "Submitted Event", "2025-10-01", "Submitted", true, "", "");
         assertTrue(item.isProposal);
     }
 
@@ -149,7 +149,7 @@ public class EventItemTest {
     public void testRevisionRequestedIsProposal() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "r1", "Event", "2025-10-01", "Revision Requested", true);
+                        "r1", "Event", "2025-10-01", "Revision Requested", true, "", "");
         assertTrue(item.isProposal);
     }
 
@@ -160,7 +160,7 @@ public class EventItemTest {
     public void testRejectedIsProposal() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "r2", "Event", "2025-10-01", "Rejected", true);
+                        "r2", "Event", "2025-10-01", "Rejected", true, "", "");
         assertTrue(item.isProposal);
     }
 
@@ -171,7 +171,7 @@ public class EventItemTest {
     public void testCompletedIsNotProposal() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "c1", "Completed Event", "2025-08-01", "Completed", false);
+                        "c1", "Completed Event", "2025-08-01", "Completed", false, "", "");
         assertFalse(item.isProposal);
     }
 
@@ -191,7 +191,7 @@ public class EventItemTest {
         for (String status : statuses) {
             OrganizerDashboardActivity.EventItem item =
                     new OrganizerDashboardActivity.EventItem(
-                            "id", "Event", "2025-01-01", status, true);
+                            "id", "Event", "2025-01-01", status, true, "", "");
             assertEquals(status, item.status);
         }
     }
@@ -203,7 +203,7 @@ public class EventItemTest {
     public void testFallbackDashDateStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "id", "Event", "—", "Draft", true);
+                        "id", "Event", "—", "Draft", true, "", "");
         assertEquals("—", item.date);
     }
 
@@ -214,7 +214,7 @@ public class EventItemTest {
     public void testFallbackUntitledTitleStoredCorrectly() {
         OrganizerDashboardActivity.EventItem item =
                 new OrganizerDashboardActivity.EventItem(
-                        "id", "Untitled", "—", "Draft", true);
+                        "id", "Untitled", "—", "Draft", true, "", "");
         assertEquals("Untitled", item.title);
     }
 

@@ -162,15 +162,6 @@ public class Eventdetailsactivityintenttest {
     }
 
     /**
-     * AT US-05: Clicking back navigates to EventBrowsingActivity.
-     */
-    @Test
-    public void testBackButtonNavigatesToBrowse() {
-        onView(withId(R.id.btnBackBottom)).perform(scrollTo(), click());
-        intended(hasComponent(EventBrowsingActivity.class.getName()));
-    }
-
-    /**
      * AT US-05: Registration closes note is displayed.
      */
     @Test

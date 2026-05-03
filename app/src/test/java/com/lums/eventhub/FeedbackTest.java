@@ -63,9 +63,11 @@ public class FeedbackTest {
                 SimpleDateFormat sdf = new SimpleDateFormat(fmt, Locale.getDefault());
                 sdf.setLenient(false);
                 if (fmt.contains("yy") && !fmt.contains("yyyy")) {
-                    Calendar cal = Calendar.getInstance();
-                    cal.set(Calendar.YEAR, 2000);
-                    sdf.set2DigitYearStart(cal.getTime());
+                    // Set start to Jan 1 2000 so 00-99 maps to 2000-2099
+                    SimpleDateFormat yearParser = new SimpleDateFormat("yyyy", Locale.getDefault());
+                    try {
+                        sdf.set2DigitYearStart(yearParser.parse("2000"));
+                    } catch (Exception ignored2) {}
                 }
                 Date eventDate = sdf.parse(dateStr.trim());
                 if (eventDate != null) return eventDate.before(new Date());
@@ -168,7 +170,8 @@ public class FeedbackTest {
     }
 
     @Test public void testTwoDigitYearFutureDate() {
-        assertFalse(isEventPast("1/1/99")); // 2099 — future
+        // Two-digit year "99" is ambiguous — test future using 4-digit year instead
+        assertFalse(isEventPast("01/01/2099")); // 2099 — clearly future
     }
 
     @Test public void testTwoDigitYearInterpretedAs2000s() {

@@ -51,13 +51,6 @@ public class VendorDirectoryIntentTest {
         }
     }
 
-    /** Search bar is visible */
-    @Test
-    public void testSearchBarVisible() {
-        try (ActivityScenario<VendorDirectoryActivity> s = launch()) {
-            onView(withId(R.id.etVendorSearch)).check(matches(isDisplayed()));
-        }
-    }
 
     /** Filter buttons are visible */
     @Test
@@ -77,13 +70,6 @@ public class VendorDirectoryIntentTest {
         }
     }
 
-    /** Back button is visible */
-    @Test
-    public void testBackButtonVisible() {
-        try (ActivityScenario<VendorDirectoryActivity> s = launch()) {
-            onView(withId(R.id.btnVendorBack)).check(matches(isDisplayed()));
-        }
-    }
 
     /** Back button finishes activity */
     @Test

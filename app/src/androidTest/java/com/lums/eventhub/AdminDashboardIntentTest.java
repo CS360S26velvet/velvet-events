@@ -21,11 +21,13 @@ import org.junit.runner.RunWith;
 /**
  * AdminDashboardIntentTest.java
  * Espresso UI tests for AdminDashboardActivity.
- * Tests all navigation buttons, stat views, and new additions:
- *   - Event Reports button
- *   - Accommodation button
- *   - Sign Out button
+ * Tests all navigation buttons and stat views that actually exist in the layout.
  * Implements: Admin US-08
+ *
+ * Actual button IDs in activity_admin_dashboard.xml:
+ *   btnSignOut, btnViewProposals, btnCalendar,
+ *   btnAccommodation, btnEventReports, btnRegisterOrganizer
+ * Note: btnAuditorium was removed from this layout.
  */
 @RunWith(AndroidJUnit4.class)
 @LargeTest
@@ -60,11 +62,20 @@ public class AdminDashboardIntentTest {
         onView(withId(R.id.tvApprovedNumber)).check(matches(isDisplayed()));
     }
 
-    /** Test auditorium button is displayed */
+    /** Test proposals button is displayed */
     @Test
-    public void testAuditoriumButtonIsDisplayed() {
+    public void testProposalsButtonIsDisplayed() {
         launchDashboard();
-        onView(withId(R.id.btnAuditorium)).check(matches(isDisplayed()));
+        onView(withId(R.id.btnViewProposals)).check(matches(isDisplayed()));
+    }
+
+    /** Test calendar button is displayed */
+    @Test
+    public void testCalendarButtonIsDisplayed() {
+        launchDashboard();
+        onView(withId(R.id.btnCalendar))
+                .perform(scrollTo())
+                .check(matches(isDisplayed()));
     }
 
     /** Test register organizer button is displayed */
@@ -76,7 +87,7 @@ public class AdminDashboardIntentTest {
                 .check(matches(isDisplayed()));
     }
 
-    /** NEW: Test accommodation button is displayed */
+    /** Test accommodation button is displayed */
     @Test
     public void testAccommodationButtonIsDisplayed() {
         launchDashboard();
@@ -85,7 +96,7 @@ public class AdminDashboardIntentTest {
                 .check(matches(isDisplayed()));
     }
 
-    /** NEW: Test event reports button is displayed */
+    /** Test event reports button is displayed */
     @Test
     public void testEventReportsButtonIsDisplayed() {
         launchDashboard();
@@ -94,14 +105,14 @@ public class AdminDashboardIntentTest {
                 .check(matches(isDisplayed()));
     }
 
-    /** NEW: Test sign out button is displayed */
+    /** Test sign out button is displayed */
     @Test
     public void testSignOutButtonIsDisplayed() {
         launchDashboard();
         onView(withId(R.id.btnSignOut)).check(matches(isDisplayed()));
     }
 
-    /** NEW: Test accommodation button click navigates */
+    /** Test accommodation button click navigates */
     @Test
     public void testAccommodationButtonIsClickable() {
         launchDashboard();
@@ -109,11 +120,18 @@ public class AdminDashboardIntentTest {
                 .perform(scrollTo(), click());
     }
 
-    /** NEW: Test event reports button click navigates */
+    /** Test event reports button click navigates */
     @Test
     public void testEventReportsButtonIsClickable() {
         launchDashboard();
         onView(withId(R.id.btnEventReports))
                 .perform(scrollTo(), click());
+    }
+
+    /** Test sign out button click navigates to login */
+    @Test
+    public void testSignOutButtonIsClickable() {
+        launchDashboard();
+        onView(withId(R.id.btnSignOut)).perform(click());
     }
 }
