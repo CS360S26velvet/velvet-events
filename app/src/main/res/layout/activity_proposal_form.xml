@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    activity_proposal_form.xml  (UPDATED)
-    CHANGES:
-      1. "Date" replaced with "Start Date" (etStartDate) + "End Date" (etEndDate)
-      2. "About This Event" (etAboutEvent) added right after Description
-    All other IDs unchanged.
+    activity_proposal_form.xml
+    CHANGES (on top of previous version):
+      - cardBudgetDoc now has:
+          tvBudgetDocLabel  (ID, so Java can update text to "✅ Budget document attached")
+          imgBudgetDocPreview (hidden ImageView shown after image selected)
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
@@ -80,7 +80,7 @@
                 android:hint="Brief description for CCA review..."
                 android:minLines="3" android:inputType="textMultiLine" android:gravity="top"/>
 
-            <!-- About This Event (NEW) -->
+            <!-- About This Event -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="About This Event"
                 android:textColor="#666666" android:textSize="13sp"/>
@@ -139,7 +139,7 @@
                 android:background="#E3F2FD" android:padding="12dp" android:layout_marginBottom="8dp"
                 android:text="SPADES Society" android:focusable="false" android:focusableInTouchMode="false"/>
 
-            <!-- Start Date (UPDATED — was "Date") -->
+            <!-- Start Date -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Start Date *" android:textColor="#666666" android:textSize="13sp"/>
             <EditText android:id="@+id/etStartDate"
@@ -147,9 +147,9 @@
                 android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
                 android:hint="dd/mm/yyyy" android:inputType="text"/>
 
-            <!-- End Date (NEW) -->
+            <!-- End Date -->
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="End Date *" android:textColor="#666666" android:textSize="13sp"/>
+                android:text="End Date" android:textColor="#666666" android:textSize="13sp"/>
             <EditText android:id="@+id/etEndDate"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
@@ -220,17 +220,35 @@
                 android:background="#FFFFFF" android:padding="12dp" android:layout_marginBottom="8dp"
                 android:hint="e.g. 50000" android:inputType="number"/>
 
+            <!-- Budget Document Card — now opens image picker -->
             <LinearLayout android:id="@+id/cardBudgetDoc"
                 android:layout_width="match_parent" android:layout_height="wrap_content"
                 android:background="#FFFFFF" android:orientation="vertical"
                 android:padding="16dp" android:layout_marginBottom="8dp"
                 android:clickable="true" android:focusable="true">
+
+                <TextView
+                    android:id="@+id/tvBudgetDocLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📎  Tap to attach budget document (image)"
+                    android:textColor="#1565C0"
+                    android:textSize="14sp"/>
+
                 <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="Tap to attach budget document"
-                    android:textColor="#666666" android:textSize="14sp"/>
-                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:text="PDF, XLSX (max. 5MB)"
-                    android:textColor="#999999" android:textSize="12sp"/>
+                    android:text="JPEG, PNG — tap to select photo of budget sheet"
+                    android:textColor="#999999" android:textSize="12sp"
+                    android:layout_marginTop="2dp"/>
+
+                <!-- Preview shown after image is picked -->
+                <ImageView
+                    android:id="@+id/imgBudgetDocPreview"
+                    android:layout_width="match_parent"
+                    android:layout_height="140dp"
+                    android:scaleType="centerCrop"
+                    android:layout_marginTop="10dp"
+                    android:background="#F5F5F5"
+                    android:visibility="gone"/>
             </LinearLayout>
 
             <!-- SECTION 4: Event Schedule -->

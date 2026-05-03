@@ -58,6 +58,8 @@
         <activity android:name=".VendorDirectoryActivity" android:exported="false" />
         <activity android:name=".AddVendorActivity" android:exported="false" />
         <activity android:name=".EventReportsActivity" android:exported="false" />
+        <activity android:name=".RegistrantDataActivity" android:exported="false" />
+        <activity android:name=".EventVisibilityActivity" android:exported="false" />
         <activity android:name=".admin.reports.AdminEventReportsActivity" android:exported="false" />
 
         <!-- Person D: Attendee module -->

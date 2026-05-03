@@ -33,31 +33,31 @@ import java.util.Map;
 /**
  * VendorDirectoryActivity.java
  *
- * Organiser browses all vendors stored in Firestore vendors/ collection.
- * Features:
- *   - Grid of vendor cards (name, category badge, star rating, used-by count)
- *   - Filter tabs: All / Catering / AV & Tech / Printing / Decor / Transport
- *   - Search bar by vendor name
- *   - Tap card → detail bottom sheet (AlertDialog): about, phone, email, address,
- *     past usage history, "Mark as Used for <event>", "Save to Favourites"
- *   - FAB → AddVendorActivity
+ * CHANGES:
+ *   1. Past usage history shows SOCIETY NAME (organizer name) — not event title
+ *   2. Phone and email are REQUIRED when adding a vendor (enforced in AddVendorActivity)
+ *   3. "Save to Favourites" button REMOVED from detail dialog
+ *   4. Top stars rating REMOVED from detail dialog (usedByCount kept)
+ *   5. After "Mark as Used", dialog DISMISSES and returns to vendor list
  *
  * Firestore collection: vendors/
  *   Fields: name, category, rating (double), usedByCount (long), about,
  *           phone, email, address, logoBase64 (optional),
- *           usageHistory (List<Map> with {eventName, date}),
- *           favouritedBy (List<String> of organizerUsernames)
+ *           usageHistory (List<Map> with {eventName (= societyName), date})
  */
 public class VendorDirectoryActivity extends AppCompatActivity {
 
-    private EditText    etSearch;
+    private EditText     etSearch;
     private RecyclerView recyclerView;
     private VendorAdapter adapter;
-    private final List<Vendor> allVendors      = new ArrayList<>();
-    private final List<Vendor> shownVendors    = new ArrayList<>();
+    private final List<Vendor> allVendors   = new ArrayList<>();
+    private final List<Vendor> shownVendors = new ArrayList<>();
     private String currentFilter = "All";
     private String organizerUsername, societyName, currentEventTitle;
     private FirebaseFirestore db;
+
+    // Track open dialog so we can dismiss it after marking used
+    private AlertDialog currentDialog;
 
     // Filter buttons
     private Button btnAll, btnCatering, btnAV, btnPrinting, btnDecor, btnTransport;
@@ -73,9 +73,7 @@ public class VendorDirectoryActivity extends AppCompatActivity {
         if (organizerUsername == null) organizerUsername = "ORG0012";
         if (societyName == null)       societyName       = "My Society";
 
-        // Get current active event title for "Mark as Used" button
         loadCurrentEventTitle();
-
         bindViews();
         setupFilterButtons();
         setupSearch();
@@ -95,28 +93,27 @@ public class VendorDirectoryActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1001 && resultCode == RESULT_OK) {
-            // Vendor was added — reload list
             loadVendors();
         }
     }
 
     private void bindViews() {
-        etSearch        = findViewById(R.id.etVendorSearch);
-        btnAll          = findViewById(R.id.btnFilterAll);
-        btnCatering     = findViewById(R.id.btnFilterCatering);
-        btnAV           = findViewById(R.id.btnFilterAV);
-        btnPrinting     = findViewById(R.id.btnFilterPrinting);
-        btnDecor        = findViewById(R.id.btnFilterDecor);
-        btnTransport    = findViewById(R.id.btnFilterTransport);
+        etSearch      = findViewById(R.id.etVendorSearch);
+        btnAll        = findViewById(R.id.btnFilterAll);
+        btnCatering   = findViewById(R.id.btnFilterCatering);
+        btnAV         = findViewById(R.id.btnFilterAV);
+        btnPrinting   = findViewById(R.id.btnFilterPrinting);
+        btnDecor      = findViewById(R.id.btnFilterDecor);
+        btnTransport  = findViewById(R.id.btnFilterTransport);
     }
 
     private void setupFilterButtons() {
-        btnAll.setOnClickListener(v      -> applyFilter("All"));
-        btnCatering.setOnClickListener(v -> applyFilter("Catering"));
-        btnAV.setOnClickListener(v       -> applyFilter("AV & Tech"));
-        btnPrinting.setOnClickListener(v -> applyFilter("Printing"));
-        btnDecor.setOnClickListener(v    -> applyFilter("Decor"));
-        btnTransport.setOnClickListener(v-> applyFilter("Transport"));
+        btnAll.setOnClickListener(v       -> applyFilter("All"));
+        btnCatering.setOnClickListener(v  -> applyFilter("Catering"));
+        btnAV.setOnClickListener(v        -> applyFilter("AV & Tech"));
+        btnPrinting.setOnClickListener(v  -> applyFilter("Printing"));
+        btnDecor.setOnClickListener(v     -> applyFilter("Decor"));
+        btnTransport.setOnClickListener(v -> applyFilter("Transport"));
         highlightFilter("All");
     }
 
@@ -127,8 +124,8 @@ public class VendorDirectoryActivity extends AppCompatActivity {
     }
 
     private void highlightFilter(String active) {
-        Button[] btns = {btnAll, btnCatering, btnAV, btnPrinting, btnDecor, btnTransport};
-        String[] labels = {"All","Catering","AV & Tech","Printing","Decor","Transport"};
+        Button[] btns   = {btnAll, btnCatering, btnAV, btnPrinting, btnDecor, btnTransport};
+        String[] labels = {"All", "Catering", "AV & Tech", "Printing", "Decor", "Transport"};
         for (int i = 0; i < btns.length; i++) {
             boolean isActive = labels[i].equals(active);
             btns[i].setBackgroundTintList(android.content.res.ColorStateList.valueOf(
@@ -163,7 +160,6 @@ public class VendorDirectoryActivity extends AppCompatActivity {
             shownVendors.add(v);
         }
         adapter.notifyDataSetChanged();
-
         TextView tvCount = findViewById(R.id.tvVendorCount);
         if (tvCount != null) tvCount.setText(shownVendors.size() + " vendors found");
     }
@@ -175,8 +171,7 @@ public class VendorDirectoryActivity extends AppCompatActivity {
                 .addOnSuccessListener(snap -> {
                     allVendors.clear();
                     for (QueryDocumentSnapshot doc : snap) {
-                        Vendor v = vendorFromDoc(doc);
-                        allVendors.add(v);
+                        allVendors.add(vendorFromDoc(doc));
                     }
                     rebuildShown();
                 })
@@ -186,26 +181,22 @@ public class VendorDirectoryActivity extends AppCompatActivity {
 
     @SuppressWarnings("unchecked")
     private Vendor vendorFromDoc(QueryDocumentSnapshot doc) {
-        Vendor v = new Vendor();
-        v.id           = doc.getId();
-        v.name         = nvl(doc.getString("name"), "Unnamed Vendor");
-        v.category     = nvl(doc.getString("category"), "Other");
-        v.about        = nvl(doc.getString("about"), "");
-        v.phone        = nvl(doc.getString("phone"), "");
-        v.email        = nvl(doc.getString("email"), "");
-        v.address      = nvl(doc.getString("address"), "");
-        v.logoBase64   = nvl(doc.getString("logoBase64"), "");
-        Double rating  = doc.getDouble("rating");
-        v.rating       = rating != null ? rating : 0.0;
-        Long used      = doc.getLong("usedByCount");
-        v.usedByCount  = used != null ? used.intValue() : 0;
-        Object hist    = doc.get("usageHistory");
+        Vendor v     = new Vendor();
+        v.id         = doc.getId();
+        v.name       = nvl(doc.getString("name"), "Unnamed Vendor");
+        v.category   = nvl(doc.getString("category"), "Other");
+        v.about      = nvl(doc.getString("about"), "");
+        v.phone      = nvl(doc.getString("phone"), "");
+        v.email      = nvl(doc.getString("email"), "");
+        v.address    = nvl(doc.getString("address"), "");
+        v.logoBase64 = nvl(doc.getString("logoBase64"), "");
+        Double rating = doc.getDouble("rating");
+        v.rating      = rating != null ? rating : 0.0;
+        Long used     = doc.getLong("usedByCount");
+        v.usedByCount = used != null ? used.intValue() : 0;
+        Object hist = doc.get("usageHistory");
         if (hist instanceof List) {
             v.usageHistory = (List<Map<String, Object>>) hist;
-        }
-        Object favs = doc.get("favouritedBy");
-        if (favs instanceof List) {
-            v.favouritedBy = (List<String>) favs;
         }
         return v;
     }
@@ -230,22 +221,19 @@ public class VendorDirectoryActivity extends AppCompatActivity {
         View view = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_vendor_detail, null);
 
-        TextView  tvName        = view.findViewById(R.id.tvVDetailName);
-        TextView  tvCategory    = view.findViewById(R.id.tvVDetailCategory);
-        TextView  tvRating      = view.findViewById(R.id.tvVDetailRating);
-        TextView  tvUsedBy      = view.findViewById(R.id.tvVDetailUsedBy);
-        TextView  tvAbout       = view.findViewById(R.id.tvVDetailAbout);
-        TextView  tvPhone       = view.findViewById(R.id.tvVDetailPhone);
-        TextView  tvEmail       = view.findViewById(R.id.tvVDetailEmail);
-        TextView  tvAddress     = view.findViewById(R.id.tvVDetailAddress);
-        LinearLayout llHistory  = view.findViewById(R.id.llVDetailHistory);
-        ImageView imgLogo       = view.findViewById(R.id.imgVDetailLogo);
-        Button    btnMarkUsed   = view.findViewById(R.id.btnMarkUsed);
-        Button    btnFavourite  = view.findViewById(R.id.btnSaveFavourite);
+        TextView     tvName    = view.findViewById(R.id.tvVDetailName);
+        TextView     tvCat     = view.findViewById(R.id.tvVDetailCategory);
+        TextView     tvUsedBy  = view.findViewById(R.id.tvVDetailUsedBy);
+        TextView     tvAbout   = view.findViewById(R.id.tvVDetailAbout);
+        TextView     tvPhone   = view.findViewById(R.id.tvVDetailPhone);
+        TextView     tvEmail   = view.findViewById(R.id.tvVDetailEmail);
+        TextView     tvAddress = view.findViewById(R.id.tvVDetailAddress);
+        LinearLayout llHistory = view.findViewById(R.id.llVDetailHistory);
+        ImageView    imgLogo   = view.findViewById(R.id.imgVDetailLogo);
+        Button       btnMarkUsed = view.findViewById(R.id.btnMarkUsed);
 
         tvName.setText(v.name);
-        tvCategory.setText(v.category);
-        tvRating.setText(starsFor(v.rating) + "  " + v.rating);
+        tvCat.setText(v.category);
         tvUsedBy.setText("Used by " + v.usedByCount + " societies");
         tvAbout.setText(v.about.isEmpty() ? "No description available." : v.about);
         tvPhone.setText(v.phone.isEmpty() ? "—" : v.phone);
@@ -255,15 +243,19 @@ public class VendorDirectoryActivity extends AppCompatActivity {
         // Logo
         if (!v.logoBase64.isEmpty()) {
             Bitmap bmp = base64ToBitmap(v.logoBase64);
-            if (bmp != null) { imgLogo.setImageBitmap(bmp); imgLogo.setVisibility(View.VISIBLE); }
+            if (bmp != null) {
+                imgLogo.setImageBitmap(bmp);
+                imgLogo.setVisibility(View.VISIBLE);
+            }
         }
 
-        // Usage history
+        // Usage history — shows SOCIETY NAME in left column
         llHistory.removeAllViews();
         if (v.usageHistory != null && !v.usageHistory.isEmpty()) {
             for (Map<String, Object> entry : v.usageHistory) {
                 View row = LayoutInflater.from(this)
                         .inflate(R.layout.item_usage_history_row, llHistory, false);
+                // "eventName" field now stores the society name
                 ((TextView) row.findViewById(R.id.tvHistoryEvent))
                         .setText(nvl((String) entry.get("eventName"), "—"));
                 ((TextView) row.findViewById(R.id.tvHistoryDate))
@@ -278,25 +270,23 @@ public class VendorDirectoryActivity extends AppCompatActivity {
             llHistory.addView(noHist);
         }
 
-        // Mark as Used button
-        String eventLabel = currentEventTitle != null ? currentEventTitle : societyName + " Event";
-        btnMarkUsed.setText("Mark as Used for " + eventLabel);
-        btnMarkUsed.setOnClickListener(btn -> markVendorUsed(v, eventLabel));
+        // Mark as Used — label uses society name
+        btnMarkUsed.setText("Mark as Used for " + societyName);
+        btnMarkUsed.setOnClickListener(btn -> markVendorUsed(v));
 
-        // Favourite button
-        boolean alreadyFav = v.favouritedBy != null && v.favouritedBy.contains(organizerUsername);
-        btnFavourite.setText(alreadyFav ? "★ Saved to Favourites" : "☆ Save to Favourites");
-        btnFavourite.setOnClickListener(btn -> toggleFavourite(v, btnFavourite));
-
-        new AlertDialog.Builder(this)
+        currentDialog = new AlertDialog.Builder(this)
                 .setView(view)
                 .setNegativeButton("Close", null)
                 .show();
     }
 
-    private void markVendorUsed(Vendor v, String eventTitle) {
+    /**
+     * Stores the SOCIETY NAME in the usageHistory entry (not the event title).
+     * After saving, dismisses the dialog so the organizer is back on the vendor list.
+     */
+    private void markVendorUsed(Vendor v) {
         Map<String, Object> entry = new HashMap<>();
-        entry.put("eventName", eventTitle);
+        entry.put("eventName", societyName);   // store society name
         entry.put("date", new java.text.SimpleDateFormat("MMM yyyy",
                 java.util.Locale.getDefault()).format(new java.util.Date()));
 
@@ -308,37 +298,23 @@ public class VendorDirectoryActivity extends AppCompatActivity {
                 .update("usageHistory", history,
                         "usedByCount", v.usedByCount + 1)
                 .addOnSuccessListener(u -> {
-                    Toast.makeText(this, "Marked as used for " + eventTitle,
+                    Toast.makeText(this,
+                            "Marked as used for " + societyName,
                             Toast.LENGTH_SHORT).show();
                     v.usedByCount++;
                     v.usageHistory = history;
                     adapter.notifyDataSetChanged();
-                });
-    }
-
-    private void toggleFavourite(Vendor v, Button btn) {
-        List<String> favs = v.favouritedBy != null
-                ? new ArrayList<>(v.favouritedBy) : new ArrayList<>();
-        boolean isFav = favs.contains(organizerUsername);
-        if (isFav) {
-            favs.remove(organizerUsername);
-            btn.setText("☆ Save to Favourites");
-        } else {
-            favs.add(organizerUsername);
-            btn.setText("★ Saved to Favourites");
-        }
-        v.favouritedBy = favs;
-        db.collection("vendors").document(v.id).update("favouritedBy", favs);
+                    // Dismiss dialog → returns to vendor list
+                    if (currentDialog != null && currentDialog.isShowing()) {
+                        currentDialog.dismiss();
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show());
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private String starsFor(double rating) {
-        int full  = (int) rating;
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 5; i++) sb.append(i < full ? "★" : "☆");
-        return sb.toString();
-    }
 
     private Bitmap base64ToBitmap(String b64) {
         try {
@@ -358,7 +334,6 @@ public class VendorDirectoryActivity extends AppCompatActivity {
         double rating;
         int    usedByCount;
         List<Map<String, Object>> usageHistory;
-        List<String> favouritedBy;
     }
 
     // ── Adapter ───────────────────────────────────────────────────────────────
@@ -380,12 +355,14 @@ public class VendorDirectoryActivity extends AppCompatActivity {
             Vendor v = list.get(position);
             h.tvName.setText(v.name);
             h.tvCategory.setText(v.category);
-            h.tvRating.setText(starsFor(v.rating) + "  " + v.rating);
             h.tvUsedBy.setText("Used by " + v.usedByCount + " societies");
 
             if (!v.logoBase64.isEmpty()) {
                 Bitmap bmp = base64ToBitmap(v.logoBase64);
-                if (bmp != null) { h.imgLogo.setImageBitmap(bmp); h.imgLogo.setVisibility(View.VISIBLE); }
+                if (bmp != null) {
+                    h.imgLogo.setImageBitmap(bmp);
+                    h.imgLogo.setVisibility(View.VISIBLE);
+                }
             } else {
                 h.imgLogo.setVisibility(View.GONE);
             }
@@ -397,14 +374,13 @@ public class VendorDirectoryActivity extends AppCompatActivity {
         @Override public int getItemCount() { return list.size(); }
 
         class VH extends RecyclerView.ViewHolder {
-            TextView  tvName, tvCategory, tvRating, tvUsedBy;
+            TextView  tvName, tvCategory, tvUsedBy;
             ImageView imgLogo;
             Button    btnContact;
             VH(View v) {
                 super(v);
                 tvName     = v.findViewById(R.id.tvVendorName);
                 tvCategory = v.findViewById(R.id.tvVendorCategory);
-                tvRating   = v.findViewById(R.id.tvVendorRating);
                 tvUsedBy   = v.findViewById(R.id.tvVendorUsedBy);
                 imgLogo    = v.findViewById(R.id.imgVendorLogo);
                 btnContact = v.findViewById(R.id.btnVendorContact);

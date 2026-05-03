@@ -226,6 +226,9 @@ public class EventBrowsingActivity extends AppCompatActivity {
                 .addOnSuccessListener(snap -> {
                     allEvents.clear();
                     for (QueryDocumentSnapshot doc : snap) {
+                        // Skip events the organizer has hidden from attendees
+                        Boolean hidden = doc.getBoolean("hiddenFromAttendees");
+                        if (Boolean.TRUE.equals(hidden)) continue;
                         allEvents.add(eventFromDoc(doc));
                     }
                     // Also load from proposals/ with status Approved
@@ -244,6 +247,9 @@ public class EventBrowsingActivity extends AppCompatActivity {
                         String id = doc.getId();
                         boolean exists = false;
                         for (Event e : allEvents) if (e.id.equals(id)) { exists = true; break; }
+                        // Skip hidden events
+                        Boolean hidden = doc.getBoolean("hiddenFromAttendees");
+                        if (Boolean.TRUE.equals(hidden)) continue;
                         if (!exists) allEvents.add(eventFromDoc(doc));
                     }
                     filter = "All";

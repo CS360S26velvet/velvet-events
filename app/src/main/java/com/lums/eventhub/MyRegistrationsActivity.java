@@ -10,6 +10,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.text.SimpleDateFormat;
@@ -18,23 +19,10 @@ import java.util.Locale;
 
 /**
  * MyRegistrationsActivity.java
- * Displays a list of all events the logged-in attendee
- * has registered for, fetched from their Firestore
- * subcollection: users/{userId}/registrations
  *
- * Each registration is shown as a card with event title,
- * organizer, date, time, venue, and a "View Event" button
- * that navigates to EventDetailsActivity.
- *
- * Passes source="myRegistrations" to EventDetailsActivity
- * so the back button there returns here instead of going
- * to EventBrowsingActivity.
- *
- * AT US-19 / US-20 — For past events (date already passed),
- * a "Rate Event" button is shown that launches FeedbackActivity.
- *
- * Receives userId via Intent and passes it forward to all
- * subsequent activities.
+ * CHANGE: Uses addSnapshotListener (real-time) instead of .get() so that
+ * payment status updates (Approved / Rejected) appear immediately without
+ * the attendee needing to leave and re-enter the screen.
  */
 public class MyRegistrationsActivity extends AppCompatActivity {
 
@@ -45,6 +33,9 @@ public class MyRegistrationsActivity extends AppCompatActivity {
     FirebaseFirestore db;
     String userId;
     String username;
+
+    // Real-time listener — must be removed onStop to avoid leaks
+    private ListenerRegistration listenerReg;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,103 +57,108 @@ public class MyRegistrationsActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        loadRegistrations();
-
-        navDashboard.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MyRegistrationsActivity.this,
-                        com.lums.eventhub.AttendeeActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
-            }
+        navDashboard.setOnClickListener(v -> {
+            Intent intent = new Intent(MyRegistrationsActivity.this, AttendeeActivity.class);
+            intent.putExtra("userId", userId);
+            startActivity(intent);
         });
 
-        navBrowseEvents.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MyRegistrationsActivity.this,
-                        com.lums.eventhub.EventBrowsingActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
-            }
+        navBrowseEvents.setOnClickListener(v -> {
+            Intent intent = new Intent(MyRegistrationsActivity.this, EventBrowsingActivity.class);
+            intent.putExtra("userId", userId);
+            startActivity(intent);
         });
 
-        navMyRegistrations.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // already here
-            }
+        navMyRegistrations.setOnClickListener(v -> { /* already here */ });
+
+        navNotifications.setOnClickListener(v -> {
+            Intent intent = new Intent(MyRegistrationsActivity.this, NotificationsActivity.class);
+            intent.putExtra("userId", userId);
+            startActivity(intent);
         });
 
-        navNotifications.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent(MyRegistrationsActivity.this,
-                        NotificationsActivity.class);
-                intent.putExtra("userId", userId);
-                startActivity(intent);
-            }
-        });
-
-        btnLogout.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startActivity(new Intent(MyRegistrationsActivity.this,
-                        com.lums.eventhub.auth.LoginActivity.class));
-                finish();
-            }
+        btnLogout.setOnClickListener(v -> {
+            startActivity(new Intent(MyRegistrationsActivity.this,
+                    com.lums.eventhub.auth.LoginActivity.class));
+            finish();
         });
     }
 
-    private void loadRegistrations() {
-        db.collection("users").document(userId).collection("registrations").get()
-                .addOnSuccessListener(snapshots -> {
+    @Override
+    protected void onStart() {
+        super.onStart();
+        startListening();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (listenerReg != null) {
+            listenerReg.remove();
+            listenerReg = null;
+        }
+    }
+
+    /**
+     * Real-time listener on users/{userId}/registrations.
+     * Fires immediately on attach and again whenever any doc changes —
+     * so Approved / Rejected updates from admin appear instantly.
+     */
+    private void startListening() {
+        if (listenerReg != null) listenerReg.remove();
+
+        listenerReg = db.collection("users").document(userId)
+                .collection("registrations")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null || snapshots == null) {
+                        tvEmpty.setText("Failed to load registrations");
+                        return;
+                    }
+
                     registrationsList.removeAllViews();
-                    final int[] count = {0};
                     final int total = snapshots.size();
+
                     if (total == 0) {
                         tvTotalCount.setText("0");
                         tvEmpty.setVisibility(View.VISIBLE);
                         return;
                     }
+                    tvEmpty.setVisibility(View.GONE);
+
+                    final int[] count = {0};
 
                     for (QueryDocumentSnapshot doc : snapshots) {
-                        String eventId        = doc.getString("eventId");
-                        String title          = doc.getString("eventTitle");
-                        String organizer      = doc.getString("organizer");
-                        // Try eventDate first (saved by new registrations), then startDate, then date
-                        String date           = doc.getString("eventDate");
+                        String eventId           = doc.getString("eventId");
+                        String title             = doc.getString("eventTitle");
+                        String organizer         = doc.getString("organizer");
+                        String date              = doc.getString("eventDate");
                         if (date == null || date.isEmpty()) date = doc.getString("startDate");
                         if (date == null || date.isEmpty()) date = doc.getString("date");
-                        String venue          = doc.getString("venue");
-                        String time           = doc.getString("time");
-                        String fee            = doc.getString("fee");
-                        String description    = doc.getString("description");
-                        String regClosingDate = doc.getString("RegClosingDate");
-                        String category       = doc.getString("category");
-                        int seatsBooked       = doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0;
-                        int seatsTotal        = doc.getLong("seatsTotal") != null ? doc.getLong("seatsTotal").intValue() : 0;
-
-                        // Read live paymentStatus from main registrations/ collection
-                        // The mirror copy (users/.../registrations) may be stale
+                        String venue             = doc.getString("venue");
+                        String time              = doc.getString("time");
+                        String fee               = doc.getString("fee");
+                        String description       = doc.getString("description");
+                        String regClosingDate    = doc.getString("RegClosingDate");
+                        String category          = doc.getString("category");
+                        int seatsBooked          = doc.getLong("seatsBooked") != null ? doc.getLong("seatsBooked").intValue() : 0;
+                        int seatsTotal           = doc.getLong("seatsTotal")  != null ? doc.getLong("seatsTotal").intValue()  : 0;
                         String registrationDocId = doc.getString("registrationDocId");
 
-                        final String fEventId      = eventId;
-                        final String fTitle        = title;
-                        final String fOrganizer    = organizer;
-                        final String fDate         = date;
-                        final String fVenue        = venue;
-                        final String fTime         = time;
-                        final String fFee          = fee;
-                        final String fDesc         = description;
-                        final String fRegClose     = regClosingDate;
-                        final String fCategory     = category;
-                        final int    fSeatsBooked  = seatsBooked;
-                        final int    fSeatsTotal   = seatsTotal;
+                        final String fEventId     = eventId;
+                        final String fTitle       = title;
+                        final String fOrganizer   = organizer;
+                        final String fDate        = date;
+                        final String fVenue       = venue;
+                        final String fTime        = time;
+                        final String fFee         = fee;
+                        final String fDesc        = description;
+                        final String fRegClose    = regClosingDate;
+                        final String fCategory    = category;
+                        final int    fSeatsBooked = seatsBooked;
+                        final int    fSeatsTotal  = seatsTotal;
 
                         if (registrationDocId != null && !registrationDocId.isEmpty()) {
-                            // Read live status from main collection
+                            // Read live paymentStatus from main registrations/ collection
                             db.collection("registrations").document(registrationDocId).get()
                                     .addOnSuccessListener(mainDoc -> {
                                         String paymentStatus   = "Pending";
@@ -176,7 +172,6 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                                         final String ps = paymentStatus;
                                         final String rr = rejectionReason;
 
-                                        // If date missing, fetch from events/ to enable feedback button
                                         if (fDate == null || fDate.isEmpty()) {
                                             db.collection("events").document(fEventId).get()
                                                     .addOnSuccessListener(evDoc -> {
@@ -187,37 +182,21 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                                                                 buildCard(fEventId, fTitle, fOrganizer,
                                                                         evDate, fTime, fVenue, fFee, fDesc,
                                                                         fRegClose, fCategory,
-                                                                        fSeatsBooked, fSeatsTotal,
-                                                                        ps, rr));
+                                                                        fSeatsBooked, fSeatsTotal, ps, rr));
                                                         count[0]++;
                                                         tvTotalCount.setText(String.valueOf(count[0]));
-                                                        tvEmpty.setVisibility(View.GONE);
-                                                    })
-                                                    .addOnFailureListener(e2 -> {
-                                                        registrationsList.addView(
-                                                                buildCard(fEventId, fTitle, fOrganizer,
-                                                                        fDate, fTime, fVenue, fFee, fDesc,
-                                                                        fRegClose, fCategory,
-                                                                        fSeatsBooked, fSeatsTotal,
-                                                                        ps, rr));
-                                                        count[0]++;
-                                                        tvTotalCount.setText(String.valueOf(count[0]));
-                                                        tvEmpty.setVisibility(View.GONE);
                                                     });
                                         } else {
                                             registrationsList.addView(
                                                     buildCard(fEventId, fTitle, fOrganizer,
                                                             fDate, fTime, fVenue, fFee, fDesc,
                                                             fRegClose, fCategory,
-                                                            fSeatsBooked, fSeatsTotal,
-                                                            ps, rr));
+                                                            fSeatsBooked, fSeatsTotal, ps, rr));
                                             count[0]++;
                                             tvTotalCount.setText(String.valueOf(count[0]));
-                                            tvEmpty.setVisibility(View.GONE);
                                         }
                                     })
                                     .addOnFailureListener(e -> {
-                                        // Fallback to mirror copy status
                                         String s = doc.getString("paymentStatus");
                                         String r = doc.getString("rejectionReason");
                                         registrationsList.addView(
@@ -246,10 +225,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
                             tvTotalCount.setText(String.valueOf(count[0]));
                         }
                     }
-                    tvEmpty.setVisibility(View.GONE);
-
-                }).addOnFailureListener(e ->
-                        tvEmpty.setText("Failed to load registrations"));
+                });
     }
 
     private View buildCard(String eventId, String title, String organizer, String date,
@@ -260,7 +236,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
 
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(0xFFDDD8F5); // match main box background
+        card.setBackgroundColor(0xFFDDD8F5);
         card.setElevation(4f);
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
@@ -281,7 +257,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         TextView tvStatus = new TextView(this);
         int statusColor, statusBg;
         String statusLabel;
-        switch (paymentStatus) {
+        switch (paymentStatus != null ? paymentStatus : "Pending") {
             case "Approved":
                 statusLabel = "✅ Payment Approved";
                 statusColor = 0xFF2E7D32; statusBg = 0xFFE8F5E9; break;
@@ -304,8 +280,8 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         tvStatus.setLayoutParams(statusParams);
         card.addView(tvStatus);
 
-        // Rejection reason (only shown if Rejected)
-        if ("Rejected".equals(paymentStatus) && !rejectionReason.isEmpty()) {
+        // Rejection reason
+        if ("Rejected".equals(paymentStatus) && rejectionReason != null && !rejectionReason.isEmpty()) {
             TextView tvReason = new TextView(this);
             tvReason.setText("Reason: " + rejectionReason);
             tvReason.setTextColor(0xFFB71C1C);
@@ -324,7 +300,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         tvOrg.setTextSize(12);
         card.addView(tvOrg);
 
-        // Date, time, venue
+        // Date / time / venue
         TextView tvInfo = new TextView(this);
         tvInfo.setText("📅 " + (date != null ? date : "")
                 + "   🕐 " + (time != null ? time : "")
@@ -332,8 +308,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         tvInfo.setTextColor(0xFF444444);
         tvInfo.setTextSize(11);
         LinearLayout.LayoutParams infoParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         infoParams.setMargins(0, 8, 0, 12);
         tvInfo.setLayoutParams(infoParams);
         card.addView(tvInfo);
@@ -342,13 +317,10 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         LinearLayout btnRow = new LinearLayout(this);
         btnRow.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams btnRowParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         btnRowParams.setMargins(0, 4, 0, 0);
         btnRow.setLayoutParams(btnRowParams);
 
-        // View Event button — passes source="myRegistrations" so back button
-        // in EventDetailsActivity returns here instead of EventBrowsingActivity
         Button btnView = new Button(this);
         btnView.setText("View Event");
         btnView.setTextColor(0xFFFFFFFF);
@@ -356,14 +328,13 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         btnView.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(0xFF5B2D8E));
         LinearLayout.LayoutParams viewParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         viewParams.setMargins(0, 0, 10, 0);
         btnView.setLayoutParams(viewParams);
         btnView.setOnClickListener(v -> {
-            Intent intent = new Intent(this, com.lums.eventhub.EventDetailsActivity.class);
+            Intent intent = new Intent(this, EventDetailsActivity.class);
             intent.putExtra("userId",           userId);
-            intent.putExtra("source",           "myRegistrations"); // ← back button fix
+            intent.putExtra("source",           "myRegistrations");
             intent.putExtra("username",         username);
             intent.putExtra("eventId",          eventId);
             intent.putExtra("eventTitle",       title);
@@ -381,7 +352,7 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         });
         btnRow.addView(btnView);
 
-        // AT US-19 / US-20 — Rate Event button, only for past events
+        // Rate Event button for past events
         if (isEventPast(date)) {
             Button btnFeedback = new Button(this);
             btnFeedback.setText("Rate Event");
@@ -402,14 +373,9 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         }
 
         card.addView(btnRow);
-
         return card;
     }
 
-    /**
-     * Returns true if the event date has already passed.
-     * Matches the date format stored in Firestore: "MMM d, yyyy" e.g. "Apr 20, 2025"
-     */
     private boolean isEventPast(String dateStr) {
         if (dateStr == null || dateStr.isEmpty()) return false;
         String[] formats = {
@@ -419,16 +385,15 @@ public class MyRegistrationsActivity extends AppCompatActivity {
         };
         for (String fmt : formats) {
             try {
-                java.text.SimpleDateFormat sdf =
-                        new java.text.SimpleDateFormat(fmt, java.util.Locale.getDefault());
+                SimpleDateFormat sdf = new SimpleDateFormat(fmt, Locale.getDefault());
                 sdf.setLenient(false);
                 if (fmt.contains("yy") && !fmt.contains("yyyy")) {
                     java.util.Calendar cal = java.util.Calendar.getInstance();
                     cal.set(java.util.Calendar.YEAR, 2000);
                     sdf.set2DigitYearStart(cal.getTime());
                 }
-                java.util.Date eventDate = sdf.parse(dateStr.trim());
-                if (eventDate != null) return eventDate.before(new java.util.Date());
+                Date eventDate = sdf.parse(dateStr.trim());
+                if (eventDate != null) return eventDate.before(new Date());
             } catch (Exception ignored) {}
         }
         return false;

@@ -1,17 +1,25 @@
 package com.lums.eventhub.admin.proposals;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
+
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.lums.eventhub.R;
+
 import android.app.AlertDialog;
 import android.widget.EditText;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,52 +27,31 @@ import java.util.Map;
 /**
  * ProposalDetailActivity.java
  *
- * Role: Admin screen that displays the full details of a single proposal
- * submitted by an organizer. Admin can Approve, Request Revision, or Reject
- * the proposal from this screen.
+ * CHANGES:
+ *   - Budget section now shows the budget document IMAGE (budgetImageBase64)
+ *     submitted by the organizer — visible to admin below the PKR amount.
  *
  * On Approve: writes status="Approved" to proposals/ AND copies key fields
  * into the events/ collection using the same document ID as the proposal.
  *
- * Canonical status values written to Firestore:
+ * Status values written to Firestore:
  *   "Approved"           — organizer sees green badge
- *   "Revision Requested" — organizer sees orange badge
- *   "Rejected"           — organizer sees red badge
- *
- * Proposal sections displayed:
- *   Section 1 — Basic info
- *   Section 2 — Participants
- *   Section 3 — Budget
- *   Section 4 — Sessions
- *   Section 5 — Accommodation
- *   Guests
- *
- * Implements: Admin US-02
- */
-/**
- * ProposalDetailActivity.java
- *
- * Loads the full proposal submitted by the organizer and displays ALL fields.
- * Admin can Approve, Request Revision, or Reject.
- *
- * Status values written back to Firestore (canonical):
- *   "Approved"           — organizer sees green badge, Edit hidden
- *   "Revision Requested" — organizer sees orange badge, Edit visible
- *   "Rejected"           — organizer sees red badge, Edit hidden
+ *   "Revision Requested" — organizer sees orange badge + Edit button
+ *   "Rejected"           — organizer sees red badge + reason
  */
 public class ProposalDetailActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
-    private String proposalId;
-    private DocumentSnapshot currentDoc;
+    private String            proposalId;
+    private DocumentSnapshot  currentDoc;
 
-    // Detail TextViews
-    private TextView tvDetailTitle, tvDetailDate, tvDetailVenue,
+    private TextView    tvDetailTitle, tvDetailDate, tvDetailVenue,
             tvDetailOrganizer, tvDetailSociety, tvDetailDesc,
             tvDetailEventType, tvDetailParticipants, tvDetailBudget,
             tvDetailAccommodation, tvDetailStatus;
+    private ImageView   imgDetailBudgetDoc;
     private LinearLayout llSessions, llGuests, llDecisionButtons;
-    private android.widget.TextView tvApprovedBadge;
+    private TextView    tvApprovedBadge;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,12 +62,9 @@ public class ProposalDetailActivity extends AppCompatActivity {
         proposalId = getIntent().getStringExtra("proposalId");
 
         bindViews();
-
         findViewById(R.id.btnBack).setOnClickListener(v -> finish());
-
         loadProposal();
 
-        // Decision buttons — canonical status values
         findViewById(R.id.btnApprove).setOnClickListener(v -> approveProposal());
         findViewById(R.id.btnRevision).setOnClickListener(v ->
                 showReasonDialog("Revision Requested"));
@@ -100,6 +84,7 @@ public class ProposalDetailActivity extends AppCompatActivity {
         tvDetailBudget       = findViewById(R.id.tvDetailBudget);
         tvDetailAccommodation= findViewById(R.id.tvDetailAccommodation);
         tvDetailStatus       = findViewById(R.id.tvDetailInfo);
+        imgDetailBudgetDoc   = findViewById(R.id.imgDetailBudgetDoc);
         llSessions           = findViewById(R.id.llDetailSessions);
         llGuests             = findViewById(R.id.llDetailGuests);
         llDecisionButtons    = findViewById(R.id.llDecisionButtons);
@@ -128,15 +113,12 @@ public class ProposalDetailActivity extends AppCompatActivity {
         set(tvDetailDesc,      doc.getString("description"));
         set(tvDetailEventType, doc.getString("eventType"));
 
-        // Date — check both field names for compatibility
-        String date = doc.getString("date");
+        String date = doc.getString("startDate");
+        if (date == null) date = doc.getString("date");
         if (date == null) date = doc.getString("eventDate");
         set(tvDetailDate, date);
 
-        set(tvDetailVenue, doc.getString("venue"));
-
-        // Organizer info
-        // organizerUsername is canonical (same as organizerId)
+        set(tvDetailVenue,     doc.getString("venue"));
         set(tvDetailOrganizer, doc.getString("organizerUsername"));
         set(tvDetailSociety,   doc.getString("societyName"));
 
@@ -146,11 +128,20 @@ public class ProposalDetailActivity extends AppCompatActivity {
                 participants != null && participants > 0
                         ? String.valueOf(participants) : "—");
 
-        // Section 3 — Budget
+        // Section 3 — Budget amount
         Long budget = doc.getLong("estimatedBudget");
         set(tvDetailBudget,
-                budget != null && budget > 0
-                        ? "PKR " + budget : "—");
+                budget != null && budget > 0 ? "PKR " + budget : "—");
+
+        // Section 3 — Budget document image (if organizer attached one)
+        String budgetImg = doc.getString("budgetImageBase64");
+        if (budgetImg != null && !budgetImg.isEmpty() && imgDetailBudgetDoc != null) {
+            Bitmap bmp = bitmapFromBase64(budgetImg);
+            if (bmp != null) {
+                imgDetailBudgetDoc.setImageBitmap(bmp);
+                imgDetailBudgetDoc.setVisibility(View.VISIBLE);
+            }
+        }
 
         // Section 4 — Sessions
         List<Map<String, Object>> sessions =
@@ -162,10 +153,9 @@ public class ProposalDetailActivity extends AppCompatActivity {
                 tv.setTextSize(13f);
                 tv.setTextColor(0xFF2D1B2E);
                 tv.setPadding(0, 4, 0, 4);
-                String sessionText = "• " + nvl(s.get("name"))
+                tv.setText("• " + nvl(s.get("name"))
                         + "  |  " + nvl(s.get("venue"))
-                        + "  |  " + nvl(s.get("startTime")) + " – " + nvl(s.get("endTime"));
-                tv.setText(sessionText);
+                        + "  |  " + nvl(s.get("startTime")) + " – " + nvl(s.get("endTime")));
                 llSessions.addView(tv);
             }
         }
@@ -173,16 +163,14 @@ public class ProposalDetailActivity extends AppCompatActivity {
         // Section 5 — Accommodation
         Boolean accom = doc.getBoolean("requiresAccommodation");
         if (Boolean.TRUE.equals(accom)) {
-            Long count = doc.getLong("accommodationCount");
+            Long count   = doc.getLong("accommodationCount");
             String checkIn  = doc.getString("checkInDate");
             String checkOut = doc.getString("checkOutDate");
             String special  = doc.getString("specialRequirements");
             String accomText = "Yes — " + (count != null ? count : "—") + " rooms"
-                    + "\nCheck-in: " + nvl(checkIn)
-                    + "  Check-out: " + nvl(checkOut);
-            if (special != null && !special.isEmpty()) {
-                accomText += "\nNotes: " + special;
-            }
+                    + "\nCheck-in: " + nvlStr(checkIn)
+                    + "  Check-out: " + nvlStr(checkOut);
+            if (special != null && !special.isEmpty()) accomText += "\nNotes: " + special;
             set(tvDetailAccommodation, accomText);
         } else {
             set(tvDetailAccommodation, "Not required");
@@ -208,16 +196,16 @@ public class ProposalDetailActivity extends AppCompatActivity {
         // Current status
         String status = doc.getString("status");
         if (tvDetailStatus != null) {
-            tvDetailStatus.setText("Current Status: " + (status != null ? status.toUpperCase() : "UNKNOWN"));
+            tvDetailStatus.setText("Current Status: " +
+                    (status != null ? status.toUpperCase() : "UNKNOWN"));
         }
 
-        // If already Approved, hide decision buttons and show approved badge
         if ("Approved".equals(status)) {
-            if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.GONE);
-            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.VISIBLE);
+            if (llDecisionButtons != null) llDecisionButtons.setVisibility(View.GONE);
+            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(View.VISIBLE);
         } else {
-            if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.VISIBLE);
-            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.GONE);
+            if (llDecisionButtons != null) llDecisionButtons.setVisibility(View.VISIBLE);
+            if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(View.GONE);
         }
     }
 
@@ -229,8 +217,8 @@ public class ProposalDetailActivity extends AppCompatActivity {
         db.collection("proposals").document(proposalId)
                 .update("status", "Approved")
                 .addOnSuccessListener(a -> {
-                    if (llDecisionButtons != null) llDecisionButtons.setVisibility(android.view.View.GONE);
-                    if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(android.view.View.VISIBLE);
+                    if (llDecisionButtons != null) llDecisionButtons.setVisibility(View.GONE);
+                    if (tvApprovedBadge   != null) tvApprovedBadge.setVisibility(View.VISIBLE);
                     writeToEventsCollection();
                 })
                 .addOnFailureListener(e ->
@@ -242,6 +230,8 @@ public class ProposalDetailActivity extends AppCompatActivity {
         Map<String, Object> eventData = new HashMap<>();
         eventData.put("title",             nvlStr(currentDoc.getString("title")));
         eventData.put("date",              nvlStr(currentDoc.getString("date")));
+        eventData.put("startDate",         nvlStr(currentDoc.getString("startDate")));
+        eventData.put("endDate",           nvlStr(currentDoc.getString("endDate")));
         eventData.put("venue",             nvlStr(currentDoc.getString("venue")));
         eventData.put("societyName",       nvlStr(currentDoc.getString("societyName")));
         eventData.put("organizerUsername", nvlStr(currentDoc.getString("organizerUsername")));
@@ -250,21 +240,21 @@ public class ProposalDetailActivity extends AppCompatActivity {
         eventData.put("status",            "Approved");
         eventData.put("approvedAt",        System.currentTimeMillis());
         eventData.put("proposalId",        proposalId);
-        // Copy registration deadline so attendees see correct date after approval
+        eventData.put("reportStatus",      "");
+
         String deadline = currentDoc.getString("registrationDeadline");
         if (deadline != null && !deadline.isEmpty()) {
             eventData.put("registrationDeadline", deadline);
         }
-        // Copy event banner image
         String imageBase64 = currentDoc.getString("eventImageBase64");
         if (imageBase64 != null && !imageBase64.isEmpty()) {
             eventData.put("eventImageBase64", imageBase64);
         }
 
-        // Same document ID as the proposal for easy cross-reference
         db.collection("events").document(proposalId)
                 .set(eventData)
                 .addOnSuccessListener(a -> {
+                    resetPreviousEventCycle(proposalId);
                     Toast.makeText(this, "Proposal approved ✓", Toast.LENGTH_SHORT).show();
                     finish();
                 })
@@ -276,7 +266,44 @@ public class ProposalDetailActivity extends AppCompatActivity {
                 });
     }
 
-    /** Shows a reason dialog before setting Rejected or Revision Requested */
+    /**
+     * Wipes all data from the previous event cycle so the new year starts fresh.
+     * Deletes: eventReports, registrationForms, accommodationData, formQuestions,
+     * all registrations (main + mirror copies on attendee profiles + calendar entries).
+     * Feedback is kept for historical reference.
+     */
+    private void resetPreviousEventCycle(String eventId) {
+        // Event report
+        db.collection("eventReports").document(eventId).delete();
+        // Registration form
+        db.collection("registrationForms").document(eventId).delete();
+        // Accommodation data
+        db.collection("accommodationData").document(eventId).delete();
+        // Form questions
+        db.collection("formQuestions").document(eventId).delete();
+
+        // All registrations for this event
+        db.collection("registrations")
+                .whereEqualTo("eventId", eventId)
+                .get()
+                .addOnSuccessListener(snap -> {
+                    for (com.google.firebase.firestore.QueryDocumentSnapshot regDoc : snap) {
+                        String uid = regDoc.getString("userId");
+                        // Delete main registration doc
+                        regDoc.getReference().delete();
+                        // Delete mirror copy + calendar entry on attendee profile
+                        if (uid != null && !uid.isEmpty()) {
+                            db.collection("users").document(uid)
+                                    .collection("registrations").document(eventId).delete();
+                            db.collection("users").document(uid)
+                                    .collection("calendarEvents").document(eventId).delete();
+                        }
+                    }
+                })
+                .addOnFailureListener(e -> android.util.Log.w("ProposalDetail",
+                        "Could not clear old registrations: " + e.getMessage()));
+    }
+
     private void showReasonDialog(String status) {
         EditText etReason = new EditText(this);
         etReason.setHint("Enter reason (shown to organizer)...");
@@ -298,10 +325,10 @@ public class ProposalDetailActivity extends AppCompatActivity {
     }
 
     private void updateStatusWithReason(String status, String reason) {
-        java.util.Map<String, Object> update = new HashMap<>();
-        update.put("status", status);
+        Map<String, Object> update = new HashMap<>();
+        update.put("status",      status);
         update.put("adminReason", reason);
-        update.put("reviewedAt", System.currentTimeMillis());
+        update.put("reviewedAt",  System.currentTimeMillis());
 
         db.collection("proposals").document(proposalId)
                 .update(update)
@@ -316,15 +343,20 @@ public class ProposalDetailActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show());
     }
 
-    private String nvlStr(String s) {
-        return s != null ? s : "";
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private Bitmap bitmapFromBase64(String b64) {
+        try {
+            byte[] bytes = Base64.decode(b64, Base64.NO_WRAP);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception e) { return null; }
     }
 
     private void set(TextView tv, String value) {
         if (tv != null) tv.setText(value != null && !value.isEmpty() ? value : "—");
     }
 
-    private String nvl(Object o) {
-        return o != null ? o.toString() : "—";
-    }
+    private String nvlStr(String s) { return s != null ? s : ""; }
+
+    private String nvl(Object o) { return o != null ? o.toString() : "—"; }
 }

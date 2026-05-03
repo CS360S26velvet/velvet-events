@@ -37,16 +37,26 @@ import java.util.Map;
 /**
  * EventReportsActivity.java
  *
- * Organiser views all their completed/approved events and submits
- * a post-event report (JPEG image + optional notes) for each.
+ * FULL FLOW (verified):
+ *   1. Organizer sees list of their approved/completed events.
+ *   2. Each event starts as "Pending" (no report submitted yet) → "Add Report" button shown.
+ *   3. Organizer taps "Add Report" → picks image + optional notes → submits.
+ *      Firestore: eventReports/{eventId} written with status="Submitted"
+ *   4. Admin sees the report on AdminEventReportsActivity → can Approve or Reject.
+ *   5a. Admin APPROVES → eventReports/{eventId}.status = "Approved"
+ *         Organizer sees: green "✅ Approved" badge + "View Report" button
+ *         OrganizerDashboard sees: "Edit Prior Event" button (replaces Approved badge)
+ *   5b. Admin REJECTS with reason → eventReports/{eventId}.status = "Rejected"
+ *         Organizer sees: red "❌ Rejected" badge + rejection reason + "Add New Report" button
+ *         Organizer can tap "Add New Report" to upload a replacement → resets to Submitted
  *
- * Firestore:
- *   reads:  proposals/ + events/ where organizerUsername == mine AND status == Approved/Completed
- *   writes: eventReports/{eventId}
- *             organizerUsername, eventTitle, imageBase64, notes, submittedAt, status="Submitted"
+ * Firestore reads:
+ *   proposals/  where organizerUsername == mine AND status == "Approved"
+ *   events/     where organizerUsername == mine AND status in [Approved, Completed]
+ *   eventReports/ where organizerUsername == mine  (to check existing report status)
  *
- * Received from OrganizerDashboardActivity:
- *   "organizerUsername", "societyName"
+ * Firestore writes:
+ *   eventReports/{eventId}  set/overwrite with full report data
  */
 public class EventReportsActivity extends AppCompatActivity {
 
@@ -55,17 +65,18 @@ public class EventReportsActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private String organizerUsername, societyName;
 
-    private RecyclerView    recyclerView;
-    private ReportAdapter   adapter;
+    private RecyclerView  recyclerView;
+    private ReportAdapter adapter;
     private final List<EventReportItem> items = new ArrayList<>();
 
     // Stats
     private TextView tvTotalEvents, tvSubmitted, tvPending;
 
-    // Pending image pick
-    private String pendingEventId, pendingEventTitle;
+    // Pending image pick state
+    private String pendingEventId;
     private String pickedImageBase64 = "";
     private Button pendingPickButton;
+    private ImageView pendingImgPreview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -92,20 +103,19 @@ public class EventReportsActivity extends AppCompatActivity {
         loadEvents();
     }
 
-    // ── Load completed/approved events ────────────────────────────────────────
+    // ── Step 1: Load events that need reports ─────────────────────────────────
 
     private void loadEvents() {
         items.clear();
 
-        // Load from proposals/ (Approved)
+        // Load from proposals/ (status == Approved)
         db.collection("proposals")
                 .whereEqualTo("organizerUsername", organizerUsername)
                 .whereEqualTo("status", "Approved")
                 .get()
                 .addOnSuccessListener(snap -> {
                     for (QueryDocumentSnapshot doc : snap) {
-                        EventReportItem item = itemFromDoc(doc);
-                        items.add(item);
+                        items.add(itemFromDoc(doc));
                     }
                     loadCompletedEvents();
                 })
@@ -113,7 +123,7 @@ public class EventReportsActivity extends AppCompatActivity {
     }
 
     private void loadCompletedEvents() {
-        // Also load Completed from events/
+        // Also load from events/ collection (Approved or Completed)
         db.collection("events")
                 .whereEqualTo("organizerUsername", organizerUsername)
                 .get()
@@ -124,26 +134,33 @@ public class EventReportsActivity extends AppCompatActivity {
                         // Avoid duplicates
                         String id = doc.getId();
                         boolean exists = false;
-                        for (EventReportItem i : items) if (i.eventId.equals(id)) { exists=true; break; }
+                        for (EventReportItem i : items) {
+                            if (i.eventId.equals(id)) { exists = true; break; }
+                        }
                         if (!exists) items.add(itemFromDoc(doc));
                     }
-                    // Now load existing report statuses
                     loadReportStatuses();
                 })
                 .addOnFailureListener(e -> loadReportStatuses());
     }
 
     private EventReportItem itemFromDoc(QueryDocumentSnapshot doc) {
-        EventReportItem item = new EventReportItem();
-        item.eventId    = doc.getId();
-        item.eventTitle = nvl(doc.getString("title"), "Untitled");
-        item.eventDate  = nvl(doc.getString("startDate"), nvl(doc.getString("date"), "—"));
+        EventReportItem item  = new EventReportItem();
+        item.eventId          = doc.getId();
+        item.eventTitle       = nvl(doc.getString("title"), "Untitled");
+        item.eventDate        = nvl(doc.getString("startDate"),
+                nvl(doc.getString("date"), "—"));
         Long att = doc.getLong("expectedParticipants");
-        item.attendees  = att != null ? att.intValue() : 0;
-        item.reportStatus = "Pending";
-        item.submittedAt  = "";
+        item.attendees        = att != null ? att.intValue() : 0;
+        item.reportStatus     = "Pending";   // default — overwritten by loadReportStatuses
+        item.submittedAt      = "";
+        item.imageBase64      = "";
+        item.notes            = "";
+        item.rejectionReason  = "";
         return item;
     }
+
+    // ── Step 2: Overlay existing report statuses ──────────────────────────────
 
     private void loadReportStatuses() {
         if (items.isEmpty()) {
@@ -152,39 +169,41 @@ public class EventReportsActivity extends AppCompatActivity {
             return;
         }
 
-        // Query ALL eventReports for this organizer, then match by eventId OR eventTitle
         db.collection("eventReports")
                 .whereEqualTo("organizerUsername", organizerUsername)
                 .get()
                 .addOnSuccessListener(snap -> {
-                    // Build map: eventId -> report doc, also title -> report doc as fallback
-                    java.util.Map<String, com.google.firebase.firestore.QueryDocumentSnapshot> byId    = new HashMap<>();
-                    java.util.Map<String, com.google.firebase.firestore.QueryDocumentSnapshot> byTitle = new HashMap<>();
+                    // Index by eventId and also by report doc ID (which equals eventId)
+                    Map<String, QueryDocumentSnapshot> byId    = new HashMap<>();
+                    Map<String, QueryDocumentSnapshot> byTitle = new HashMap<>();
+
                     for (QueryDocumentSnapshot doc : snap) {
-                        String eid   = doc.getString("eventId");
+                        String eid    = doc.getString("eventId");
                         String etitle = doc.getString("eventTitle");
+                        // Report doc ID is also stored as the eventId
+                        byId.put(doc.getId(), doc);
                         if (eid    != null) byId.put(eid, doc);
                         if (etitle != null) byTitle.put(etitle.toLowerCase().trim(), doc);
                     }
 
                     for (EventReportItem item : items) {
-                        // Match by eventId first, fall back to title match
-                        com.google.firebase.firestore.QueryDocumentSnapshot matched =
+                        QueryDocumentSnapshot matched =
                                 byId.containsKey(item.eventId) ? byId.get(item.eventId)
                                         : byTitle.containsKey(item.eventTitle.toLowerCase().trim())
                                         ? byTitle.get(item.eventTitle.toLowerCase().trim()) : null;
 
                         if (matched != null) {
-                            item.reportStatus    = nvl(matched.getString("status"), "Submitted");
-                            item.rejectionReason = nvl(matched.getString("rejectionReason"), "");
+                            item.reportStatus   = nvl(matched.getString("status"), "Submitted");
+                            item.rejectionReason= nvl(matched.getString("rejectionReason"), "");
+                            item.imageBase64    = nvl(matched.getString("imageBase64"), "");
+                            item.notes          = nvl(matched.getString("notes"), "");
                             Long ts = matched.getLong("submittedAt");
                             if (ts != null) {
                                 item.submittedAt = new SimpleDateFormat("MMM d, yyyy",
                                         Locale.getDefault()).format(new Date(ts));
                             }
-                            item.imageBase64 = nvl(matched.getString("imageBase64"), "");
-                            item.notes       = nvl(matched.getString("notes"), "");
                         }
+                        // If no match → stays "Pending"
                     }
 
                     updateStats();
@@ -198,35 +217,36 @@ public class EventReportsActivity extends AppCompatActivity {
 
     private void updateStats() {
         int total    = items.size();
-        int reviewed = 0; // Approved or Rejected by admin
+        int approved = 0;
+        int pending  = 0;
         for (EventReportItem i : items) {
-            if ("Approved".equals(i.reportStatus) || "Rejected".equals(i.reportStatus)) reviewed++;
+            if ("Approved".equals(i.reportStatus)) approved++;
+            else pending++;
         }
-        int pendingCount = total - reviewed; // not yet submitted OR submitted but awaiting
-
-        tvTotalEvents.setText(String.valueOf(total));
-        tvSubmitted.setText(String.valueOf(reviewed));   // "Reports Submitted" = reviewed by admin
-        tvPending.setText(String.valueOf(pendingCount)); // still pending
+        if (tvTotalEvents != null) tvTotalEvents.setText(String.valueOf(total));
+        if (tvSubmitted   != null) tvSubmitted.setText(String.valueOf(approved));
+        if (tvPending     != null) tvPending.setText(String.valueOf(pending));
     }
 
-    // ── Add Report dialog ─────────────────────────────────────────────────────
+    // ── Add / Re-submit Report dialog ─────────────────────────────────────────
 
     private void showAddReportDialog(EventReportItem item) {
         pendingEventId    = item.eventId;
-        pendingEventTitle = item.eventTitle;
         pickedImageBase64 = "";
         pendingPickButton = null;
+        pendingImgPreview = null;
 
         View view = LayoutInflater.from(this)
                 .inflate(R.layout.dialog_add_report, null);
 
-        TextView  tvTitle   = view.findViewById(R.id.tvAddReportTitle);
-        Button    btnPick   = view.findViewById(R.id.btnPickReportImage);
-        ImageView imgPreview= view.findViewById(R.id.imgReportPreview);
-        EditText  etNotes   = view.findViewById(R.id.etReportNotes);
+        TextView  tvTitle    = view.findViewById(R.id.tvAddReportTitle);
+        Button    btnPick    = view.findViewById(R.id.btnPickReportImage);
+        ImageView imgPreview = view.findViewById(R.id.imgReportPreview);
+        EditText  etNotes    = view.findViewById(R.id.etReportNotes);
 
         tvTitle.setText(item.eventTitle);
         pendingPickButton = btnPick;
+        pendingImgPreview = imgPreview;
 
         btnPick.setOnClickListener(v -> {
             Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -261,9 +281,6 @@ public class EventReportsActivity extends AppCompatActivity {
         });
 
         dialog.show();
-
-        // Store preview ref for onActivityResult
-        view.setTag(imgPreview);
     }
 
     // ── View existing report ──────────────────────────────────────────────────
@@ -297,6 +314,10 @@ public class EventReportsActivity extends AppCompatActivity {
 
     // ── Submit to Firestore ───────────────────────────────────────────────────
 
+    /**
+     * Writes (or overwrites) eventReports/{eventId}.
+     * Always resets status to "Submitted" so admin can review again.
+     */
     private void submitReport(EventReportItem item, String imageBase64, String notes) {
         Map<String, Object> report = new HashMap<>();
         report.put("organizerUsername", organizerUsername);
@@ -308,15 +329,18 @@ public class EventReportsActivity extends AppCompatActivity {
         report.put("imageBase64",       imageBase64);
         report.put("notes",             notes);
         report.put("status",            "Submitted");
+        report.put("rejectionReason",   "");          // clear any previous rejection
         report.put("submittedAt",       System.currentTimeMillis());
 
+        // Use eventId as document ID so it's easy to look up from both sides
         db.collection("eventReports").document(item.eventId)
                 .set(report)
                 .addOnSuccessListener(v -> {
-                    item.reportStatus = "Submitted";
-                    item.imageBase64  = imageBase64;
-                    item.notes        = notes;
-                    item.submittedAt  = new SimpleDateFormat("MMM d, yyyy",
+                    item.reportStatus    = "Submitted";
+                    item.imageBase64     = imageBase64;
+                    item.notes           = notes;
+                    item.rejectionReason = "";
+                    item.submittedAt     = new SimpleDateFormat("MMM d, yyyy",
                             Locale.getDefault()).format(new Date());
                     updateStats();
                     adapter.notifyDataSetChanged();
@@ -344,6 +368,14 @@ public class EventReportsActivity extends AppCompatActivity {
                             android.content.res.ColorStateList.valueOf(0xFFE8F5E9));
                     pendingPickButton.setTextColor(0xFF2E7D32);
                 }
+                // Show preview in dialog
+                if (pendingImgPreview != null) {
+                    Bitmap bmp = base64ToBitmap(encoded);
+                    if (bmp != null) {
+                        pendingImgPreview.setImageBitmap(bmp);
+                        pendingImgPreview.setVisibility(View.VISIBLE);
+                    }
+                }
             }
         }
     }
@@ -358,7 +390,7 @@ public class EventReportsActivity extends AppCompatActivity {
             int maxPx = 1024, w = bmp.getWidth(), h = bmp.getHeight();
             if (w > maxPx || h > maxPx) {
                 float s = Math.min((float) maxPx / w, (float) maxPx / h);
-                bmp = Bitmap.createScaledBitmap(bmp, Math.round(w*s), Math.round(h*s), true);
+                bmp = Bitmap.createScaledBitmap(bmp, Math.round(w * s), Math.round(h * s), true);
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bmp.compress(Bitmap.CompressFormat.JPEG, 80, baos);
@@ -380,8 +412,9 @@ public class EventReportsActivity extends AppCompatActivity {
     // ── Model ─────────────────────────────────────────────────────────────────
 
     static class EventReportItem {
-        String rejectionReason = ""; // set from Firestore when status == Rejected
-        String eventId, eventTitle, eventDate, reportStatus, submittedAt, imageBase64, notes;
+        String eventId, eventTitle, eventDate;
+        String reportStatus;    // "Pending" | "Submitted" | "Approved" | "Rejected"
+        String submittedAt, imageBase64, notes, rejectionReason;
         int    attendees;
     }
 
@@ -405,11 +438,17 @@ public class EventReportsActivity extends AppCompatActivity {
             h.tvName.setText(item.eventTitle);
             h.tvDate.setText("📅 " + item.eventDate);
             h.tvAttendees.setText("👥 " + item.attendees);
-            h.tvStatus.setText(item.reportStatus);
 
-            // Status colour and button based on reportStatus
+            // Reset rejection reason visibility
+            if (h.tvRejectionReason != null) {
+                h.tvRejectionReason.setVisibility(View.GONE);
+                h.tvRejectionReason.setText("");
+            }
+
             switch (item.reportStatus) {
+
                 case "Approved":
+                    // Admin has approved the report
                     h.tvStatus.setText("✅ Approved");
                     h.tvStatus.setTextColor(0xFF2E7D32);
                     h.tvStatus.setBackgroundTintList(
@@ -419,22 +458,19 @@ public class EventReportsActivity extends AppCompatActivity {
                     h.btnAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFF1565C0));
                     h.btnAction.setOnClickListener(v -> showViewReportDialog(item));
-                    // Hide rejection reason if shown
-                    if (h.tvRejectionReason != null) h.tvRejectionReason.setVisibility(View.GONE);
                     break;
 
                 case "Rejected":
+                    // Admin rejected — show reason and allow re-upload
                     h.tvStatus.setText("❌ Rejected");
                     h.tvStatus.setTextColor(0xFFC62828);
                     h.tvStatus.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFFFFEBEE));
                     h.tvSubmittedDate.setText(item.submittedAt);
-                    // Show rejection reason
                     if (h.tvRejectionReason != null && !item.rejectionReason.isEmpty()) {
                         h.tvRejectionReason.setVisibility(View.VISIBLE);
                         h.tvRejectionReason.setText("Reason: " + item.rejectionReason);
                     }
-                    // Show Add button (re-upload)
                     h.btnAction.setText("Add New Report");
                     h.btnAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFFC62828));
@@ -442,17 +478,26 @@ public class EventReportsActivity extends AppCompatActivity {
                     break;
 
                 case "Submitted":
+                    // Report sent to admin, awaiting their review
+                    h.tvStatus.setText("📤 Submitted");
+                    h.tvStatus.setTextColor(0xFF1565C0);
+                    h.tvStatus.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFFE8EAF6));
+                    h.tvSubmittedDate.setText(item.submittedAt.isEmpty() ? "—" : item.submittedAt);
+                    h.btnAction.setText("View Report");
+                    h.btnAction.setBackgroundTintList(
+                            android.content.res.ColorStateList.valueOf(0xFF1565C0));
+                    h.btnAction.setOnClickListener(v -> showViewReportDialog(item));
+                    break;
+
+                case "Pending":
                 default:
-                    h.tvStatus.setText("⏳ Pending Review");
+                    // No report submitted yet
+                    h.tvStatus.setText("⏳ Pending Report");
                     h.tvStatus.setTextColor(0xFFE65100);
                     h.tvStatus.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFFFFF3E0));
-                    h.tvSubmittedDate.setText(item.submittedAt.isEmpty() ? "—" : item.submittedAt);
-                    if (h.tvRejectionReason != null) {
-                        h.tvRejectionReason.setVisibility(View.GONE);
-                        h.tvRejectionReason.setText("");
-                    }
-                    // No report submitted yet — show Add Report button
+                    h.tvSubmittedDate.setText("—");
                     h.btnAction.setText("Add Report");
                     h.btnAction.setBackgroundTintList(
                             android.content.res.ColorStateList.valueOf(0xFF1565C0));

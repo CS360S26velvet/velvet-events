@@ -26,11 +26,15 @@ import java.util.Map;
 /**
  * AddVendorActivity.java
  *
+ * CHANGES:
+ *   - Phone and Email are now REQUIRED fields (validated before save)
+ *
  * Organiser fills in details for a new vendor and adds it to the
  * vendors/ Firestore collection.
  *
  * Fields:
- *   Name (required), Category (spinner), About, Phone, Email, Address,
+ *   Name (required), Phone (required), Email (required),
+ *   Category (spinner), About, Address,
  *   Logo image (optional — JPEG/PNG, Base64 encoded)
  *
  * On Save → writes to vendors/ and returns RESULT_OK to VendorDirectoryActivity.
@@ -54,21 +58,21 @@ public class AddVendorActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
 
-        etName         = findViewById(R.id.etVendorName);
-        etAbout        = findViewById(R.id.etVendorAbout);
-        etPhone        = findViewById(R.id.etVendorPhone);
-        etEmail        = findViewById(R.id.etVendorEmail);
-        etAddress      = findViewById(R.id.etVendorAddress);
-        spinnerCategory= findViewById(R.id.spinnerVendorCategory);
-        btnPickLogo    = findViewById(R.id.btnPickLogo);
-        btnSaveVendor  = findViewById(R.id.btnSaveVendor);
-        btnCancelVendor= findViewById(R.id.btnCancelVendor);
-        imgLogoPreview = findViewById(R.id.imgLogoPreview);
+        etName          = findViewById(R.id.etVendorName);
+        etAbout         = findViewById(R.id.etVendorAbout);
+        etPhone         = findViewById(R.id.etVendorPhone);
+        etEmail         = findViewById(R.id.etVendorEmail);
+        etAddress       = findViewById(R.id.etVendorAddress);
+        spinnerCategory = findViewById(R.id.spinnerVendorCategory);
+        btnPickLogo     = findViewById(R.id.btnPickLogo);
+        btnSaveVendor   = findViewById(R.id.btnSaveVendor);
+        btnCancelVendor = findViewById(R.id.btnCancelVendor);
+        imgLogoPreview  = findViewById(R.id.imgLogoPreview);
 
         // Category spinner
         ArrayAdapter<String> catAdapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item,
-                new String[]{"Catering","AV & Tech","Printing","Decor","Transport","Other"});
+                new String[]{"Catering", "AV & Tech", "Printing", "Decor", "Transport", "Other"});
         catAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerCategory.setAdapter(catAdapter);
 
@@ -102,6 +106,7 @@ public class AddVendorActivity extends AppCompatActivity {
     }
 
     private void saveVendor() {
+        // --- Validation ---
         String name = etName.getText().toString().trim();
         if (name.isEmpty()) {
             etName.setError("Vendor name is required");
@@ -109,10 +114,23 @@ public class AddVendorActivity extends AppCompatActivity {
             return;
         }
 
+        String phone = etPhone.getText().toString().trim();
+        if (phone.isEmpty()) {
+            etPhone.setError("Phone number is required");
+            etPhone.requestFocus();
+            return;
+        }
+
+        String email = etEmail.getText().toString().trim();
+        if (email.isEmpty()) {
+            etEmail.setError("Email is required");
+            etEmail.requestFocus();
+            return;
+        }
+
+        // --- Collect remaining optional fields ---
         String category = spinnerCategory.getSelectedItem().toString();
         String about    = etAbout.getText().toString().trim();
-        String phone    = etPhone.getText().toString().trim();
-        String email    = etEmail.getText().toString().trim();
         String address  = etAddress.getText().toString().trim();
 
         Map<String, Object> vendor = new HashMap<>();
@@ -126,7 +144,6 @@ public class AddVendorActivity extends AppCompatActivity {
         vendor.put("rating",       0.0);
         vendor.put("usedByCount",  0L);
         vendor.put("usageHistory", new ArrayList<>());
-        vendor.put("favouritedBy", new ArrayList<>());
         vendor.put("createdAt",    System.currentTimeMillis());
 
         btnSaveVendor.setEnabled(false);
@@ -154,11 +171,10 @@ public class AddVendorActivity extends AppCompatActivity {
             Bitmap bmp = BitmapFactory.decodeStream(is);
             is.close();
             if (bmp == null) return null;
-            // Scale to max 400px
             int maxPx = 400, w = bmp.getWidth(), h = bmp.getHeight();
             if (w > maxPx || h > maxPx) {
                 float s = Math.min((float) maxPx / w, (float) maxPx / h);
-                bmp = Bitmap.createScaledBitmap(bmp, Math.round(w*s), Math.round(h*s), true);
+                bmp = Bitmap.createScaledBitmap(bmp, Math.round(w * s), Math.round(h * s), true);
             }
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             bmp.compress(Bitmap.CompressFormat.JPEG, 75, baos);

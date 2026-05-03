@@ -92,6 +92,10 @@ public class EventDetailsActivity extends AppCompatActivity {
     private final Map<Integer, String> formFileBase64 = new HashMap<>();
     private List<Map<String, Object>> currentQuestions = new ArrayList<>();
 
+    // Set when resubmitting after rejection — holds the existing registrations/ doc ID
+    // so we overwrite instead of creating a duplicate
+    private String resubmitRegistrationDocId = null;
+
     // ── Lifecycle ──────────────────────────────────────────────────────────────
 
     @Override
@@ -654,18 +658,40 @@ public class EventDetailsActivity extends AppCompatActivity {
         reg.put("paymentProofUrl",       "");
         reg.put("accommodationProofUrl", "");
 
-        db.collection("registrations").add(reg)
-                .addOnSuccessListener(ref -> {
-                    Toast.makeText(this,
-                            "Registration submitted! Awaiting payment verification.",
-                            Toast.LENGTH_LONG).show();
-                    setAlreadyRegisteredState();
-                    db.collection("users").document(userId)
-                            .collection("registrations").document(eventId).set(reg);
-                })
-                .addOnFailureListener(e ->
-                        Toast.makeText(this, "Submission failed: " + e.getMessage(),
-                                Toast.LENGTH_SHORT).show());
+        if (resubmitRegistrationDocId != null && !resubmitRegistrationDocId.isEmpty()) {
+            // RESUBMIT — overwrite existing registration doc (no duplicate created)
+            reg.put("registrationDocId", resubmitRegistrationDocId);
+            db.collection("registrations").document(resubmitRegistrationDocId).set(reg)
+                    .addOnSuccessListener(unused -> {
+                        Toast.makeText(this,
+                                "Proof re-submitted! Awaiting verification.",
+                                Toast.LENGTH_LONG).show();
+                        resubmitRegistrationDocId = null;
+                        setAlreadyRegisteredState();
+                        db.collection("users").document(userId)
+                                .collection("registrations").document(eventId).set(reg);
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Submission failed: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show());
+        } else {
+            // NEW registration
+            db.collection("registrations").add(reg)
+                    .addOnSuccessListener(ref -> {
+                        // Store the generated doc ID in the reg so we can find it later
+                        reg.put("registrationDocId", ref.getId());
+                        ref.update("registrationDocId", ref.getId());
+                        Toast.makeText(this,
+                                "Registration submitted! Awaiting payment verification.",
+                                Toast.LENGTH_LONG).show();
+                        setAlreadyRegisteredState();
+                        db.collection("users").document(userId)
+                                .collection("registrations").document(eventId).set(reg);
+                    })
+                    .addOnFailureListener(e ->
+                            Toast.makeText(this, "Submission failed: " + e.getMessage(),
+                                    Toast.LENGTH_SHORT).show());
+        }
     }
 
     // ── File picker ────────────────────────────────────────────────────────────
@@ -791,7 +817,18 @@ public class EventDetailsActivity extends AppCompatActivity {
     private void checkIfAlreadyRegistered() {
         db.collection("users").document(userId)
                 .collection("registrations").document(eventId).get()
-                .addOnSuccessListener(doc -> { if (doc.exists()) setAlreadyRegisteredState(); });
+                .addOnSuccessListener(doc -> {
+                    if (!doc.exists()) return;
+                    String status = doc.getString("paymentStatus");
+                    if ("Rejected".equals(status)) {
+                        // Payment was rejected — allow re-upload
+                        String reason = doc.getString("rejectionReason");
+                        String docId  = doc.getString("registrationDocId");
+                        setRejectedState(reason != null ? reason : "", docId);
+                    } else {
+                        setAlreadyRegisteredState();
+                    }
+                });
     }
 
     private void setAlreadyRegisteredState() {
@@ -799,6 +836,36 @@ public class EventDetailsActivity extends AppCompatActivity {
         btnRegister.setText("Already Registered ✓");
         btnRegister.setBackgroundTintList(
                 android.content.res.ColorStateList.valueOf(0xFF4CAF50));
+    }
+
+    /**
+     * Called when payment was rejected. Shows an orange "Re-upload Proof" button
+     * that lets the attendee resubmit with a new payment image.
+     * The existing registration doc is overwritten (not duplicated).
+     */
+    private void setRejectedState(String reason, String existingDocId) {
+        resubmitRegistrationDocId = existingDocId;
+        btnRegister.setEnabled(true);
+        btnRegister.setText("❌ Rejected — Re-upload Proof");
+        btnRegister.setBackgroundTintList(
+                android.content.res.ColorStateList.valueOf(0xFFC62828));
+        btnRegister.setOnClickListener(v -> openRegistrationForm());
+        // Also show reason if available
+        if (reason != null && !reason.isEmpty()) {
+            try {
+                android.widget.TextView tvReason = new android.widget.TextView(this);
+                tvReason.setText("Rejection reason: " + reason);
+                tvReason.setTextColor(0xFFC62828);
+                tvReason.setTextSize(12f);
+                tvReason.setPadding(0, 8, 0, 0);
+                // Insert below register button in its parent
+                android.view.ViewGroup parent = (android.view.ViewGroup) btnRegister.getParent();
+                if (parent != null) {
+                    int idx = parent.indexOfChild(btnRegister);
+                    parent.addView(tvReason, idx + 1);
+                }
+            } catch (Exception ignored) {}
+        }
     }
 
     // ── Back ───────────────────────────────────────────────────────────────────

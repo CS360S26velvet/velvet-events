@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_admin_dashboard.xml
+    CHANGE: Removed btnAuditorium tile. Proposals tile is now full-width in its row.
+-->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -20,7 +24,6 @@
             android:paddingTop="48dp"
             android:paddingBottom="28dp">
 
-            <!-- Pink blob decoration -->
             <View
                 android:layout_width="180dp"
                 android:layout_height="180dp"
@@ -35,7 +38,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
 
-                <!-- Top row: title + sign out -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -74,7 +76,6 @@
                             android:textColor="#F9C0CC" />
                     </LinearLayout>
 
-                    <!-- Sign out button -->
                     <TextView
                         android:id="@+id/btnSignOut"
                         android:layout_width="wrap_content"
@@ -90,7 +91,6 @@
                         android:paddingBottom="8dp" />
                 </LinearLayout>
 
-                <!-- Username pill -->
                 <TextView
                     android:id="@+id/tvUsername"
                     android:layout_width="wrap_content"
@@ -107,7 +107,7 @@
             </LinearLayout>
         </FrameLayout>
 
-        <!-- ── STATS CARDS ROW ── -->
+        <!-- ── STATS CARDS ROW 1 ── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -118,7 +118,6 @@
             android:paddingBottom="4dp"
             android:weightSum="2">
 
-            <!-- Pending Proposals card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -153,7 +152,6 @@
                     android:textColor="#9B7B86" />
             </LinearLayout>
 
-            <!-- Approved This Month card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -189,6 +187,7 @@
             </LinearLayout>
         </LinearLayout>
 
+        <!-- ── STATS CARDS ROW 2 ── -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -199,7 +198,6 @@
             android:paddingBottom="4dp"
             android:weightSum="2">
 
-            <!-- Accommodation Requests card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -234,7 +232,6 @@
                     android:textColor="#9B7B86" />
             </LinearLayout>
 
-            <!-- Active Events card -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
@@ -283,7 +280,6 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp">
 
-            <!-- Section header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -316,7 +312,7 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Table header row -->
+            <!-- Table header -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -367,14 +363,12 @@
                     android:gravity="center" />
             </LinearLayout>
 
-            <!-- Dynamic proposals list container -->
             <LinearLayout
                 android:id="@+id/llPendingProposals"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- Empty state -->
             <TextView
                 android:id="@+id/tvNoPending"
                 android:layout_width="match_parent"
@@ -388,7 +382,7 @@
 
         </LinearLayout>
 
-        <!-- ── QUICK NAVIGATION ── -->
+        <!-- ── MANAGEMENT CONSOLE ── -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -400,24 +394,22 @@
             android:layout_marginTop="20dp"
             android:layout_marginBottom="12dp" />
 
+        <!-- ROW 1: Proposals (full width — Auditorium removed) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:weightSum="2"
             android:layout_marginBottom="12dp">
 
             <LinearLayout
                 android:id="@+id/btnViewProposals"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="80dp"
-                android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:background="@drawable/bg_nav_card_pink"
-                android:layout_marginEnd="8dp"
                 android:elevation="3dp">
 
                 <TextView
@@ -434,34 +426,9 @@
                     android:textColor="#FFFFFF"
                     android:layout_marginTop="4dp" />
             </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/btnAuditorium"
-                android:layout_width="0dp"
-                android:layout_height="80dp"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:background="@drawable/bg_nav_card_purple"
-                android:layout_marginStart="8dp"
-                android:elevation="3dp">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="🏛️"
-                    android:textSize="22sp" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Auditorium"
-                    android:textSize="12sp"
-                    android:textStyle="bold"
-                    android:textColor="#FFFFFF"
-                    android:layout_marginTop="4dp" />
-            </LinearLayout>
         </LinearLayout>
 
+        <!-- ROW 2: Calendar + Accommodation -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -524,7 +491,7 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Register New Organizer — full width row -->
+        <!-- ROW 3: Event Reports + Register Organizer -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -565,7 +532,6 @@
                     android:layout_height="wrap_content"
                     android:text="👤"
                     android:textSize="22sp" />
-
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

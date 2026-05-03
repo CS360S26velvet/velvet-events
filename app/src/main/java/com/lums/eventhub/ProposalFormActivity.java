@@ -26,35 +26,37 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ProposalFormActivity.java  (UPDATED)
+ * ProposalFormActivity.java
  *
- * CHANGES:
- *   1. "Date" field replaced with "Start Date" (etStartDate) + "End Date" (etEndDate)
- *      Saved to Firestore as "startDate" and "endDate" (not "date")
- *   2. New "About This Event" field (etAboutEvent) added under Description
- *      Saved as "aboutEvent" — shown on attendee side as "About this Event"
- *   3. loadProposalForEdit updated to load startDate, endDate, aboutEvent
- *   4. validateSection1 updated to check startDate instead of date
- *
- * Everything else identical to original.
+ * CHANGES (on top of previous version):
+ *   - cardBudgetDoc now opens an IMAGE PICKER (instead of showing a toast)
+ *   - Budget image is stored as budgetImageBase64 in Firestore
+ *   - Budget image is loaded back when editing an existing proposal
+ *   - Budget image preview shown inside the card after selection
  */
 public class ProposalFormActivity extends AppCompatActivity {
 
     private String organizerUsername;
     private String societyName;
 
-    private static final int IMAGE_PICK_RC = 600;
-    private String eventImageBase64 = "";
-    private ImageView imgEventPreview;
-    private android.widget.Button btnPickEventImage;
+    // Event banner image
+    private static final int IMAGE_PICK_RC        = 600;
+    // Budget document image
+    private static final int BUDGET_IMAGE_PICK_RC = 601;
 
-    // UPDATED: replaced etDate with etStartDate + etEndDate
+    private String    eventImageBase64  = "";
+    private String    budgetImageBase64 = "";
+    private ImageView imgEventPreview;
+    private Button    btnPickEventImage;
+    private ImageView imgBudgetDocPreview;
+    private TextView  tvBudgetDocLabel;
+
     private EditText etTitle, etDescription, etAboutEvent, etSocietyName;
     private EditText etStartDate, etEndDate, etVenue;
-    private RadioGroup rgEventType;
+    private RadioGroup   rgEventType;
     private EditText     etParticipants;
     private LinearLayout llGuestRows;
-    private EditText etBudget;
+    private EditText     etBudget;
     private LinearLayout llSessionRows;
     private CheckBox     cbAccommodation;
     private LinearLayout llAccommodationFields;
@@ -95,17 +97,19 @@ public class ProposalFormActivity extends AppCompatActivity {
         tvHeaderTitle         = findViewById(R.id.tvProposalHeaderTitle);
         etTitle               = findViewById(R.id.etTitle);
         etDescription         = findViewById(R.id.etDescription);
-        etAboutEvent          = findViewById(R.id.etAboutEvent);          // NEW
+        etAboutEvent          = findViewById(R.id.etAboutEvent);
         rgEventType           = findViewById(R.id.rgEventType);
         etSocietyName         = findViewById(R.id.etSocietyName);
         imgEventPreview       = findViewById(R.id.imgEventPreview);
         btnPickEventImage     = findViewById(R.id.btnPickEventImage);
-        etStartDate           = findViewById(R.id.etStartDate);           // NEW (was etDate)
-        etEndDate             = findViewById(R.id.etEndDate);             // NEW
+        etStartDate           = findViewById(R.id.etStartDate);
+        etEndDate             = findViewById(R.id.etEndDate);
         etVenue               = findViewById(R.id.etVenue);
         etParticipants        = findViewById(R.id.etParticipants);
         llGuestRows           = findViewById(R.id.llGuestRows);
         etBudget              = findViewById(R.id.etBudget);
+        imgBudgetDocPreview   = findViewById(R.id.imgBudgetDocPreview);
+        tvBudgetDocLabel      = findViewById(R.id.tvBudgetDocLabel);
         llSessionRows         = findViewById(R.id.llSessionRows);
         cbAccommodation       = findViewById(R.id.cbAccommodation);
         llAccommodationFields = findViewById(R.id.llAccommodationFields);
@@ -114,7 +118,7 @@ public class ProposalFormActivity extends AppCompatActivity {
         etCheckOut            = findViewById(R.id.etCheckOut);
         etSpecialRequirements = findViewById(R.id.etSpecialRequirements);
 
-        // Wire image picker button
+        // Event banner image picker
         btnPickEventImage.setOnClickListener(v -> {
             android.content.Intent intent = new android.content.Intent(
                     android.content.Intent.ACTION_GET_CONTENT);
@@ -127,32 +131,39 @@ public class ProposalFormActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, android.content.Intent data) {
+    protected void onActivityResult(int requestCode, int resultCode,
+                                    android.content.Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == IMAGE_PICK_RC && resultCode == RESULT_OK
-                && data != null && data.getData() != null) {
-            try {
-                java.io.InputStream is = getContentResolver().openInputStream(data.getData());
-                android.graphics.Bitmap bmp = android.graphics.BitmapFactory.decodeStream(is);
-                if (is != null) is.close();
-                if (bmp != null) {
-                    int maxPx = 1024, w = bmp.getWidth(), h = bmp.getHeight();
-                    if (w > maxPx || h > maxPx) {
-                        float s = Math.min((float) maxPx / w, (float) maxPx / h);
-                        bmp = android.graphics.Bitmap.createScaledBitmap(bmp,
-                                Math.round(w * s), Math.round(h * s), true);
-                    }
-                    java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-                    bmp.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, baos);
-                    eventImageBase64 = android.util.Base64.encodeToString(
-                            baos.toByteArray(), android.util.Base64.NO_WRAP);
-                    imgEventPreview.setImageBitmap(bmp);
-                    imgEventPreview.setVisibility(View.VISIBLE);
-                    btnPickEventImage.setText("✅ Image selected");
+
+        if (resultCode != RESULT_OK || data == null || data.getData() == null) return;
+
+        if (requestCode == IMAGE_PICK_RC) {
+            // Event banner
+            Bitmap bmp = decodeBitmap(data.getData(), 1024);
+            if (bmp != null) {
+                eventImageBase64 = encodeBitmap(bmp, 80);
+                imgEventPreview.setImageBitmap(bmp);
+                imgEventPreview.setVisibility(View.VISIBLE);
+                btnPickEventImage.setText("✅ Image selected");
+            } else {
+                Toast.makeText(this, "Could not load image", Toast.LENGTH_SHORT).show();
+            }
+
+        } else if (requestCode == BUDGET_IMAGE_PICK_RC) {
+            // Budget document image
+            Bitmap bmp = decodeBitmap(data.getData(), 1024);
+            if (bmp != null) {
+                budgetImageBase64 = encodeBitmap(bmp, 80);
+                if (imgBudgetDocPreview != null) {
+                    imgBudgetDocPreview.setImageBitmap(bmp);
+                    imgBudgetDocPreview.setVisibility(View.VISIBLE);
                 }
-            } catch (Exception e) {
-                android.widget.Toast.makeText(this, "Could not load image",
-                        android.widget.Toast.LENGTH_SHORT).show();
+                if (tvBudgetDocLabel != null) {
+                    tvBudgetDocLabel.setText("✅ Budget document attached");
+                    tvBudgetDocLabel.setTextColor(0xFF2E7D32);
+                }
+            } else {
+                Toast.makeText(this, "Could not load image", Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -202,7 +213,8 @@ public class ProposalFormActivity extends AppCompatActivity {
         }
         btnRem.setOnClickListener(v -> {
             if (llSessionRows.getChildCount() <= 1) {
-                Toast.makeText(this, "At least one session is required.", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "At least one session is required.",
+                        Toast.LENGTH_SHORT).show();
             } else {
                 llSessionRows.removeView(row);
             }
@@ -210,12 +222,26 @@ public class ProposalFormActivity extends AppCompatActivity {
         llSessionRows.addView(row);
     }
 
+    /**
+     * Budget card now opens an image picker.
+     * Supporting docs card still shows coming-soon message.
+     */
     private void wireDocumentCards() {
-        String msg = "File upload will be available in final version.";
         findViewById(R.id.cardSupportingDocs).setOnClickListener(v ->
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
-        findViewById(R.id.cardBudgetDoc).setOnClickListener(v ->
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show());
+                Toast.makeText(this,
+                        "File upload will be available in final version.",
+                        Toast.LENGTH_SHORT).show());
+
+        // Budget document — open image picker
+        findViewById(R.id.cardBudgetDoc).setOnClickListener(v -> {
+            android.content.Intent intent = new android.content.Intent(
+                    android.content.Intent.ACTION_GET_CONTENT);
+            intent.setType("image/*");
+            intent.addCategory(android.content.Intent.CATEGORY_OPENABLE);
+            startActivityForResult(
+                    android.content.Intent.createChooser(intent, "Select Budget Document"),
+                    BUDGET_IMAGE_PICK_RC);
+        });
     }
 
     private void wireBottomBar() {
@@ -260,12 +286,12 @@ public class ProposalFormActivity extends AppCompatActivity {
     private void saveProposal(boolean submit) {
         if (submit && !validateSection1()) return;
 
-        String title      = etTitle.getText().toString().trim();
-        String description= etDescription.getText().toString().trim();
-        String aboutEvent = etAboutEvent.getText().toString().trim();   // NEW
-        String startDate  = etStartDate.getText().toString().trim();    // NEW
-        String endDate    = etEndDate.getText().toString().trim();      // NEW
-        String venue      = etVenue.getText().toString().trim();
+        String title       = etTitle.getText().toString().trim();
+        String description = etDescription.getText().toString().trim();
+        String aboutEvent  = etAboutEvent.getText().toString().trim();
+        String startDate   = etStartDate.getText().toString().trim();
+        String endDate     = etEndDate.getText().toString().trim();
+        String venue       = etVenue.getText().toString().trim();
 
         String eventType = "";
         int checkedId = rgEventType.getCheckedRadioButtonId();
@@ -284,14 +310,12 @@ public class ProposalFormActivity extends AppCompatActivity {
         Map<String, Object> data = new HashMap<>();
         data.put("title",                 title);
         data.put("description",           description);
-        data.put("aboutEvent",            aboutEvent);          // NEW
+        data.put("aboutEvent",            aboutEvent);
         data.put("eventType",             eventType);
         data.put("societyName",           societyName);
-        data.put("startDate",             startDate);           // NEW (replaces "date")
+        data.put("startDate",             startDate);
         data.put("endDate",               endDate);
-        if (!eventImageBase64.isEmpty()) data.put("eventImageBase64", eventImageBase64);             // NEW
-        // Keep "date" = startDate for backward-compat with existing queries
-        data.put("date",                  startDate);
+        data.put("date",                  startDate);  // backward-compat
         data.put("venue",                 venue);
         data.put("expectedParticipants",  participants);
         data.put("estimatedBudget",       budget);
@@ -303,6 +327,9 @@ public class ProposalFormActivity extends AppCompatActivity {
         data.put("organizerUsername",     organizerUsername);
         data.put("guests",                collectGuests());
         data.put("sessions",              collectSessions());
+
+        if (!eventImageBase64.isEmpty())  data.put("eventImageBase64",  eventImageBase64);
+        if (!budgetImageBase64.isEmpty()) data.put("budgetImageBase64", budgetImageBase64);
 
         if (submit) {
             data.put("status",      "Submitted");
@@ -353,7 +380,7 @@ public class ProposalFormActivity extends AppCompatActivity {
             Toast.makeText(this, "Please select: Event Type", Toast.LENGTH_SHORT).show();
             return false;
         }
-        if (etStartDate.getText().toString().trim().isEmpty()) {   // UPDATED from etDate
+        if (etStartDate.getText().toString().trim().isEmpty()) {
             Toast.makeText(this, "Please fill in: Start Date", Toast.LENGTH_SHORT).show();
             return false;
         }
@@ -370,28 +397,44 @@ public class ProposalFormActivity extends AppCompatActivity {
                 .get()
                 .addOnSuccessListener(doc -> {
                     if (!doc.exists()) return;
+
                     setText(etTitle,       doc.getString("title"));
                     setText(etDescription, doc.getString("description"));
-                    setText(etAboutEvent,  doc.getString("aboutEvent"));  // NEW
-                    setText(etStartDate,   doc.getString("startDate") != null
-                            ? doc.getString("startDate") : doc.getString("date")); // NEW + fallback
-                    setText(etEndDate,     doc.getString("endDate"));     // NEW
-                    // Load existing banner image if present
+                    setText(etAboutEvent,  doc.getString("aboutEvent"));
+                    // startDate with fallback to legacy "date" field
+                    String sd = doc.getString("startDate");
+                    if (sd == null) sd = doc.getString("date");
+                    setText(etStartDate, sd);
+                    setText(etEndDate,   doc.getString("endDate"));
+                    setText(etVenue,     doc.getString("venue"));
+                    setText(etSocietyName, doc.getString("societyName"));
+
+                    // Event banner
                     String existingImg = doc.getString("eventImageBase64");
                     if (existingImg != null && !existingImg.isEmpty()) {
                         eventImageBase64 = existingImg;
-                        try {
-                            byte[] bytes = Base64.decode(existingImg, Base64.NO_WRAP);
-                            Bitmap bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
-                            if (bmp != null) {
-                                imgEventPreview.setImageBitmap(bmp);
-                                imgEventPreview.setVisibility(android.view.View.VISIBLE);
-                                btnPickEventImage.setText("✅ Image selected");
-                            }
-                        } catch (Exception ignored) {}
+                        Bitmap bmp = bitmapFromBase64(existingImg);
+                        if (bmp != null) {
+                            imgEventPreview.setImageBitmap(bmp);
+                            imgEventPreview.setVisibility(View.VISIBLE);
+                            btnPickEventImage.setText("✅ Image selected");
+                        }
                     }
-                    setText(etVenue,       doc.getString("venue"));
-                    setText(etSocietyName, doc.getString("societyName"));
+
+                    // Budget document image
+                    String existingBudget = doc.getString("budgetImageBase64");
+                    if (existingBudget != null && !existingBudget.isEmpty()) {
+                        budgetImageBase64 = existingBudget;
+                        Bitmap bmp = bitmapFromBase64(existingBudget);
+                        if (bmp != null && imgBudgetDocPreview != null) {
+                            imgBudgetDocPreview.setImageBitmap(bmp);
+                            imgBudgetDocPreview.setVisibility(View.VISIBLE);
+                        }
+                        if (tvBudgetDocLabel != null) {
+                            tvBudgetDocLabel.setText("✅ Budget document attached");
+                            tvBudgetDocLabel.setTextColor(0xFF2E7D32);
+                        }
+                    }
 
                     String eventType = doc.getString("eventType");
                     if ("Society Event".equals(eventType)) {
@@ -430,6 +473,37 @@ public class ProposalFormActivity extends AppCompatActivity {
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Could not load proposal.", Toast.LENGTH_SHORT).show());
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private Bitmap decodeBitmap(android.net.Uri uri, int maxPx) {
+        try {
+            java.io.InputStream is = getContentResolver().openInputStream(uri);
+            Bitmap bmp = BitmapFactory.decodeStream(is);
+            if (is != null) is.close();
+            if (bmp == null) return null;
+            int w = bmp.getWidth(), h = bmp.getHeight();
+            if (w > maxPx || h > maxPx) {
+                float s = Math.min((float) maxPx / w, (float) maxPx / h);
+                bmp = Bitmap.createScaledBitmap(bmp,
+                        Math.round(w * s), Math.round(h * s), true);
+            }
+            return bmp;
+        } catch (Exception e) { return null; }
+    }
+
+    private String encodeBitmap(Bitmap bmp, int quality) {
+        java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+        bmp.compress(Bitmap.CompressFormat.JPEG, quality, baos);
+        return Base64.encodeToString(baos.toByteArray(), Base64.NO_WRAP);
+    }
+
+    private Bitmap bitmapFromBase64(String b64) {
+        try {
+            byte[] bytes = Base64.decode(b64, Base64.NO_WRAP);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (Exception e) { return null; }
     }
 
     private void setText(EditText et, String value) {

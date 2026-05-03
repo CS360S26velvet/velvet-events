@@ -13,22 +13,16 @@ import com.lums.eventhub.R;
 import com.lums.eventhub.admin.organizer.RegisterOrganizerActivity;
 import com.lums.eventhub.admin.proposals.ProposalDetailActivity;
 import com.lums.eventhub.admin.proposals.ProposalListActivity;
-import com.lums.eventhub.admin.auditorium.AuditoriumActivity;
 import com.lums.eventhub.admin.calendar.CalendarActivity;
 import com.lums.eventhub.admin.accommodation.AccommodationActivity;
 
 /**
  * AdminDashboardActivity.java
  *
- * Role: Main landing screen for admin users after login.
- * Displays summary stat cards (pending proposals, approved proposals,
- * accommodation requests, active events) and a live list of the 5 most
- * recent proposals awaiting CCA review. Provides navigation to all
- * admin sub-screens.
- *
- * Implements: Admin US-08
+ * CHANGES:
+ *   - Removed btnAuditorium click listener
+ *   - Removed AuditoriumActivity import
  */
-
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
@@ -50,25 +44,19 @@ public class AdminDashboardActivity extends AppCompatActivity {
         findViewById(R.id.btnViewProposals).setOnClickListener(v ->
                 startActivity(new Intent(this, ProposalListActivity.class)));
 
-        findViewById(R.id.btnAuditorium).setOnClickListener(v ->
-                startActivity(new Intent(this, AuditoriumActivity.class)));
-
         findViewById(R.id.btnCalendar).setOnClickListener(v ->
                 startActivity(new Intent(this, CalendarActivity.class)));
 
-        // CHANGED: now opens society-grouped accommodation view
         findViewById(R.id.btnAccommodation).setOnClickListener(v ->
-                startActivity(new Intent(this, com.lums.eventhub.admin.accommodation.AdminAccommodationBySocietyActivity.class)));
+                startActivity(new Intent(this,
+                        com.lums.eventhub.admin.accommodation.AdminAccommodationBySocietyActivity.class)));
 
-        // Register New Organizer button
         findViewById(R.id.btnRegisterOrganizer).setOnClickListener(v ->
                 startActivity(new Intent(this, RegisterOrganizerActivity.class)));
 
-        // "View All" proposals link
         findViewById(R.id.tvViewAll).setOnClickListener(v ->
                 startActivity(new Intent(this, ProposalListActivity.class)));
 
-        // Sign out — clears saved session + navigates to LoginActivity
         findViewById(R.id.btnSignOut).setOnClickListener(v -> {
             com.lums.eventhub.auth.LoginActivity.clearSession(this);
             Intent intent = new Intent(this, com.lums.eventhub.auth.LoginActivity.class);
@@ -79,7 +67,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.btnEventReports).setOnClickListener(v ->
-                startActivity(new Intent(this, com.lums.eventhub.admin.reports.AdminEventReportsActivity.class)));
+                startActivity(new Intent(this,
+                        com.lums.eventhub.admin.reports.AdminEventReportsActivity.class)));
 
         loadStats();
         loadPendingProposals();
@@ -93,22 +82,18 @@ public class AdminDashboardActivity extends AppCompatActivity {
     }
 
     private void loadStats() {
-        // Pending = status "Submitted" (organizer submitted to CCA, not yet reviewed)
         db.collection("proposals").whereEqualTo("status", "Submitted").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvPendingNumber)).setText(String.valueOf(q.size())));
 
-        // Approved
         db.collection("proposals").whereEqualTo("status", "Approved").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvApprovedNumber)).setText(String.valueOf(q.size())));
 
-        // Accommodation requests
         db.collection("accommodation_requests").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvAccomNumber)).setText(String.valueOf(q.size())));
 
-        // Active events = Approved proposals
         db.collection("proposals").whereEqualTo("status", "Approved").get()
                 .addOnSuccessListener(q ->
                         ((TextView) findViewById(R.id.tvActiveNumber)).setText(String.valueOf(q.size())));
@@ -119,7 +104,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
         TextView tvNoPending   = findViewById(R.id.tvNoPending);
         container.removeAllViews();
 
-        // Show "Submitted" proposals (pending CCA review) — not Draft
         db.collection("proposals").whereEqualTo("status", "Submitted")
                 .limit(5)
                 .get()
@@ -133,7 +117,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     for (QueryDocumentSnapshot doc : query) {
                         String docId   = doc.getId();
                         String title   = doc.getString("title");
-                        // societyName preferred for display; fallback to organizerUsername
                         String society = doc.getString("societyName");
                         if (society == null) {
                             society = doc.getString("organizerUsername");
@@ -148,7 +131,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         if (society == null) society = "—";
                         if (date    == null) date    = "—";
 
-                        // Build row
                         LinearLayout row = new LinearLayout(this);
                         row.setOrientation(LinearLayout.HORIZONTAL);
                         row.setPadding(10, 14, 10, 14);

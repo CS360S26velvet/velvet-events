@@ -300,6 +300,15 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                             "payment_approved",
                             "Payment Approved",
                             "Your payment for " + eventName + " has been approved! You are now registered.");
+                    // Update mirror copy on attendee profile
+                    if (r.userId != null && !r.userId.isEmpty()) {
+                        java.util.Map<String, Object> mirrorUpdate = new java.util.HashMap<>();
+                        mirrorUpdate.put("paymentStatus",   "Approved");
+                        mirrorUpdate.put("rejectionReason", "");
+                        db.collection("users").document(r.userId)
+                                .collection("registrations").document(eventId)
+                                .update(mirrorUpdate);
+                    }
                     // If attendee also selected accommodation, write to accommodationData subcollection
                     writeAccommodationDataIfNeeded(r);
                 })
@@ -394,6 +403,17 @@ public class PaymentVerificationActivity extends AppCompatActivity {
                             "Payment Rejected",
                             "Your payment for " + eventName + " was rejected. Reason: " + reason
                                     + ". Please re-submit with correct proof.");
+                    // Update the mirror copy on attendee profile so EventDetailsActivity
+                    // shows the "Re-upload Proof" button immediately
+                    if (r.userId != null && !r.userId.isEmpty()) {
+                        java.util.Map<String, Object> mirrorUpdate = new java.util.HashMap<>();
+                        mirrorUpdate.put("paymentStatus",      "Rejected");
+                        mirrorUpdate.put("rejectionReason",    reason);
+                        mirrorUpdate.put("registrationDocId",  r.docId);
+                        db.collection("users").document(r.userId)
+                                .collection("registrations").document(eventId)
+                                .update(mirrorUpdate);
+                    }
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());

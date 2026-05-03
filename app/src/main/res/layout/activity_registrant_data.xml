@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    activity_registrant_data.xml
+    Two screens managed by visibility:
+      llEventList     — list of approved events
+      llAttendeeScreen — list of attendees for selected event
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#E3F2FD">
+
+    <!-- HEADER -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#1565C0"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/btnRegistrantDataBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="←"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:paddingEnd="12dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Registrant Data"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="View all attendees and their registration forms"
+            android:textColor="#BBDEFB"
+            android:textSize="13sp"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <!-- SCREEN 1: EVENT LIST -->
+    <LinearLayout
+        android:id="@+id/llEventList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/tvEventListHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Your Approved Events"
+            android:textColor="#333333"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:padding="16dp"/>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:id="@+id/llEventRows"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <!-- Event rows added dynamically -->
+
+                <TextView
+                    android:id="@+id/tvEventListEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No approved events found."
+                    android:textColor="#999999"
+                    android:textSize="14sp"
+                    android:gravity="center"
+                    android:padding="40dp"
+                    android:visibility="gone"/>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- SCREEN 2: ATTENDEE LIST -->
+    <LinearLayout
+        android:id="@+id/llAttendeeScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <!-- Sub-header with back + event name -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1976D2"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/btnAttendeeBack"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="← Events"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:paddingEnd="12dp"/>
+
+            <TextView
+                android:id="@+id/tvAttendeeEventName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Event Name"
+                android:textColor="#FFFFFF"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="All Registrants"
+            android:textColor="#333333"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/tvAttendeeEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="No registrants for this event."
+            android:textColor="#999999"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:padding="40dp"
+            android:visibility="gone"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerAttendees"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="8dp"
+            android:clipToPadding="false"/>
+
+    </LinearLayout>
+
+</LinearLayout>
