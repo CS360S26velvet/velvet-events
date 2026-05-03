@@ -1,4 +1,4 @@
-# 📋 Project README
+# Project README
 
 ---
 
@@ -651,5 +651,193 @@ Had constant communication on Slack throughout.
 <summary><h2>VI) Addressing Feedback on Previous Deliverable</h2></summary>
 
 TA had satisfactory response, approved our figma screens and app flow. Mentioned that we built as website which we defended that since proposal making document uploading are easier to manage on website we had that in mind. He mentioned that when coding obviously it should be in Adnroid Studio – as mobile screen app.
+
+</details>
+
+---
+
+<details>
+<summary><h2>VII) UI Mockups D4</h2></summary>
+
+Organizer first submits new event to CCA for approval with all the details.
+
+![UI Mockup 1](images_3_UI_MockUps_D4/image1.png)
+
+---
+
+CCA reviews the event details and approves/rejects them.
+
+![UI Mockup 2](images_3_UI_MockUps_D4/image2.png)
+
+---
+
+Once event has been approved, Organizer makes the registration form that attendees can view.
+
+![UI Mockup 3](images_3_UI_MockUps_D4/image3.png)
+
+---
+
+Organizer chooses if registration fees, accommodation is required and chooses the deadline date for this registration form.
+
+![UI Mockup 4](images_3_UI_MockUps_D4/image4.png)
+
+---
+
+Organizer then goes to form builder activity where organizer builds the form by adding paragraph questions, MCQs or short form questions.
+
+![UI Mockup 5](images_3_UI_MockUps_D4/image5.png)
+
+---
+
+Once form is built, the organizer can save the draft and come back and save it and also release the form to attendees.
+
+![UI Mockup 6](images_3_UI_MockUps_D4/image6.png)
+
+---
+
+On Attendee side now the event is visible.
+
+![UI Mockup 7](images_3_UI_MockUps_D4/image7.png)
+
+---
+
+Attendee can view the event details and register.
+
+![UI Mockup 8](images_3_UI_MockUps_D4/image8.png)
+
+---
+
+The attendee needs to fill out the registration form and attach any payment proof if needed.
+
+![UI Mockup 9](images_3_UI_MockUps_D4/image9.png)
+
+---
+
+Once registration is submitted the attendee will need to wait for payment approval (if any payment was done) and this will be done by the organizer.
+
+![UI Mockup 10](images_3_UI_MockUps_D4/image10.png)
+
+---
+
+If an event requires accommodation, CCA can download that particular event's participant details who require accommodation.
+
+![UI Mockup 11](images_3_UI_MockUps_D4/image11.png)
+
+---
+
+Once event is done organizers need to submit the event report.
+
+![UI Mockup 12](images_3_UI_MockUps_D4/image12.png)
+
+---
+
+Once they get approved on admin side; it means it's finished and so next year an organizer can reuse it as same to allow minimal data entry again.
+
+![UI Mockup 13](images_3_UI_MockUps_D4/image13.png)
+
+---
+
+Organizers have a vendor directory; visible to all other organizers.
+
+![UI Mockup 14](images_3_UI_MockUps_D4/image14.png)
+
+---
+
+Organizers have check-in dashboard to mark attendance on day of event.
+
+![UI Mockup 15](images_3_UI_MockUps_D4/image15.png)
+
+---
+
+Organizers can allow when to toggle off the event from attendees side.
+
+![UI Mockup 16](images_3_UI_MockUps_D4/image16.png)
+
+---
+
+![UI Mockup 17](images_3_UI_MockUps_D4/image17.png)
+
+![UI Mockup 18](images_3_UI_MockUps_D4/image18.png)
+
+![UI Mockup 19](images_3_UI_MockUps_D4/image19.png)
+
+![UI Mockup 20](images_3_UI_MockUps_D4/image20.png)
+
+</details>
+
+---
+
+<details>
+<summary><h2>VIII) Product Backlog Tracking 2</h2></summary>
+
+![Product Backlog 1](images_Product_Backlog_Tracking_2/image1.png)
+
+![Product Backlog 2](images_Product_Backlog_Tracking_2/image2.png)
+
+![Product Backlog 3](images_Product_Backlog_Tracking_2/image3.png)
+
+![Product Backlog 4](images_Product_Backlog_Tracking_2/image4.png)
+
+![Product Backlog 5](images_Product_Backlog_Tracking_2/image5.png)
+
+![Product Backlog 6](images_Product_Backlog_Tracking_2/image6.png)
+
+</details>
+
+---
+
+<details>
+<summary><h2>IX) Final Way Sprint</h2></summary>
+
+### Week 1
+
+| Person | User Stories | Tasks |
+|--------|-------------|-------|
+| Person A | Admin US-03, US-04, US-05 | Approval/rejection notifications to societies; feedback report to organizer on rejection; grant/restrict organizer editing access |
+| Person B | Org US-17, Org US-24 (setup), AT US-12, AT US-13 | Free vs paid ticketing toggle; payment setup (amount, bank, note, ticket preview); show registration fee and bank details to attendee |
+| Person C | Org US-06, US-07, US-08, US-01 | Notification on proposal approval/rejection with reason; edit and resubmit rejected proposal; polish organizer login interface |
+| Person D | AT US-05 (extended), AT US-11, AT US-21 | Full event detail view with fee and images; registration confirmation message; My Registrations page with downloadable ticket |
+
+### Week 2
+
+| Person | User Stories | Tasks |
+|--------|-------------|-------|
+| Person A | Admin US-07, US-10, US-11, US-12 | First-come-first-served auditorium booking logic; event categorization (society-led vs school); review/approve/reject resource requests with feedback |
+| Person B | Org US-09, US-10, US-11, US-12, US-13 | Send event details to CCA; event type selection for attendee filtering; duplicate past event; edit published event; auto-hide event when registration closes |
+| Person C | Org US-20 / AT US-08, Org US-24, Org US-26, US-27 | Registrant Data; Event Report |
+| Person D | AT US-17, AT US-18, AT US-19, AT US-20 | Persistent Login; Add event to calendar; submit post-event feedback and rating; anonymous feedback option |
+
+### Week 3
+
+| Person | User Stories | Tasks |
+|--------|-------------|-------|
+| Person A | Admin US-14, US-17, US-18 | Reject accommodation requests with feedback; view submitted post-event reports; export feedback reports |
+| Person B | AT US-14, AT US-15, AT US-16 | Attendee uploads payment proof in-app; payment confirmation notification; check-in logic |
+| Person C | Org US-14, US-15, US-16, US-31, US-32, US-33, US-34 | Vendor directory; submit post-event report |
+| Person D | AT notifications center | Notification center (payment confirmed, registration approved, event updates); integration polish and final testing |
+
+</details>
+
+---
+
+<details>
+<summary><h2>X) UML Diagram D4</h2></summary>
+
+### 🔗 Interactive Diagram Link
+
+[View Full UML Diagram on draw.io](https://app.diagrams.net/#G1EzSsHSMsaxBwZqXVUWNRlg0b3gg8wgot#%7B%22pageId%22%3A%226QuBo7XLGjD0uoXep6cE%22%7D)
+
+### Diagram Image
+
+![UML Diagram D4](images_UML_Diagram_D4/image1.png)
+
+</details>
+
+---
+
+<details>
+<summary><h2>XI) Addressing Feedback on Previous Deliverable</h2></summary>
+
+TA had satisfactory response. Suggested that we organize code files into proper folders (feature-based or layer-based structure) and implement persistent login so we accomplished both.
 
 </details>
